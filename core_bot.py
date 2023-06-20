@@ -1,5 +1,5 @@
 # Мой первый телеграм-бот
-# с использованием библиотки pyTelegramBotAPI
+# с  использованием библиотки pyTelegramBotAPI
 
 import os
 import telebot
