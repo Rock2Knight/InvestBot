@@ -8,7 +8,8 @@ from tinkoff.invest.sandbox.client import SandboxClient
 API_TOKEN = os.environ['TELE_TOKEN']     # Токен бота
 TOKEN = os.environ['TINKOFF_TOKEN']      # Токен тинькофф-инвестиций
 
-bot = telebot.TeleBot(API_TOKEN) # сам бот
+bot = telebot.TeleBot(API_TOKEN)         # сам бот
+sandbox_account_flag = False             # Состояние аккаунта в песочнице
 
 # Список типов ценных бумаг
 figi = {'derivative': 'Фьючерсы и опционы', 'structured_bonds': 'структурные облигации', 'closed_fund': 'закрытые паевые фонды',
@@ -56,6 +57,31 @@ def get_info_accountant(message):
             message_text += figi[name] + '\n'
 
     bot.send_message(message.chat.id, message_text)
+
+""" Открытие счета в песочнице """
+@bot.message_handler(commands=['open'])
+def open_account(message):
+    global sandbox_account_flag
+
+    if sandbox_account_flag:                                      # если счет в песочнице уже есть,
+        message_text = "У вас уже есть аккаунт в песочнице!"      # то выводим соответствующее оповщение
+        bot.send_message(message.chat.id, message_text)
+        return
+
+    with SandboxClient(TOKEN) as client:                               # Создаем аккаунт тинькофф-инвестиций
+        sbAccountRescponse = client.sandbox.open_sandbox_account()     # создаем счет в песочнице
+        sandbox_account_flag = True                                    # устанавливаем флаг создания песочницы
+        message_text = "Вы создали новый счет в песочнице!\nЕго номер: " + sbAccountRescponse.account_id
+        bot.send_message(message.chat.id, message_text)
+
+    # Сохраняем номер счета в файле
+    with open("accounts_sandbox.txt", 'a', encoding="utf-8") as SanboxClients:
+        SanboxClients.write(sbAccountRescponse.account_id + '\n')
+        SanboxClients.close()
+
+
+@bot.message_handler(commands=['PayIn'])
+def pay_in(message):
 
 if __name__ == '__main__':
     bot.infinity_polling()
