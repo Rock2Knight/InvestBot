@@ -2,7 +2,7 @@ from tinkoff.invest.schemas import Quotation, MoneyValue
 from tinkoff.invest.sandbox.client import SandboxClient
 
 from work.bot import bot, TOKEN
-from telebot.types import Message, User
+from telebot.types import Message, User, Chat
 sandbox_account_flag = False             # Состояние аккаунта в песочнице
 
 import json
@@ -41,6 +41,9 @@ def getMessageInfo(message: Message):
     user: User = message.from_user
     date = message.date                  # Date the message was sent in Unix time
     from_user = dict()                   # Информация об отправителе сообщения
+    chat_info = dict()                   # Информация о чате
+    message_info = dict()                # Информация о сообщении
+    chat: Chat = message.chat            # Chat of message
 
     from_user["id"] = user.id                                                     # id юзера
     from_user["is_bot"] = user.is_bot                                             # бот или нет
@@ -54,13 +57,19 @@ def getMessageInfo(message: Message):
     from_user["can_read_all_group_messages"] = user.can_read_all_group_messages   # может ли читать сообщения всех групп
     from_user["supports_inline_queries"] = user.supports_inline_queries
 
-    # Dump python-dict to json
-    with open("../user_admin_info.json", "w") as write_file:
-        json.dump(from_user, write_file)
+    chat_info["id"] = chat.id
+    chat_info["type"] = chat.type
 
-    # Note: end up this function. This function must get information
-    # about message and serialize it in json
+    message_info["message_id"] = message_id
+    message_info["date"] = date
+    message_info["from_user"] = from_user
+    message_info["chat_info"] = chat_info
+    message_info["content_type"] = list(["text"])
+    message_info["options"] = dict()
+    message_info["json_string"] = ""
 
+    with open("../message_admin_info.json", "w") as write_file:
+        json.dump(message_info, write_file)
 
 
 """ Открытие счета в песочнице """
