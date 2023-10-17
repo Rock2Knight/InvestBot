@@ -15,14 +15,10 @@ from tinkoff.invest.caching.market_data_cache.cache_settings import (
 )
 from tinkoff.invest.utils import now
 
-from datetime import timedelta
+from datetime import timedelta, datetime
 from pathlib import Path
 from functional import *
 
-#API_TOKEN = os.environ['TELE_TOKEN']     # Токен бота
-#TOKEN = os.environ['TINKOFF_TOKEN']      # Токен тинькофф-инвестиций
-
-#bot = telebot.TeleBot(API_TOKEN)         # сам бот
 
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['help', 'start'])
@@ -56,7 +52,8 @@ def getSandboxPortfolio(message):
 
         # Формулировка сообщения
         message_text = f"Баланс счета {in_account_id}: \n"
-        portfolio = client.sandbox.get_sandbox_portfolio(account_id=in_account_id)
+        # portfolio = client.sandbox.get_sandbox_portfolio(account_id=in_account_id)
+        portfolio = client.operations.get_portfolio(account_id=in_account_id)
         total_amount = portfolio.total_amount_portfolio
         message_text += "Currency: " + total_amount.currency + "\n"
         message_text += "Units: " + str(total_amount.units) + "\n"
@@ -88,6 +85,16 @@ def getAllInstruments(message):
             json.dump(SharesDict, write_file)          # Dump python-dict to json
 
 
+def cast_money(sum: Quotation) -> float:
+    return sum.units + sum.nano / 1e9
+
+
+def string_data(dt: datetime) -> str:
+    dt_tuple = dt.timetuple()
+    dt_string = str(dt_tuple[0])+'-'+str(dt_tuple[1])+'-'+str(dt_tuple[2])+'-'+str(dt_tuple[3])+'-'+str(dt_tuple[4])+'-'+str(dt_tuple[5])
+    return dt_string
+
+
 @bot.message_handler(commands=['get_candles'])
 def getCandles(message):
     figi = message.text
@@ -98,6 +105,7 @@ def getCandles(message):
         market_data_cache = MarketDataCache(settings=settings, services=client)
 
         candles = list([])
+        up_candles = list([])
         candles_raw = market_data_cache.get_all_candles(        # Test candle
                 figi="BBG004730N88",
                 from_=now() - timedelta(days=7),
@@ -107,6 +115,7 @@ def getCandles(message):
         for candle in candles_raw:
             candles.append(candle)
         print(f"Amount of candles: {len(candles)}\n")
+        size = len(candles)
 
         for i in range(5):
             print(f"Open: {cast_money(candles[i].open)}\n",     # Open cast
@@ -116,6 +125,20 @@ def getCandles(message):
                   f"Time: {candles[i].time}\n",                 # Time of candle
                   f"Volume: {candles[i].volume}\n\n", sep='')   # Volume
 
+
+        with open("../share_yandex_history_other.txt", "w") as write_file:
+            write_file.write('Time open close low high volume\n')
+            for i in range(size):
+                up_candle = dict()
+                up_candle['open'] = str(cast_money(candles[i].open))
+                up_candle['close'] = str(cast_money(candles[i].close))
+                up_candle['low'] = str(cast_money(candles[i].low))
+                up_candle['high'] = str(cast_money(candles[i].high))
+                up_candle['time'] = string_data(candles[i].time)
+                up_candle['volume'] = str(candles[i].volume)
+
+                write_file.write(up_candle['time']+' '+up_candle['open']+' '+up_candle['close']+' '+
+                                 up_candle['low']+' '+up_candle['high']+' '+up_candle['volume']+'\n')
 
 if __name__ == '__main__':
     bot.infinity_polling()
