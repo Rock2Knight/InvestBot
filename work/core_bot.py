@@ -1,9 +1,8 @@
 # Мой первый телеграм-бот
 # с  использованием библиотки pyTelegramBotAPI
-from datetime import datetime
-#import os
-import telebot
 import json
+from datetime import timedelta, datetime, timezone
+from pathlib import Path
 
 from tinkoff.invest import CandleInterval
 from tinkoff.invest.schemas import MoneyValue, InstrumentStatus, Quotation
@@ -13,20 +12,35 @@ from tinkoff.invest.services import MarketDataCache
 from tinkoff.invest.caching.market_data_cache.cache_settings import (
     MarketDataCacheSettings,
 )
-from tinkoff.invest.utils import now
 
-from datetime import timedelta, datetime
-from pathlib import Path
 from functional import *
 
 
 # Handle '/start' and '/help'
-@bot.message_handler(commands=['help', 'start'])
+@bot.message_handler(commands=['start'])
 def send_welcome(message):
     bot.reply_to(message, """\
 Hi there, I am TraderBot.
 I can help you to deal with shares, bonds and other. To get info about account, send \"info\"\
 """)
+
+# Handle '/start' and '/help'
+@bot.message_handler(commands=['help'])
+def helpMessage(message):
+    message_text = "Краткая справка по командам в InvestBot: \n"
+    message_text += "\"/start\" - Приветственное сообщение\n"
+    message_text += "\"/help\" - Получить справку\n"
+    message_text += "\"/portfolio account_id\" - Информация о портфеле счета с ID account_id\n"
+    message_text += "\"/accounts\" - Получение всех аккаунтов в песочнице\n"
+    message_text += "\"/open\" - Открытие счета в песочнице\n"
+    message_text += "\"/info\" - Получение информации об активном счете в Тинькофф-песочнице\n"
+    message_text += "\"/PayIn amount\" - Внесение на активный счет Тинькофф-песочницы суммы amount руб\n"
+    message_text += "\"/get_instruments\" - Получение всех доступных для торговли инструментов и\n" \
+                    "запись их в json-файл\n"
+    message_text += "\"/get_candles\" - Получение часового свечного графика по указанному\n" \
+                    "инструменту за последнюю неделю\n"
+    bot.send_message(message.chat.id, message_text)      # Отправляем состояние счета
+
 
 
 # Получаем баланс счета в песочнице по id
@@ -95,9 +109,82 @@ def string_data(dt: datetime) -> str:
     return dt_string
 
 
+# Преобразует даты и время (начала и конца периода)
+# к типу datetime
+def CandlesParamsSettings(paramList: list[str]):
+
+    getCandlesParams = None
+    candle_interval = None    # Интервал свечи
+
+    year_ = int(paramList[2][:4])
+    month_ = int(paramList[2][5:7])
+    day_ = int(paramList[2][8:10])
+    hour_ = int(paramList[2][11:13])
+    minute_ = int(paramList[2][14:16])
+    second_ = int(paramList[2][17:19])
+
+    moment1 = datetime(year=year_, month=month_, day=day_,
+                       hour=hour_, minute=minute_, second=second_,
+                       tzinfo=timezone.utc)
+
+    year_ = int(paramList[3][:4])
+    month_ = int(paramList[3][5:7])
+    day_ = int(paramList[3][8:10])
+    hour_ = int(paramList[3][11:13])
+    minute_ = int(paramList[3][14:16])
+    second_ = int(paramList[3][17:19])
+
+    moment2 = datetime(year=year_, month=month_, day=day_,
+                       hour=hour_, minute=minute_, second=second_,
+                       tzinfo=timezone.utc)
+
+    CI_str = paramList[4]
+
+    # Определение интервала свечи
+    if CI_str == '1_MIN':
+        candle_interval = CandleInterval.CANDLE_INTERVAL_1_MIN
+    elif CI_str == '2_MIN':
+        candle_interval = CandleInterval.CANDLE_INTERVAL_2_MIN
+    elif CI_str == '3_MIN':
+        candle_interval = CandleInterval.CANDLE_INTERVAL_3_MIN
+    elif CI_str == '5_MIN':
+        candle_interval = CandleInterval.CANDLE_INTERVAL_5_MIN
+    elif CI_str == '10_MIN':
+        candle_interval = CandleInterval.CANDLE_INTERVAL_10_MIN
+    elif CI_str == '15_MIN':
+        candle_interval = CandleInterval.CANDLE_INTERVAL_15_MIN
+    elif CI_str == '30_MIN':
+        candle_interval = CandleInterval.CANDLE_INTERVAL_30_MIN
+    elif CI_str == 'HOUR':
+        candle_interval = CandleInterval.CANDLE_INTERVAL_HOUR
+    elif CI_str == '2_HOUR':
+        candle_interval = CandleInterval.CANDLE_INTERVAL_2_HOUR
+    elif CI_str == '4_HOUR':
+        candle_interval = CandleInterval.CANDLE_INTERVAL_4_HOUR
+    elif CI_str == 'DAY':
+        candle_interval = CandleInterval.CANDLE_INTERVAL_DAY
+    elif CI_str == 'WEEK':
+        candle_interval = CandleInterval.CANDLE_INTERVAL_WEEK
+    elif CI_str == 'MONTH':
+        candle_interval = CandleInterval.CANDLE_INTERVAL_MONTH
+    else:
+        raise ValueError
+
+    getCandlesParams = (paramList[1], moment1, moment2, candle_interval)
+    return getCandlesParams
+
+
 @bot.message_handler(commands=['get_candles'])
 def getCandles(message):
-    figi = message.text
+
+    param_list = message.text.split(' ')  # Список параметров
+    candlesParams = None                  # Список параметров для getCandles
+
+    try:
+        candlesParams = CandlesParamsSettings(param_list)
+    except ValueError:
+        print('Incorrect value of CandleInterval')
+
 
     with SandboxClient(TOKEN) as client:             # Запускаем клиент тинькофф-песочницы
         # Set MarketDataCache
@@ -107,9 +194,10 @@ def getCandles(message):
         candles = list([])
         up_candles = list([])
         candles_raw = market_data_cache.get_all_candles(        # Test candle
-                figi="BBG004730N88",
-                from_=now() - timedelta(days=7),
-                interval=CandleInterval.CANDLE_INTERVAL_HOUR,
+                figi=candlesParams[0],
+                from_=candlesParams[1],
+                to=candlesParams[2],
+                interval=candlesParams[3],
         )
 
         for candle in candles_raw:
@@ -126,7 +214,7 @@ def getCandles(message):
                   f"Volume: {candles[i].volume}\n\n", sep='')   # Volume
 
 
-        with open("../share_yandex_history_other.txt", "w") as write_file:
+        with open("../share_history_other.txt", "w") as write_file:
             write_file.write('Time open close low high volume\n')
             for i in range(size):
                 up_candle = dict()

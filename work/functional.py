@@ -1,11 +1,12 @@
+import json
+
 from tinkoff.invest.schemas import Quotation, MoneyValue
 from tinkoff.invest.sandbox.client import SandboxClient
 
-from work.bot import bot, TOKEN
 from telebot.types import Message, User, Chat
-sandbox_account_flag = False             # Состояние аккаунта в песочнице
 
-import json
+from work.bot import bot, TOKEN
+sandbox_account_flag = False             # Состояние аккаунта в песочнице
 
 # Список имен, импортируемых из данного модуля при конструкцией "from functional import *"
 __all__ = [
