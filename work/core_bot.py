@@ -1,7 +1,7 @@
 # Мой первый телеграм-бот
 # с  использованием библиотки pyTelegramBotAPI
 import json
-from datetime import timedelta, datetime, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 from tinkoff.invest import CandleInterval
@@ -14,7 +14,7 @@ from tinkoff.invest.caching.market_data_cache.cache_settings import (
 )
 
 from functional import *
-
+from exceptions import *
 
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['start'])
@@ -47,6 +47,10 @@ def helpMessage(message):
 @bot.message_handler(commands=['portfolio'])
 def getSandboxPortfolio(message):
     words = message.text.split(' ')
+
+    if len(words) == 1:
+        raise InvestBotValueError('Incorrect id')
+
     in_account_id = words[-1]         # Введенный id
 
     with SandboxClient(TOKEN) as client:             # Запускаем клиент тинькофф-песочницы
@@ -116,27 +120,27 @@ def CandlesParamsSettings(paramList: list[str]):
     getCandlesParams = None
     candle_interval = None    # Интервал свечи
 
-    year_ = int(paramList[2][:4])
-    month_ = int(paramList[2][5:7])
-    day_ = int(paramList[2][8:10])
-    hour_ = int(paramList[2][11:13])
-    minute_ = int(paramList[2][14:16])
-    second_ = int(paramList[2][17:19])
-
-    moment1 = datetime(year=year_, month=month_, day=day_,
-                       hour=hour_, minute=minute_, second=second_,
+    moment1_raw = None
+    moment1 = None
+    try:
+        moment1_raw = datetime.strptime(paramList[2], '%Y-%m-%d_%H:%M:%S')
+    except ValueError:
+        raise InvestBotValueError("Invalid format of start datetime object")
+    finally:
+        moment1 = datetime(year=moment1_raw.year, month=moment1_raw.month, day=moment1_raw.day,
+                       hour=moment1_raw.hour, minute=moment1_raw.minute, second=moment1_raw.second,
                        tzinfo=timezone.utc)
 
-    year_ = int(paramList[3][:4])
-    month_ = int(paramList[3][5:7])
-    day_ = int(paramList[3][8:10])
-    hour_ = int(paramList[3][11:13])
-    minute_ = int(paramList[3][14:16])
-    second_ = int(paramList[3][17:19])
-
-    moment2 = datetime(year=year_, month=month_, day=day_,
-                       hour=hour_, minute=minute_, second=second_,
-                       tzinfo=timezone.utc)
+    moment2_raw = None
+    moment2 = None
+    try:
+        moment2_raw = datetime.strptime(paramList[3], '%Y-%m-%d_%H:%M:%S')
+    except ValueError:
+        raise InvestBotValueError("Invalid format of end datetime object")
+    finally:
+        moment2 = datetime(year=moment2_raw.year, month=moment2_raw.month, day=moment2_raw.day,
+                        hour=moment2_raw.hour, minute=moment2_raw.minute, second = moment2_raw.second,
+                        tzinfo = timezone.utc)
 
     CI_str = paramList[4]
 
@@ -168,22 +172,21 @@ def CandlesParamsSettings(paramList: list[str]):
     elif CI_str == 'MONTH':
         candle_interval = CandleInterval.CANDLE_INTERVAL_MONTH
     else:
-        raise ValueError
+        raise InvestBotValueError("Invalid value of CandleInterval")
 
     getCandlesParams = (paramList[1], moment1, moment2, candle_interval)
     return getCandlesParams
 
 
-@bot.message_handler(commands=['get_candles'])
-def getCandles(message):
+def getCandles(param_list: str):
 
-    param_list = message.text.split(' ')  # Список параметров
+    param_list = param_list.split(' ')  # Список параметров
     candlesParams = None                  # Список параметров для getCandles
 
     try:
         candlesParams = CandlesParamsSettings(param_list)
-    except ValueError:
-        print('Incorrect value of CandleInterval')
+    except InvestBotValueError as iverror:
+        raise InvestBotValueError(iverror.msg)
 
 
     with SandboxClient(TOKEN) as client:             # Запускаем клиент тинькофф-песочницы
@@ -202,31 +205,35 @@ def getCandles(message):
 
         for candle in candles_raw:
             candles.append(candle)
-        print(f"Amount of candles: {len(candles)}\n")
-        size = len(candles)
 
-        for i in range(5):
-            print(f"Open: {cast_money(candles[i].open)}\n",     # Open cast
-                  f"Close: {cast_money(candles[i].close)}\n",   # Close cast
-                  f"Low: {cast_money(candles[i].low)}\n",       # Min cast
-                  f"High: {cast_money(candles[i].high)}\n",     # Max cast
-                  f"Time: {candles[i].time}\n",                 # Time of candle
-                  f"Volume: {candles[i].volume}\n\n", sep='')   # Volume
+    return candles
 
 
-        with open("../share_history_other.txt", "w") as write_file:
-            write_file.write('Time open close low high volume\n')
-            for i in range(size):
-                up_candle = dict()
-                up_candle['open'] = str(cast_money(candles[i].open))
-                up_candle['close'] = str(cast_money(candles[i].close))
-                up_candle['low'] = str(cast_money(candles[i].low))
-                up_candle['high'] = str(cast_money(candles[i].high))
-                up_candle['time'] = string_data(candles[i].time)
-                up_candle['volume'] = str(candles[i].volume)
+@bot.message_handler(commands=['get_candles'])
+def save_candles(message):
 
-                write_file.write(up_candle['time']+' '+up_candle['open']+' '+up_candle['close']+' '+
-                                 up_candle['low']+' '+up_candle['high']+' '+up_candle['volume']+'\n')
+    candles = ''                           # Список HistoricCandle
+
+    try:
+        candles = getCandles(message.text)
+    except InvestBotValueError as iverror:
+        raise InvestBotValueError(iverror.msg)
+
+    size = len(candles)
+
+    with open("../share_history_other.txt", "w") as write_file:
+        write_file.write('Time open close low high volume\n')
+        for i in range(size):
+            up_candle = dict()
+            up_candle['open'] = str(cast_money(candles[i].open))
+            up_candle['close'] = str(cast_money(candles[i].close))
+            up_candle['low'] = str(cast_money(candles[i].low))
+            up_candle['high'] = str(cast_money(candles[i].high))
+            up_candle['time'] = string_data(candles[i].time)
+            up_candle['volume'] = str(candles[i].volume)
+
+            write_file.write(up_candle['time'] + ' ' + up_candle['open'] + ' ' + up_candle['close'] + ' ' +
+                             up_candle['low'] + ' ' + up_candle['high'] + ' ' + up_candle['volume'] + '\n')
 
 if __name__ == '__main__':
     bot.infinity_polling()
