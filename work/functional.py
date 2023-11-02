@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 from tinkoff.invest.schemas import Quotation, MoneyValue
 from tinkoff.invest.sandbox.client import SandboxClient
@@ -17,7 +18,8 @@ __all__ = [
     'Chat',
     'SandboxClient',
     'Quotation',
-    'getAccounts'
+    'getAccounts',
+    'cast_money'
 ]
 
 # Список типов ценных бумаг
@@ -28,8 +30,8 @@ figi = {'derivative': 'Фьючерсы и опционы', 'structured_bonds': 
         'russian_shares': 'акции, не включенные в котировальные списки'}
 
 """ Convert Quotation type to float """
-def cast_money(v: Quotation):
-    return v.units + v.nano / 1e9
+def cast_money(sum: Quotation) -> float:
+    return sum.units + sum.nano / 1e9
 
 
 """ Получение всех аккаунтов в песочнице """

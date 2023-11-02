@@ -1,119 +1,190 @@
 # Модуль отладки инструментов тех. анализа
+from abc import ABC, abstractmethod         # Для абстрактных классов и интерфейсов
 from datetime import datetime
+from typing import Union
+from math import floor
+
 import core_bot
 
-MA_INTERVALS = {'5_DAY': 5, '10_DAY': 10, '20_DAY': 20}
 
-# Отладочный метод, вычисляющий MA для каждого момента времени из интервала
-# MA_interval - интервал усреднения для скользящей средней
-def MA_build(MA_interval: str, param_list: str):
+# Интерфейс для индикатора MA
+class MA_indicator(ABC):
 
-    global MA_INTERVALS
-    if MA_interval not in MA_INTERVALS.keys():
-        raise ValueError                         # Передали в качестве периода скользящей средней некорректное значение
+    @staticmethod
+    @abstractmethod
+    def MA_build(MA_interval: int, param_list: str) -> list[dict[str, Union[float, str]]]:
+        pass
 
-    candles = core_bot.getCandles(param_list)  # Лишняя работа, так-как вывается метод, обращающийся к API
-    size = len(candles)
-    up_candles = list([])
-
-    for i in range(size):
-        up_candle = dict()
-        up_candle['close'] = core_bot.cast_money(candles[i].close)
-        up_candle['time'] = core_bot.string_data(candles[i].time)
-
-        up_candles.append(up_candle)
-
-    day_data = dict()                 # словарь с ценами закрытия за каждый день
-    cnt_candles = len(up_candles)
-    for i in range(cnt_candles):
-        time_candle = datetime.strptime(up_candles[i]['time'], '%Y-%m-%d-%H-%M-%S')
-
-        # Преобразуем датафрейм из datetime в строку для хранения в словаре как ключа
-        time_str = str(time_candle.year)
-        time_str += '-' + str(time_candle.month)
-        time_str += '-' + str(time_candle.day)
-        if not time_str in day_data.keys():
-            day_data[time_str] = list([])
-
-        day_data[time_str].append(up_candles[i]['close'])
-
-    days = day_data.keys()
-    day_close_cast = dict()
-    print('\nTime       Cast')
-    for day in days:
-        close_cast = sum(day_data[day])/len(day_data[day])
-        day_close_cast[day] = list([])
-        day_close_cast[day].append(close_cast)
-        day_close_cast[day].append(0.0)
-        print(f'{day} '+'%.2f' % close_cast + ' RUB')
-
-    del day_data
-
-    list_day = list(day_close_cast.keys())
-    for i, moment in enumerate(list_day):
-        if i >= MA_INTERVALS[MA_interval]-1:
-            sum_cast = 0.0
-            for j in range(i-MA_INTERVALS[MA_interval]+1, i+1):
-                sum_cast += day_close_cast[list_day[j]][0]
-            aver = sum_cast / MA_INTERVALS[MA_interval]
-            day_close_cast[moment][1] = aver
+    @staticmethod
+    @abstractmethod
+    def MA_signal(bars_MA: list[dict[str, Union[float, str]]]):
+        pass
 
 
-    return day_close_cast
+# Обычная MA
+class SMA_indicator(MA_indicator):
 
+    # Отладочный метод, вычисляющий MA для каждого момента времени из интервала
+    # MA_interval - интервал усреднения для скользящей средней
+    @staticmethod
+    def MA_build(MA_interval: int, param_list: str) -> list[dict[str, Union[float, str]]]:
+
+        if MA_interval <= 0:
+            raise ValueError('Invalid value of MA interval')  # Передали в качестве периода скользящей средней некорректное значение
+
+        candles = core_bot.getCandles(param_list)  # Лишняя работа, так-как вывается метод, обращающийся к API
+        size = len(candles)
+        up_candles = list([])
+        sma_val = 0.0
+
+        for i in range(size):
+            up_candle = dict()
+            up_candle['time'] = candles[i].time.strftime('%Y-%m-%d_%H:%M:%S')
+            up_candle['open'] = core_bot.cast_money(candles[i].close)
+            up_candle['close'] = core_bot.cast_money(candles[i].close)
+            up_candle['min'] = core_bot.cast_money(candles[i].low)
+            up_candle['max'] = core_bot.cast_money(candles[i].high)
+            up_candle['sma'] = sma_val
+            up_candles.append(up_candle)
+
+            if i >= MA_interval-1:
+                start_bar = i - MA_interval + 1
+                end_bar = i + 1
+                sum_bar = 0.0
+                for j in range(start_bar, end_bar):
+                    sum_bar += up_candles[j]['close']
+                sma_val = sum_bar / MA_interval
+                up_candles[i]['sma'] = sma_val
+
+        return up_candles
+
+
+    '''
+    Метод, выдающий торговые сигналы для прошедших моментов времени :)
+    bars_MA - словарь, где ключ - момент времени
+    значение - список:
+    0-ой элемент списка - цена закрытия
+    1-ый элемент списка - значение MA для данного момента времени
+    '''
+    @staticmethod
+    def MA_signal(bars_MA: list[dict[str, Union[float, str]]]):
+        cmp_close: list[float] = list([0.0, 0.0])               # Список для сравнения цен закрытия
+        cmp_ma: list[float] = list([0.0, 0.0])                  # Список для сравнения значений MA
+        signal = ' '                                    # Торговый сигнал
+        bars_MA[0]['signal'] = ''
+        cur_time = None
+
+        sizeTimeList = len(bars_MA)                # Количество свечек
+        for i in range(1, sizeTimeList):
+            cmp_close[0] = bars_MA[i-1]['close']
+            cmp_close[1] = bars_MA[i]['close']
+            cmp_ma[0] = bars_MA[i-1]['sma']
+            cmp_ma[1] = bars_MA[i]['sma']
+
+            if bars_MA[i-1]['close'] < bars_MA[i-1]['sma'] and bars_MA[i]['close'] > bars_MA[i]['sma']:
+                signal = 'BUY'                                               # График цен пересек SMA снизу вверх
+            elif bars_MA[i-1]['close'] > bars_MA[i-1]['sma'] and bars_MA[i]['close'] < bars_MA[i]['sma']:
+                signal = 'SELL'                                              # График цен пересек SMA сверху вниз
+
+            if bars_MA[i-1]['sma'] == 0.0:
+                signal = ' '
+            bars_MA[i]['signal'] = signal
+            signal = ' '
 
 if __name__ == '__main__':
+    figi = 'BBG004730N88'          # Фиги торгуемого инструемента (СберБанк)
+    lot = 10                       # лотность инструмента
+    cnt_lots = 0                   # Количество лотов Sber в портфеле
+    account_portfolio = 100000     # Размер портфеля в рублях
+    start_sum = account_portfolio
+    stop_loss = 0.05               # Точка аннулирования для торговой стратегии в процентах
+    ping = 1                       # задержка в сек
+    ping_interval = ping / (60*4)  # задержка, выраженная относительно интервала (размер интервала = 4 ч)
+    start_time = '2022-07-16_00:00:00'   # Стартовое время моделирования
+    ModelTime = 1000               # Время моделирования в временных интервалах
 
-    MA_intervals = None      # Словарь со свечами с показателями MA
-    param_list = '/get_candles BBG004730N88 2022-07-16_00:00:00 2022-10-16_00:00:00 HOUR'
-    MA_intervals = MA_build('10_DAY', param_list)   # Получаем словарь с ценами закрытия за день и MA
-    candles = core_bot.getCandles(param_list)       # Список свечей
+    request = '/get_candles BBG004730N88 2022-07-16_00:00:00 2022-10-16_00:00:00 4_HOUR'
+    sma_period = 5
 
-    size = len(candles)           # Размер списка свечей
-    up_candles = list([])         # Свечи отфармотированные (с MA)
+    up_candles = SMA_indicator.MA_build(MA_interval=sma_period, param_list=request)  # Запрашиваем исторические данные за период
+    SMA_indicator.MA_signal(up_candles)   # строим SMA и по ней выставляем торговые сигналы
+    print('\n\nModeling trading\n')
+    start_time = up_candles[0]['time']
+    orderType = 'NO'                      # Тип сделки
+    order_cnt_lot: int = 0                     # Количество лотов по последней сделке
+    position = 0                          # Количество
+    stop_loss_cast, take_profit_cast = 0.0, 0.0   # Суммы срабатывания стоп-лосса и тейк-профита
+    signal = ' '
 
-    # Создаем список таймфреймов для MA
-    MA_keys = MA_intervals.keys()
-    MA_keys = list(MA_keys)
-    MA_iter = 0                   # Итератор для MA ключей
+    cntCandles = len(up_candles)
+    for i in range(cntCandles):
 
-    for i in range(size):
-        up_candle = dict()
-        up_candle['open'] = str(core_bot.cast_money(candles[i].open))
-        up_candle['close'] = str(core_bot.cast_money(candles[i].close))
-        up_candle['low'] = str(core_bot.cast_money(candles[i].low))
-        up_candle['high'] = str(core_bot.cast_money(candles[i].high))
-        up_candle['time'] = core_bot.string_data(candles[i].time)
-        up_candle['volume'] = str(candles[i].volume)
+        market_cast = (up_candles[i]['open'] + up_candles[i]['close']) / 2  # Расчет рыночной цены
 
-        # Датафрейм за час
-        dateframe_all = datetime.strptime(core_bot.string_data(candles[i].time), '%Y-%m-%d-%H-%M-%S')
-        day = MA_keys[MA_iter] + ' 00:00:00'
-        # Датафрейм за день
-        dateframe_day = datetime.strptime(day, '%Y-%m-%d %H:%M:%S')
-        if dateframe_day.day != dateframe_all.day:
-            MA_iter += 1
+        if orderType == 'BUY' and market_cast * order_cnt_lot <= stop_loss_cast:       # Срабатывание стоп-лосса
+            if cnt_lots < order_cnt_lot:
+                continue
+            cnt_lots -= order_cnt_lot
+            account_portfolio +=  market_cast
+            cur_time = up_candles[i]['time']
+            signal = up_candles[i]['signal']
 
-        up_candle['ma'] = MA_intervals[MA_keys[MA_iter]][1]
-        up_candles.append(up_candle)
+            print(f'TIME={cur_time} ACCOUNT_SUM=', '%.2f ' % account_portfolio,
+                  f'POSITION=%2.f ' % position,
+                  f'ORDER_TYPE=BUY BUY_LOT={order_cnt_lot} CUR_LOT={cnt_lots} ',
+                  f'STOP-LOSS SIGNAL={signal}')
 
+        elif orderType == 'SELL' and market_cast * order_cnt_lot >= take_profit_cast:   # Срабатывание тейк-профита
+            if account_portfolio < position:
+                continue
+            account_portfolio -= market_cast
+            cnt_lots += order_cnt_lot
+            cur_time = up_candles[i]['time']
+            signal = up_candles[i]['signal']
 
-    print('\nTime        Cast   10_DAY_MA')
-    for key in MA_intervals.keys():
-        close_cast = MA_intervals[key][0]
-        ma = MA_intervals[key][1]
-        print(f'{key} ' + '%.2f' % close_cast + ' RUB  ' + '%.2f' % ma + ' RUB')
+            print(f'TIME={cur_time} ACCOUNT_SUM=', '%.2f ' % account_portfolio,
+                  f'POSITION=%2.f ' % position,
+                  f'ORDER_TYPE=BUY SELL_LOT={order_cnt_lot} CUR_LOT={cnt_lots} ',
+                  f'TAKE-PROFIT SIGNAL={signal}')
 
+        position = (account_portfolio * 0.01) / stop_loss   # Размер торговой позиции
+        order_cnt_lot = int(floor(position / market_cast))              # Расчет количества лотов для сделки
+        stop_loss_cast = position - position * stop_loss    # Расчет суммы срабатывания стоп-лосса
+        take_profit_cast = position + position * stop_loss  # Расчет суммы срабатывания тейк-профита
 
-    print('\n\n Candles for period with 5_day_MA values:\n')
-    print('Time    Open   Close   Min   Max   5_DAY_MA')
-    size = len(up_candles)
-    for i in range(size):
-        moment = up_candles[i]['time']
-        open = up_candles[i]['open']
-        close = up_candles[i]['close']
-        low = up_candles[i]['low']
-        high = up_candles[i]['high']
-        ma = up_candles[i]['ma']
+        if up_candles[i]['signal'] in ['BUY', 'SELL']:
 
-        print(f'{moment} {open} {close} {low} {high} ' + '%.2f' % ma)
+            if up_candles[i]['signal'] == 'BUY':
+                if account_portfolio < position:
+                    continue
+                account_portfolio -= position     # Свободная сумма на счете уменьшается
+                cnt_lots += order_cnt_lot         # Количество лотов акции SBER увеличивается на счете
+                orderType = 'BUY'
+                cur_time = up_candles[i]['time']
+                signal = up_candles[i]['signal']
+
+                print(
+                    f'TIME={cur_time} ',
+                    'ACCOUNT_SUM=%.2f ' % account_portfolio,
+                    f'POSITION=%2.f ' % position,
+                    f'ORDER_TYPE=BUY BUY_LOT={order_cnt_lot} ',
+                    f'CUR_LOT={cnt_lots} SIGNAL={signal}')
+            elif up_candles[i]['signal'] == 'SELL':
+                if cnt_lots < order_cnt_lot:
+                    continue
+                account_portfolio += position     # Свободная сумма на счете увеличивается
+                cnt_lots -= order_cnt_lot         # Количество лотов акции SBER уменьшается на счете
+                orderType = 'SELL'
+                cur_time = up_candles[i]['time']
+                signal = up_candles[i]['signal']
+
+                print(
+                    f'TIME={cur_time} ',
+                    'ACCOUNT_SUM=%.2f ' % account_portfolio,
+                    f'POSITION=%2.f ' % position,
+                    f'ORDER_TYPE=SELL SELL_LOT={order_cnt_lot} ',
+                    f'CUR_LOT={cnt_lots} SIGNAL={signal}')
+
+    print(f'\n\nCur portfolio sum: {account_portfolio} RUB')
+    print(f'Count of SBER lots: {cnt_lots}')
+    print(f'Profit/loss: {account_portfolio - start_sum} RUB')

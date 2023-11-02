@@ -1,5 +1,6 @@
 # Мой первый телеграм-бот
 # с  использованием библиотки pyTelegramBotAPI
+import logging
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -8,13 +9,15 @@ from tinkoff.invest import CandleInterval
 from tinkoff.invest.schemas import MoneyValue, InstrumentStatus, Quotation
 
 # Для исторических свечей
-from tinkoff.invest.services import MarketDataCache
+from tinkoff.invest.services import MarketDataCache, MarketDataStreamService
 from tinkoff.invest.caching.market_data_cache.cache_settings import (
     MarketDataCacheSettings,
 )
 
 from functional import *
 from exceptions import *
+
+logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='w')
 
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['start'])
@@ -85,6 +88,11 @@ def getSandboxPortfolio(message):
 def getAllInstruments(message):
 
     SharesDict = dict()
+    target_figi, target_name = '', ''      # FIGI и наименование искомого инструмента
+
+    words = message.text.split(' ')
+    if len(words) != 1:
+        target_figi = words[1]
 
     with SandboxClient(TOKEN) as client:  # Запускаем клиент тинькофф-песочницы
         # Получаем информацию обо всех акциях
@@ -99,26 +107,17 @@ def getAllInstruments(message):
                                            "exchange": instrument.exchange,
                                            "nominal": cast_money(instrument.nominal)}
 
+            if target_figi == instrument.figi:
+                target_name = instrument.name
+
+        bot.send_message(message.chat.id, target_name+' '+target_figi)
         with open("../shares.json", "w") as write_file:
             json.dump(SharesDict, write_file)          # Dump python-dict to json
-
-
-def cast_money(sum: Quotation) -> float:
-    return sum.units + sum.nano / 1e9
-
-
-def string_data(dt: datetime) -> str:
-    dt_tuple = dt.timetuple()
-    dt_string = str(dt_tuple[0])+'-'+str(dt_tuple[1])+'-'+str(dt_tuple[2])+'-'+str(dt_tuple[3])+'-'+str(dt_tuple[4])+'-'+str(dt_tuple[5])
-    return dt_string
 
 
 # Преобразует даты и время (начала и конца периода)
 # к типу datetime
 def CandlesParamsSettings(paramList: list[str]):
-
-    getCandlesParams = None
-    candle_interval = None    # Интервал свечи
 
     moment1_raw = None
     moment1 = None
@@ -195,7 +194,6 @@ def getCandles(param_list: str):
         market_data_cache = MarketDataCache(settings=settings, services=client)
 
         candles = list([])
-        up_candles = list([])
         candles_raw = market_data_cache.get_all_candles(        # Test candle
                 figi=candlesParams[0],
                 from_=candlesParams[1],
@@ -212,8 +210,6 @@ def getCandles(param_list: str):
 @bot.message_handler(commands=['get_candles'])
 def save_candles(message):
 
-    candles = ''                           # Список HistoricCandle
-
     try:
         candles = getCandles(message.text)
     except InvestBotValueError as iverror:
@@ -229,7 +225,7 @@ def save_candles(message):
             up_candle['close'] = str(cast_money(candles[i].close))
             up_candle['low'] = str(cast_money(candles[i].low))
             up_candle['high'] = str(cast_money(candles[i].high))
-            up_candle['time'] = string_data(candles[i].time)
+            up_candle['time'] = candles[i].time.strftime('%Y-%m-%d_%H:%M:%S')
             up_candle['volume'] = str(candles[i].volume)
 
             write_file.write(up_candle['time'] + ' ' + up_candle['open'] + ' ' + up_candle['close'] + ' ' +
