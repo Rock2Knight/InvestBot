@@ -4,9 +4,10 @@ import logging
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+import time
 
 from tinkoff.invest import CandleInterval
-from tinkoff.invest.schemas import MoneyValue, InstrumentStatus, Quotation
+from tinkoff.invest import schemas
 
 # Для исторических свечей
 from tinkoff.invest.services import MarketDataCache, MarketDataStreamService
@@ -96,7 +97,7 @@ def getAllInstruments(message):
 
     with SandboxClient(TOKEN) as client:  # Запускаем клиент тинькофф-песочницы
         # Получаем информацию обо всех акциях
-        shares = client.instruments.shares(instrument_status=InstrumentStatus.INSTRUMENT_STATUS_ALL)
+        shares = client.instruments.shares(instrument_status=schemas.InstrumentStatus.INSTRUMENT_STATUS_ALL)
         for instrument in shares.instruments:
             SharesDict[instrument.name] = {"figi": instrument.figi,
                                            "currency": instrument.currency,
@@ -230,6 +231,64 @@ def save_candles(message):
 
             write_file.write(up_candle['time'] + ' ' + up_candle['open'] + ' ' + up_candle['close'] + ' ' +
                              up_candle['low'] + ' ' + up_candle['high'] + ' ' + up_candle['volume'] + '\n')
+
+
+@bot.message_handler(commands=['get_data_stream'])
+def getCandlesDataStream(message):
+
+
+    def request_iterator():
+        yield schemas.MarketDataRequest(
+            subscribe_candles_request=schemas.SubscribeCandlesRequest(
+                waiting_close=True,
+                subscription_action=schemas.SubscriptionAction.SUBSCRIPTION_ACTION_SUBSCRIBE,
+                instruments=[
+                    schemas.CandleInstrument(
+                        figi='TCS009029540',
+                        interval=schemas.SubscriptionInterval.SUBSCRIPTION_INTERVAL_FIVE_MINUTE,
+                    )
+                ],
+            )
+        )
+        while True:
+            time.sleep(1)
+
+    with SandboxClient(TOKEN) as client:             # Запускаем клиент тинькофф-песочницы
+        for marketdata in client.market_data_stream.market_data_stream(
+            request_iterator()
+        ):
+            print(marketdata)
+
+    '''
+    # свеча по акции Сбер, с таймфреймом 5 минут
+    candleInstrument = schemas.CandleInstrument(figi='TCS009029540',
+                    interval=schemas.SubscriptionInterval.SUBSCRIPTION_INTERVAL_FIVE_MINUTES, instrument_id='TCS009029540')
+    instrumentsCandles = list([candleInstrument])
+    subscriptionAction = schemas.SubscriptionAction.SUBSCRIPTION_ACTION_SUBSCRIBE   # Запрос на подписку
+    subCandlesRequest = schemas.SubscribeCandlesRequest(subscription_action=subscriptionAction, instruments=instrumentsCandles)
+    orderInstrument = schemas.OrderBookInstrument(figi='TCS009029540', depth=20, instrument_id='TCS009029540')
+    instrumentsOrder = list([orderInstrument])
+    subOrderRequest = schemas.SubscribeOrderBookRequest(subscription_action=subscriptionAction, instruments=instrumentsOrder)
+    instrumentTrade = schemas.TradeInstrument(figi='TCS009029540', instrument_id='TCS009029540')
+    trades = list([instrumentTrade])
+    subTradeRequest = schemas.SubscribeTradesRequest(subscription_action=subscriptionAction, instruments=trades)
+    infoInstrument = schemas.InfoInstrument(figi='TCS009029540', instrument_id='TCS009029540')
+    infos = list([infoInstrument])
+    subInfoRequest = schemas.SubscribeInfoRequest(subscription_action=subscriptionAction, instruments=infos)
+    lastPriceInstrument = schemas.LastPriceInstrument(figi='TCS009029540', instrument_id='TCS009029540')
+    lastPrices = list([lastPriceInstrument])
+    subLastPrice = schemas.SubscribeLastPriceRequest(subscription_action=subscriptionAction, instruments=lastPrices)
+    my_subscript = schemas.GetMySubscriptions()
+
+    request = schemas.MarketDataRequest(subscribe_candles_request=subCandlesRequest, subscribe_order_book_request=subOrderRequest,
+                                subscribe_trades_request=subTradeRequest, subscribe_info_request=subInfoRequest,
+                                subscribe_last_price_request=subLastPrice, get_my_subscriptions=my_subscript)
+
+    market_stream = MarketDataStreamService()
+    MarketDataResponse = MarketDataStreamService.market_data_stream(request)
+    #MarketDataStreamService.market_data_stream(subscribe_candles_request)   # Запрос на стрим данных
+    '''
+
 
 if __name__ == '__main__':
     bot.infinity_polling()
