@@ -4,6 +4,7 @@ import logging
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+import pandas as pd               # Для датафреймов исторических свечей
 
 from tinkoff.invest import CandleInterval
 from tinkoff.invest.schemas import MoneyValue, InstrumentStatus, Quotation
@@ -217,6 +218,32 @@ def save_candles(message):
 
     size = len(candles)
 
+    # Форматированные исторические свечи
+    updated_candles = {'open': list([]), 'close': list([]),
+                       'low': list([]), 'high': list([]),
+                       'time': list([]), 'volume': list([])}
+
+    # Создаем сырой датафрейм форматированных свечей
+    for i in range(size):
+        open = str(cast_money(candles[i].open))
+        close = str(cast_money(candles[i].close))
+        low = str(cast_money(candles[i].low))
+        high = str(cast_money(candles[i].high))
+        time = candles[i].time.strftime('%Y-%m-%d_%H:%M:%S')
+        volume = str(candles[i].volume)
+
+        # Добавляем строку в сырой датафрейм
+        updated_candles['open'].append(open)
+        updated_candles['close'].append(close)
+        updated_candles['low'].append(low)
+        updated_candles['high'].append(high)
+        updated_candles['time'].append(time)
+        updated_candles['volume'].append(volume)
+
+    df_candles = pd.DataFrame(updated_candles)   # Создаем датафрейм с форматированными свечами
+    df_candles.to_csv("../share_history.csv", sep=',')
+
+    '''
     with open("../share_history_other.txt", "w") as write_file:
         write_file.write('Time open close low high volume\n')
         for i in range(size):
@@ -230,6 +257,9 @@ def save_candles(message):
 
             write_file.write(up_candle['time'] + ' ' + up_candle['open'] + ' ' + up_candle['close'] + ' ' +
                              up_candle['low'] + ' ' + up_candle['high'] + ' ' + up_candle['volume'] + '\n')
+    '''
+
+    print("Data have been written")
 
 if __name__ == '__main__':
     bot.infinity_polling()
