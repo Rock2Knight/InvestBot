@@ -44,10 +44,13 @@ def getAccounts(message):
         for account in accounts_info.accounts:
             message_text += str(account) + "\n\n"
 
-        while(message_text[-1] == '\n'):
-            message_text = message_text[:-1]
-
-        bot.send_message(message.chat.id, message_text)
+        try:
+            while(message_text[-1] == '\n'):
+                message_text = message_text[:-1]
+        except IndexError:
+            message_text = "No accounts"
+        finally:
+            bot.send_message(message.chat.id, message_text)
 
 """ Отладочный метод: получения информации о полях экземпляра Message """
 @bot.message_handler(commands=['message'])

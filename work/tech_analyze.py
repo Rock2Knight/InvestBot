@@ -1,265 +1,120 @@
 # Модуль отладки инструментов тех. анализа
-from abc import ABC, abstractmethod         # Для абстрактных классов и интерфейсов
+from abc import ABC, abstractmethod  # Для абстрактных классов и интерфейсов
 from datetime import datetime
 from typing import Union
 from math import floor
+import pandas as pd
 
-import core_bot
+from MA_indicator import SMA_indicator
 
+# Цикл, моделирующий торговлю
+def run_main():
+    figi = 'BBG00475KKY8'  # Фиги торгуемого инструемента (Новатэк)
+    active_cast = 0        # Текущая цена актива
+    lot = 1  # лотность инструмента
+    cnt_lots = 1000  # Количество лотов Новатэк в портфеле
+    account_portfolio = 100000.00  # Размер портфеля в рублях
+    start_sum = account_portfolio
+    ma_interval = 5
 
-# Интерфейс для индикатора MA
-class MA_indicator(ABC):
-
-    @staticmethod
-    @abstractmethod
-    def MA_build(MA_interval: int, param_list: str) -> list[dict[str, Union[float, str]]]:
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def MA_signal(bars_MA: list[dict[str, Union[float, str]]]):
-        pass
-
-
-# Обычная MA
-class SMA_indicator(MA_indicator):
-
-    # Отладочный метод, вычисляющий MA для каждого момента времени из интервала
-    # MA_interval - интервал усреднения для скользящей средней
-    @staticmethod
-    def MA_build(MA_interval: int, param_list: str) -> list[dict[str, Union[float, str]]]:
-
-        if MA_interval <= 0:
-            raise ValueError('Invalid value of MA interval')  # Передали в качестве периода скользящей средней некорректное значение
-
-        candles = core_bot.getCandles(param_list)  # Лишняя работа, так-как вывается метод, обращающийся к API
-        size = len(candles)
-        up_candles = list([])
-        sma_val = 0.0
-
-        for i in range(size):
-            up_candle = dict()
-            up_candle['time'] = candles[i].time.strftime('%Y-%m-%d_%H:%M:%S')
-            up_candle['open'] = core_bot.cast_money(candles[i].close)
-            up_candle['close'] = core_bot.cast_money(candles[i].close)
-            up_candle['min'] = core_bot.cast_money(candles[i].low)
-            up_candle['max'] = core_bot.cast_money(candles[i].high)
-            up_candle['sma'] = sma_val
-            up_candles.append(up_candle)
-
-            if i >= MA_interval - 1:
-                start_bar = i - MA_interval + 1
-                end_bar = i + 1
-                sum_bar = 0.0
-                for j in range(start_bar, end_bar):
-                    sum_bar += up_candles[j]['close']
-                sma_val = sum_bar / MA_interval
-                up_candles[i]['sma'] = sma_val
-
-        return up_candles
+    # Условия расчета позиции
+    stopAccount = 0.01  # Риск для счета в процентах
+    stopLoss = 0.05     # Точка аннулирования для торговой стратегии в процентах
 
 
-    '''
-    Метод, выдающий торговые сигналы для прошедших моментов времени :)
-    bars_MA - словарь, где ключ - момент времени
-    значение - список:
-    0-ой элемент списка - цена закрытия
-    1-ый элемент списка - значение MA для данного момента времени
-    '''
-    @staticmethod
-    def MA_signal(bars_MA: list[dict[str, Union[float, str]]]):
-        cmp_close: list[float] = list([0.0, 0.0])               # Список для сравнения цен закрытия
-        cmp_ma: list[float] = list([0.0, 0.0])                  # Список для сравнения значений MA
-        signal = ' '                                    # Торговый сигнал
-        bars_MA[0]['signal'] = ''
-        cur_time = None
+    CandlesDF = pd.read_csv("../share_history.csv")       # 1. Получаем готовый датафрейм исторических свечей
+    SMA_5 = SMA_indicator(MA_interval=ma_interval, CandlesDF=CandlesDF)
+    MAXInter = 3                                          # Max количество пересечений на интервал
+    CNT_timeframe = 10                                    # Длина проверяемого интервала
+    cntInter = 0                                          # Количество пересечений
+    lot_cast = CandlesDF.iloc[0]['close']  # Рыночная цена одного лота (типа)
+    positionSize = 0.0                                    # Размер позиции
+    totalSharePrice = lot_cast * cnt_lots                 # Общая стоимость акций Новатэк в портфеле
+    cnt_tradeLots = 0
 
-        sizeTimeList = len(bars_MA)                # Количество свечек
-        for i in range(1, sizeTimeList):
-            cmp_close[0] = bars_MA[i-1]['close']
-            cmp_close[1] = bars_MA[i]['close']
-            cmp_ma[0] = bars_MA[i-1]['sma']
-            cmp_ma[1] = bars_MA[i]['sma']
+    print("INFO\n-------------\n\nStart sum on account: %.2f RUB " % start_sum +
+          f"\nTime: {CandlesDF.iloc[0]['time']}" +
+          "\nStart count of NOVATEK lots: " + str(cnt_lots) +
+          "\nCast per NOVATEK lot: %.2f RUB" % lot_cast +
+          "\nTotal instrument price: %.2f RUB" % floor(totalSharePrice) +
+          "\nAccountant max loss: %.2f" % stopAccount +
+          "\nStop loss: %.2f\n" % stopLoss +
+          "--------------------------\n")
 
-            if bars_MA[i-1]['close'] < bars_MA[i-1]['sma'] and bars_MA[i]['close'] > bars_MA[i]['sma']:
-                signal = 'BUY'                                               # График цен пересек SMA снизу вверх
-            elif bars_MA[i-1]['close'] > bars_MA[i-1]['sma'] and bars_MA[i]['close'] < bars_MA[i]['sma']:
-                signal = 'SELL'                                              # График цен пересек SMA сверху вниз
+    # Анализируем свечи из выделенного интервала
+    for i in range(CandlesDF.shape[0]):
+        BUY_Signal = False
+        SELL_Signal = False
 
-            if bars_MA[i-1]['sma'] == 0.0:
-                signal = ' '
-            bars_MA[i]['signal'] = signal
-            signal = ' '
+        # Вывод информации об аккаунте
+        print("INFO ABOUT ACCOUNT\n--------------------------\n" +
+              f"\nTime: {CandlesDF.iloc[i]['time']}" +
+              "\nStart sum on account: %.2f RUB " % start_sum +
+              "\nCurrent sum on account: %.2f RUB " % account_portfolio +
+              "\nCurrent count of NOVATEK lots: " + str(cnt_lots) +
+              "\nCast per NOVATEK lot: %.2f RUB" % lot_cast +
+              "\nTotal instrument price: %.2f RUB" % floor(totalSharePrice) +
+              "--------------------------\n")
 
+        # Если количество свеч для построения SMA недостаточно, продолжаем цикл
+        if i < ma_interval - 1:                                         # Если номер свечи меньше периода SMA, то просто делаем итерацию без действий
+            continue
 
+        #SMA_Values = SMA_indicator.MA_build(MA_interval=ma_interval, cntOfCandles=i+1)
 
-# Экспоненциальная MA
-class EMA_indicator(MA_indicator):
+        if i < 0:
+            raise IndexError
 
-    @staticmethod
-    def MA_build(MA_interval: int, param_list: str) -> list[dict[str, Union[float, str]]]:
-        if MA_interval <= 0:
-            raise ValueError(
-                'Invalid value of MA interval')  # Передали в качестве периода скользящей средней некорректное значение
+        sma_prev = SMA_5.get_SMA(i - 1)
+        sma_cur = SMA_5.get_SMA(i)
+        BUY_Signal = CandlesDF.iloc[i - 1]['close'] < sma_prev and CandlesDF.iloc[i]['close'] > sma_cur
+        SELL_Signal = CandlesDF.iloc[i - 1]['close'] > sma_prev and CandlesDF.iloc[i]['close'] < sma_cur
 
-        candles = core_bot.getCandles(param_list)  # Лишняя работа, так-как вывается метод, обращающийся к API
-        size = len(candles)
-        up_candles = list([])
-        ema_val = 0.0
+        if BUY_Signal or SELL_Signal:
+            # Торговый сигнал  сработал, проверяем
+            start_frame = 0
+            if i < CNT_timeframe:
+                start_frame = 0
+            else:
+                start_frame = i - CNT_timeframe
 
-        up_candle_0 = dict()
-        up_candle_0['time'] = candles[0].time.strftime('%Y-%m-%d_%H:%M:%S')
-        up_candle_0['open'] = core_bot.cast_money(candles[0].close)
-        up_candle_0['close'] = core_bot.cast_money(candles[0].close)
-        up_candle_0['min'] = core_bot.cast_money(candles[0].low)
-        up_candle_0['max'] = core_bot.cast_money(candles[0].high)
-        up_candle_0['ema'] = up_candle_0['close']                   # EMA для первого таймфрейма равна цене актива
-        up_candles.append(up_candle_0)
+            for j in range(start_frame + 1, i + 1):
+                # Считаем количество персечений SMA в 10 предыдущих таймфреймах
+                sma_prev = SMA_5.get_SMA(j - 1)
+                sma_cur = SMA_5.get_SMA(j)
+                if CandlesDF.iloc[j - 1]['close'] < sma_prev and CandlesDF.iloc[j]['close'] > sma_cur:
+                    cntInter += 1
 
-        close = up_candle_0['close']
-        ema_val = up_candle_0['ema']
-        print(f'Close     EMA')
-        print('%.2f' % close, '%.2f' % ema_val)
+            # Если количество пересечений не очень большое, то совершаем сделку
+            if cntInter < MAXInter:
+                positionSize = account_portfolio * stopAccount / stopLoss   # Расчитываем размер позиции (сделки)
 
-        Weight = 2 / (MA_interval + 1)        # Вычисляем вес EMA
+                if BUY_Signal:
+                    account_portfolio -= positionSize             # Перечисляем деньги за сделку брокеру в случае покупки
+                else:
+                    account_portfolio += positionSize             # Получаем деньги за сделку от брокера в случае продажи
 
-        for i in range(1, size):
-            up_candle = dict()
-            up_candle['time'] = candles[i].time.strftime('%Y-%m-%d_%H:%M:%S')
-            up_candle['open'] = core_bot.cast_money(candles[i].close)
-            up_candle['close'] = core_bot.cast_money(candles[i].close)
-            up_candle['min'] = core_bot.cast_money(candles[i].low)
-            up_candle['max'] = core_bot.cast_money(candles[i].high)
-            up_candle['ema'] = (up_candles[i-1]['close'] * Weight) + (up_candles[i-1]['ema'] * (1 - Weight)) # Рассчитываем EMA в конкретной точке по формуле
-            up_candles.append(up_candle)
+                active_cast = CandlesDF.iloc[j]['close']  # Рыночная цена актива (типа)
+                lot_cast = lot * active_cast              # Рыночная цена одного лота актива (типа)
+                cnt_tradeLots = floor(positionSize / lot_cast)  # Количество покупаемых/продаваемых лотов
 
-            close = up_candle['close']
-            ema_val = up_candle['ema']
-            print('%.2f' % close, '%.2f' % ema_val)
+                if BUY_Signal:
+                    cnt_lots += cnt_tradeLots  # Получаем лоты инструмента (акции Тинькофф) на счет
+                else:
+                    cnt_lots -= cnt_tradeLots  # Продаем лоты инструмента (акции Тинькофф) брокеру
 
-        return up_candles
+                totalSharePrice = lot_cast * cnt_lots                       # Общая стоимость акций Тинькофф в портфеле
 
-    @staticmethod
-    def MA_signal(bars_MA: list[dict[str, Union[float, str]]]):
-        cmp_close: list[float] = list([0.0, 0.0])  # Список для сравнения цен закрытия
-        cmp_ma: list[float] = list([0.0, 0.0])  # Список для сравнения значений MA
-        signal = ' '  # Торговый сигнал
-        bars_MA[0]['signal'] = ''
-        cur_time = None
-
-        sizeTimeList = len(bars_MA)  # Количество свечек
-        for i in range(1, sizeTimeList):
-            cmp_close[0] = bars_MA[i - 1]['close']
-            cmp_close[1] = bars_MA[i]['close']
-            cmp_ma[0] = bars_MA[i - 1]['ema']
-            cmp_ma[1] = bars_MA[i]['ema']
-
-            if bars_MA[i - 1]['close'] < bars_MA[i - 1]['ema'] and bars_MA[i]['close'] > bars_MA[i]['ema']:
-                signal = 'BUY'  # График цен пересек SMA снизу вверх
-            elif bars_MA[i - 1]['close'] > bars_MA[i - 1]['ema'] and bars_MA[i]['close'] < bars_MA[i]['ema']:
-                signal = 'SELL'  # График цен пересек SMA сверху вниз
-
-            if bars_MA[i - 1]['ema'] == 0.0:
-                signal = ' '
-            bars_MA[i]['signal'] = signal
-            signal = ' '
+                # Вывод информации о сделке
+                if BUY_Signal:
+                    print("INFO ABOUT TRANSACTION\n--------------------------\n" +
+                          "\nBUY - %2.f RUB" % positionSize + "\n+ " + str(cnt_tradeLots) + " NOVATEK lots" +
+                          "--------------------------\n")
+                else:
+                    print("INFO ABOUT TRANSACTION\n--------------------------\n" +
+                          "\nSELL + %2.f RUB" % positionSize + "\n- " + str(cnt_tradeLots) + " NOVATEK lots" +
+                          "--------------------------\n")
 
 
 if __name__ == '__main__':
-    figi = 'BBG004730N88'          # Фиги торгуемого инструемента (СберБанк)
-    lot = 10                       # лотность инструмента
-    cnt_lots = 0                   # Количество лотов Sber в портфеле
-    account_portfolio = 100000     # Размер портфеля в рублях
-    start_sum = account_portfolio
-    stop_loss = 0.05               # Точка аннулирования для торговой стратегии в процентах
-    ping = 1                       # задержка в сек
-    ping_interval = ping / (60*4)  # задержка, выраженная относительно интервала (размер интервала = 4 ч)
-    start_time = '2022-07-16_00:00:00'   # Стартовое время моделирования
-    ModelTime = 1000               # Время моделирования в временных интервалах
-
-    request = '/get_candles BBG004730N88 2023-10-02_00:00:00 2023-11-03_19:00:00 HOUR'
-    ema_period = 5
-
-    up_candles = EMA_indicator.MA_build(MA_interval=ema_period, param_list=request)  # Запрашиваем исторические данные за период
-    print('\n\n')
-    EMA_indicator.MA_signal(up_candles)   # строим SMA и по ней выставляем торговые сигналы
-    print('\n\nModeling trading\n')
-    start_time = up_candles[0]['time']
-    orderType = 'NO'                      # Тип сделки
-    order_cnt_lot: int = 0                # Количество лотов по последней сделке
-    position = 0                          # Количество
-    stop_loss_cast, take_profit_cast = 0.0, 0.0   # Суммы срабатывания стоп-лосса и тейк-профита
-    signal = ' '
-
-    cntCandles = len(up_candles)
-    for i in range(cntCandles):
-
-        market_cast = (up_candles[i]['open'] + up_candles[i]['close']) / 2  # Расчет рыночной цены
-
-        if orderType == 'BUY' and market_cast * order_cnt_lot <= stop_loss_cast:       # Срабатывание стоп-лосса
-            if cnt_lots < order_cnt_lot:
-                continue
-            cnt_lots -= order_cnt_lot
-            account_portfolio +=  market_cast
-            cur_time = up_candles[i]['time']
-            signal = up_candles[i]['signal']
-
-            print(f'TIME={cur_time} ACCOUNT_SUM=', '%.2f ' % account_portfolio,
-                  f'POSITION=%2.f ' % position,
-                  f'ORDER_TYPE=BUY BUY_LOT={order_cnt_lot} CUR_LOT={cnt_lots} ',
-                  f'STOP-LOSS SIGNAL={signal}')
-
-        elif orderType == 'SELL' and market_cast * order_cnt_lot >= take_profit_cast:   # Срабатывание тейк-профита
-            if account_portfolio < position:
-                continue
-            account_portfolio -= market_cast
-            cnt_lots += order_cnt_lot
-            cur_time = up_candles[i]['time']
-            signal = up_candles[i]['signal']
-
-            print(f'TIME={cur_time} ACCOUNT_SUM=', '%.2f ' % account_portfolio,
-                  f'POSITION=%2.f ' % position,
-                  f'ORDER_TYPE=BUY SELL_LOT={order_cnt_lot} CUR_LOT={cnt_lots} ',
-                  f'TAKE-PROFIT SIGNAL={signal}')
-
-        position = (account_portfolio * 0.01) / stop_loss   # Размер торговой позиции
-        order_cnt_lot = int(floor(position / market_cast))              # Расчет количества лотов для сделки
-        stop_loss_cast = position - position * stop_loss    # Расчет суммы срабатывания стоп-лосса
-        take_profit_cast = position + position * stop_loss  # Расчет суммы срабатывания тейк-профита
-
-        if up_candles[i]['signal'] in ['BUY', 'SELL']:
-
-            if up_candles[i]['signal'] == 'BUY':
-                if account_portfolio < position:
-                    continue
-                account_portfolio -= position     # Свободная сумма на счете уменьшается
-                cnt_lots += order_cnt_lot         # Количество лотов акции SBER увеличивается на счете
-                orderType = 'BUY'
-                cur_time = up_candles[i]['time']
-                signal = up_candles[i]['signal']
-
-                print(
-                    f'TIME={cur_time} ',
-                    'ACCOUNT_SUM=%.2f ' % account_portfolio,
-                    f'POSITION=%2.f ' % position,
-                    f'ORDER_TYPE=BUY BUY_LOT={order_cnt_lot} ',
-                    f'CUR_LOT={cnt_lots} SIGNAL={signal}')
-            elif up_candles[i]['signal'] == 'SELL':
-                if cnt_lots < order_cnt_lot:
-                    continue
-                account_portfolio += position     # Свободная сумма на счете увеличивается
-                cnt_lots -= order_cnt_lot         # Количество лотов акции SBER уменьшается на счете
-                orderType = 'SELL'
-                cur_time = up_candles[i]['time']
-                signal = up_candles[i]['signal']
-
-                print(
-                    f'TIME={cur_time} ',
-                    'ACCOUNT_SUM=%.2f ' % account_portfolio,
-                    f'POSITION=%2.f ' % position,
-                    f'ORDER_TYPE=SELL SELL_LOT={order_cnt_lot} ',
-                    f'CUR_LOT={cnt_lots} SIGNAL={signal}')
-
-    print(f'\n\nCur portfolio sum: {account_portfolio} RUB')
-    print(f'Count of SBER lots: {cnt_lots}')
-    print(f'Profit/loss: {account_portfolio - start_sum} RUB')
+    run_main()
