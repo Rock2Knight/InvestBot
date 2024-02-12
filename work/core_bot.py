@@ -2,7 +2,8 @@
 # с  использованием библиотки pyTelegramBotAPI
 import logging
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+import pytz
 from pathlib import Path
 import pandas as pd               # Для датафреймов исторических свечей
 
@@ -19,6 +20,7 @@ from functional import *
 from exceptions import *
 
 logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='w')
+UTC_OFFSET = "Europe/Moscow"
 
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['start'])
@@ -122,24 +124,31 @@ def CandlesParamsSettings(paramList: list[str]):
 
     moment1_raw = None
     moment1 = None
+    new_datetime = 0
     try:
         moment1_raw = datetime.strptime(paramList[2], '%Y-%m-%d_%H:%M:%S')
     except ValueError:
         raise InvestBotValueError("Invalid format of start datetime object")
     finally:
+        hour_value = 0
+        if UTC_OFFSET == "Europe/Moscow":
+            hour_value = moment1_raw.hour - 3
         moment1 = datetime(year=moment1_raw.year, month=moment1_raw.month, day=moment1_raw.day,
-                       hour=moment1_raw.hour, minute=moment1_raw.minute, second=moment1_raw.second,
+                       hour=hour_value, minute=moment1_raw.minute, second=moment1_raw.second,
                        tzinfo=timezone.utc)
 
     moment2_raw = None
     moment2 = None
     try:
-        moment2_raw = datetime.strptime(paramList[3], '%Y-%m-%d_%H:%M:%S')
+        moment2_raw = datetime.strptime(paramList[3], '%Y-%m-%d_%H:%M:%S').replace(tzinfo=pytz.timezone('Europe/Moscow'))
     except ValueError:
         raise InvestBotValueError("Invalid format of end datetime object")
     finally:
+        hour_value = 0
+        if UTC_OFFSET == "Europe/Moscow":
+            hour_value = moment2_raw.hour - 3
         moment2 = datetime(year=moment2_raw.year, month=moment2_raw.month, day=moment2_raw.day,
-                        hour=moment2_raw.hour, minute=moment2_raw.minute, second = moment2_raw.second,
+                        hour=hour_value, minute=moment2_raw.minute, second = moment2_raw.second,
                         tzinfo = timezone.utc)
 
     CI_str = paramList[4]
@@ -229,7 +238,13 @@ def save_candles(message):
         close = str(cast_money(candles[i].close))
         low = str(cast_money(candles[i].low))
         high = str(cast_money(candles[i].high))
-        time = candles[i].time.strftime('%Y-%m-%d_%H:%M:%S')
+
+        utc_time = candles[i].time
+        hour_msk = utc_time.hour + 3
+        moscow_time = datetime(year=utc_time.year, month=utc_time.month, day=utc_time.day,
+                               hour=hour_msk, minute=utc_time.minute, second=utc_time.second)
+
+        time = moscow_time.strftime('%Y-%m-%d_%H:%M:%S')
         volume = str(candles[i].volume)
 
         # Добавляем строку в сырой датафрейм
@@ -242,22 +257,6 @@ def save_candles(message):
 
     df_candles = pd.DataFrame(updated_candles)   # Создаем датафрейм с форматированными свечами
     df_candles.to_csv("../share_history.csv", sep=',')
-
-    '''
-    with open("../share_history_other.txt", "w") as write_file:
-        write_file.write('Time open close low high volume\n')
-        for i in range(size):
-            up_candle = dict()
-            up_candle['open'] = str(cast_money(candles[i].open))
-            up_candle['close'] = str(cast_money(candles[i].close))
-            up_candle['low'] = str(cast_money(candles[i].low))
-            up_candle['high'] = str(cast_money(candles[i].high))
-            up_candle['time'] = candles[i].time.strftime('%Y-%m-%d_%H:%M:%S')
-            up_candle['volume'] = str(candles[i].volume)
-
-            write_file.write(up_candle['time'] + ' ' + up_candle['open'] + ' ' + up_candle['close'] + ' ' +
-                             up_candle['low'] + ' ' + up_candle['high'] + ' ' + up_candle['volume'] + '\n')
-    '''
 
     print("Data have been written")
 

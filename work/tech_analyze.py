@@ -1,11 +1,14 @@
 # Модуль отладки инструментов тех. анализа
-from abc import ABC, abstractmethod  # Для абстрактных классов и интерфейсов
-from datetime import datetime
-from typing import Union
 from math import floor
+from datetime import datetime
 import pandas as pd
 
 from MA_indicator import SMA_indicator
+
+def getDateNow():
+    cur_time = datetime.now()
+    print(cur_time)
+
 
 # Цикл, моделирующий торговлю
 def run_main():
@@ -20,7 +23,6 @@ def run_main():
     # Условия расчета позиции
     stopAccount = 0.01  # Риск для счета в процентах
     stopLoss = 0.05     # Точка аннулирования для торговой стратегии в процентах
-
 
     CandlesDF = pd.read_csv("../share_history.csv")       # 1. Получаем готовый датафрейм исторических свечей
     SMA_5 = SMA_indicator(MA_interval=ma_interval, CandlesDF=CandlesDF)
