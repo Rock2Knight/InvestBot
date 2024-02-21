@@ -50,14 +50,8 @@ def helpMessage(message):
 
 
 # Получаем баланс счета в песочнице по id
-@bot.message_handler(commands=['portfolio'])
-def getSandboxPortfolio(message):
-    words = message.text.split(' ')
-
-    if len(words) == 1:
-        raise InvestBotValueError('Incorrect id')
-
-    in_account_id = words[-1]         # Введенный id
+#@bot.message_handler(commands=['portfolio'])
+def getSandboxPortfolio(account_id: str):
 
     with SandboxClient(TOKEN) as client:             # Запускаем клиент тинькофф-песочницы
         accounts_info = client.users.get_accounts()  # получаем информацию о счете
@@ -65,25 +59,25 @@ def getSandboxPortfolio(message):
 
         # Проверка наличия счета в списке
         for account in accounts_info.accounts:
-            if in_account_id == str(account.id):     # Если нашли нужный счет, то выходим из списка
+            if account_id == str(account.id):     # Если нашли нужный счет, то выходим из списка
                 isNotAccount = False
                 break
 
         # Если счета нет, то выводим сообщение об ошибке и выходим из функции
         if isNotAccount:
-            bot.send_message(message.chat.id, "Неверно указан id счета")
-            return
+            return None
 
-        # Формулировка сообщения
-        message_text = f"Баланс счета {in_account_id}: \n"
-        # portfolio = client.sandbox.get_sandbox_portfolio(account_id=in_account_id)
-        portfolio = client.operations.get_portfolio(account_id=in_account_id)
-        total_amount = portfolio.total_amount_portfolio
-        message_text += "Currency: " + total_amount.currency + "\n"
-        message_text += "Units: " + str(total_amount.units) + "\n"
-        message_text += "Nano: " + str(total_amount.nano)
+        portfolio = client.sandbox.get_sandbox_portfolio(account_id=account_id)
+        total_amount_shares = cast_money(portfolio.total_amount_shares)
+        total_amount_bonds = cast_money(portfolio.total_amount_bonds)
+        total_amount_etf = cast_money(portfolio.total_amount_etf)
+        total_amount = cast_money(portfolio.total_amount_portfolio)
 
-        bot.send_message(message.chat.id, message_text)   # Отправляем состояние счета
+        print("Общая стоимость портфеля: %.2f" % total_amount)
+        print("Общая стоимость акций в портфеле: %.2f" % total_amount_shares)
+        print("Общая стоимость облигаций в портфеле: %.2f" % total_amount_bonds)
+        print("Общая стоимость ETF в портфеле: %.2f" % total_amount_etf)
+        return portfolio
 
 
 """ Get all actions and write them to json """

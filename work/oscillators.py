@@ -1,7 +1,10 @@
 # Модуль, хранящий классы, реализующие технические индикаторы-осцилляторы
+from datetime import datetime
+
 from tinkoff.invest.schemas import HistoricCandle
 
 import core_bot
+import pandas as pd
 from MA_indicator import EMA_indicator
 
 
@@ -32,13 +35,50 @@ class RSI:
 
     def __init__(self, RSI_interval: int = 14):
         self.RSI_interval = RSI_interval
-        self.EMA_up = list([])
-        self.EMA_close = list([])
+        self.RSI_df = None
 
-        # Первые N EMA_up и EMA_close нулевые
-        for i in range(RSI_interval):
-            self.EMA_up.append(0.0)
-            self.EMA_close.append(0.0)
+        if self.RSI_interval <= 0:
+            raise ValueError(
+                'Invalid value of MA interval')  # Передали в качестве периода скользящей средней некорректное значение
+
+        EMA_up, EMA_close = 0, 0  # EMA роста и EMA падения
+        self.CandlesDF = pd.read_csv("../share_history.csv")
+        rsiValues = dict()
+        rsiValues['time'] = list([])
+        rsiValues['RSI'] = list([])
+
+        for i in range(self.CandlesDF.shape[0]):
+
+            # Рассчитываем EMA роста и EMA падения
+            rsiValues['time'].append(self.CandlesDF.iloc[i]['time'])
+            if i < self.RSI_interval - 1:
+                rsi_value = 0.0
+                rsiValues['RSI'].append(0.0)
+            else:
+                for j in range(i - self.RSI_interval + 1, i):
+
+                    change = 0.0
+                    if j != i:
+                        change = self.CandlesDF.iloc[j]['close'] - self.CandlesDF.iloc[j]['open']
+
+                    if change > 0:
+                        EMA_up += abs(change)
+                    else:
+                        EMA_close += abs(change)
+                RS = EMA_up / EMA_close
+                rsi_value = 100 - 100 / (1 + RS)
+                rsiValues['RSI'].append(rsi_value)
+                EMA_up, EMA_close = 0.0, 0.0
+
+            if len(rsiValues['RSI']) == 0:
+                continue
+
+        self.RSI_df = pd.DataFrame(rsiValues)
+        self.RSI_df.to_csv("rsi_history.csv")
+
+    def get_RSI(self, index: int):
+        return self.RSI_df.iloc[index]['RSI']
+
 
     def build(self, param_list: str):
         if self.RSI_interval <= 0:
@@ -46,45 +86,50 @@ class RSI:
                 'Invalid value of MA interval')  # Передали в качестве периода скользящей средней некорректное значение
 
         EMA_up, EMA_close = 0, 0  # EMA роста и EMA падения
-        candles = core_bot.getCandles(param_list)  # Лишняя работа, так-как вывается метод, обращающийся к API
-        size = len(candles)
-        up_candles = list([])
+        #candles = core_bot.getCandles(param_list)  # Лишняя работа, так-как вывается метод, обращающийся к API
+        CandlesDF = pd.read_csv("../share_history.csv")
+        rsiValues = dict()
+        rsiValues['time'] = list([])
+        rsiValues['RSI'] = list([])
+        rsi_value = 0.0
 
-        gen_up_candle = formatCandle(size, candles)
+        #size = len(candles)
 
-        i = 0
+        #gen_up_candle = formatCandle(size, candles)
+
+        #i = 0
         print('Time          Close    RSI')
-        for up_candle in gen_up_candle:
+        for i in range(CandlesDF.shape[0]):
 
             # Рассчитываем EMA роста и EMA падения
             if i < self.RSI_interval - 1:
-                up_candle['RSI'] = 0.0
+                rsi_value = 0.0
             else:
-                for j in range(i - self.RSI_interval + 1, i + 1):
+                for j in range(i - self.RSI_interval + 1, i):
 
                     change = 0.0
                     if j != i:
-                        change = up_candles[j]['close'] - up_candles[j]['open']
-                    else:
-                        change = up_candle['close'] - up_candle['open']
+                        change = CandlesDF.iloc[j]['close'] - CandlesDF.iloc[j]['open']
 
                     if change > 0:
                         EMA_up += abs(change)
                     else:
                         EMA_close += abs(change)
                 RS = EMA_up / EMA_close
-                up_candle['RSI'] = 100 - 100 / (1 + RS)
+                rsi_value = 100 - 100 / (1 + RS)
+                rsiValues['time'].append(CandlesDF.iloc[i]['time'])
+                rsiValues['RSI'].append(rsi_value)
                 EMA_up, EMA_close = 0.0, 0.0
 
-            up_candles.append(up_candle)
-            time_val = up_candles[i]['time']
-            close = up_candles[i]['close']
-            rsi = up_candles[i]['RSI']
-            print(f'{time_val}  ', '%.2f' % close, '%.2f' % rsi)
-            i += 1
+            close = CandlesDF.iloc[i]['close']
+            time_val = rsiValues['time'][-1]
+            rsi_val_view = rsiValues['RSI'][-1]
+            print(f'{time_val}  ', '%.2f' % close, '%.2f' % rsi_val_view)
+
+        self.RSI_df = pd.DataFrame(rsiValues)
+        self.RSI_df.to_csv("rsi_history.csv")
 
         print('\n\n')
-        return up_candles
 
 
 # Модель "Голова и плечи" (Перевернутые голова и плечи)
@@ -214,3 +259,6 @@ class MACD:
                 return -1
             else:
                 return 0
+
+if __name__=='__main__':
+    rsi_df = RSI()

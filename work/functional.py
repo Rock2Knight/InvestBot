@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from typing import Union
 
 from tinkoff.invest.schemas import Quotation, MoneyValue
 from tinkoff.invest.sandbox.client import SandboxClient
@@ -29,8 +30,8 @@ figi = {'derivative': 'Фьючерсы и опционы', 'structured_bonds': 
         'foreign_bond': 'Еврооблигации',
         'russian_shares': 'акции, не включенные в котировальные списки'}
 
-""" Convert Quotation type to float """
-def cast_money(sum: Quotation) -> float:
+""" Convert Quotation/MoneyValue type to float """
+def cast_money(sum: Union[Quotation, MoneyValue]) -> float:
     return sum.units + sum.nano / 1e9
 
 
