@@ -1,5 +1,7 @@
 # Модуль отладки инструментов тех. анализа
 from math import floor
+from contextlib import redirect_stdout
+
 from datetime import datetime
 import pandas as pd
 
@@ -11,157 +13,85 @@ from tinkoff.invest.schemas import OrderDirection, OrderType
 
 # Раздел констант
 ACCOUNT_ID = "0a475568-a650-449d-b5a8-ebab32e6b5ce"
-MAX_MIN_INTERVAL = 10                                  # Интервал поиска максимумов и минимумов
+MAX_MIN_INTERVAL = 14                                  # Интервал поиска максимумов и минимумов
+COMMISION = 0.003                                      # коммисия брокера
 
 def getDateNow():
     cur_time = datetime.now()
     print(cur_time)
 
-
-# Цикл, моделирующий торговлю
-def run_main():
-
-    '''
-    portfolio = None
-    with SandboxClient(TOKEN) as client:
-        portfolio = client.sandbox.get_sandbox_portfolio(account_id=ACCOUNT_ID)
-
-    print("------------------------------------------------------\n\n")
-
-    figi = 'BBG00475KKY8'  # Фиги торгуемого инструемента (Новатэк)
-    active_cast = 1423.6        # Текущая цена актива
-    lot = 1  # лотность инструмента
-    lot_cast = lot * active_cast  # Текущая цена за лот
-    cnt_lots = 0 # Количество лотов Новатэк в портфеле
-    account_portfolio = 100000.00  # Размер портфеля в рублях
-
-    total_amount_shares = cast_money(portfolio.total_amount_shares)
-    total_amount_bonds = cast_money(portfolio.total_amount_bonds)
-    total_amount_etf = cast_money(portfolio.total_amount_etf)
-    total_amount = cast_money(portfolio.total_amount_portfolio)
-    free_money = total_amount - total_amount_shares - total_amount_bonds - total_amount_etf
-
-    start_sum = total_amount
-    ma_interval = 5
-
-    print(portfolio)
-    print("------------------------------------\n")
-
-    # Вывод информации об аккаунте и счете-песочнице в нем в консоль
-    print("INFO ABOUT ACCOUNT\n--------------------------\n" +
-          f"Account id: 0a475568-a650-449d-b5a8-ebab32e6b5ce" +
-          f"\nTime: {datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}" +
-          "\nStart sum on account: %.2f RUB " % start_sum +
-          "\nCurrent sum on account: %.2f RUB " % total_amount +
-          "\nFree money on account: %.2f RUB" % free_money +
-          "\nCurrent count of NOVATEK lots: " + str(cnt_lots) +
-          "\nCast per NOVATEK lot: %.2f RUB" % lot_cast +
-          "\nTotal share amount: %.2f RUB" % floor(total_amount_shares) +
-          "\nTotal bonds amount: %.2f RUB" % floor(total_amount_bonds) +
-          "\nTotal ETF amount: %.2f RUB" % floor(total_amount_etf) +
-          "--------------------------\n")
-    '''
-
-    # Преобразование цены к типу Quotation
-    #my_price = Quotation(units=1409, nano=0)
-
-    # Пример на покупку 5 лотов акции НОВАТЭК в песочнице
-    '''
-    with SandboxClient(TOKEN) as client:
-        response = client.sandbox.post_sandbox_order(figi=figi, quantity=5,
-                                          direction=OrderDirection.ORDER_DIRECTION_BUY,
-                                          account_id="0a475568-a650-449d-b5a8-ebab32e6b5ce",
-                                          order_type=OrderType.ORDER_TYPE_MARKET)
-
-        print(response)
-    '''
-
-    # Пример на продажу 5 лотов акции НОВАТЭК в песочнице
-    '''
-    with SandboxClient(TOKEN) as client:
-        response = client.sandbox.post_sandbox_order(figi=figi, quantity=5, direction=OrderDirection.ORDER_DIRECTION_SELL,
-                                          account_id="0a475568-a650-449d-b5a8-ebab32e6b5ce",
-                                          order_type=OrderType.ORDER_TYPE_MARKET)
-
-        print(response, "\n")
-
-    '''
-
-    '''
-    portfolio = getSandboxPortfolio("0a475568-a650-449d-b5a8-ebab32e6b5ce")
-    total_amount_shares = cast_money(portfolio.total_amount_shares)
-    total_amount_bonds = cast_money(portfolio.total_amount_bonds)
-    total_amount_etf = cast_money(portfolio.total_amount_etf)
-    total_amount = cast_money(portfolio.total_amount_portfolio)
-    cnt_lots -= 5
-    '''
-
-    # Вывод информации об аккаунте
-    '''
-    print("INFO ABOUT ACCOUNT\n--------------------------\n" +
-          f"Account id: 0a475568-a650-449d-b5a8-ebab32e6b5ce" +
-          f"\nTime: {datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}" +
-          "\nStart sum on account: %.2f RUB " % start_sum +
-          "\nCurrent sum on account: %.2f RUB " % total_amount +
-          "\nCurrent count of NOVATEK lots: " + str(cnt_lots) +
-          "\nCast per NOVATEK lot: %.2f RUB" % lot_cast +
-          "\nTotal share amount: %.2f RUB" % floor(total_amount_shares) +
-          "\nTotal bonds amount: %.2f RUB" % floor(total_amount_bonds) +
-          "\nTotal ETF amount: %.2f RUB" % floor(total_amount_etf) +
-          "--------------------------\n")
-    '''
-
-
-    # Тестирование на исторических данных начинается здесь!
-    # Инфа по инструменту и портфелю
-    figi = 'BBG00475KKY8'  # Фиги торгуемого инструемента (Новатэк)
+""" Функция, моделирующая торговлю и формирующая выходные данные в виде датасета """
+def HistoryTrain(figi, cnt_lots, account_portfolio, ma_interval=5):
     active_cast = 0  # Текущая цена актива
     lot = 1  # лотность инструмента
-    cnt_lots = 1000  # Количество лотов инструмента(Новатэк) в портфеле
-    account_portfolio = 100000.00  # Размер портфеля в рублях
     start_sum = account_portfolio
-
-    # Настройки индикаторов
-    ma_interval = 5
-    minCandles = {'time': list([]), 'min': list([])}    # Минимумы по ценам за интервал MAX_MIN_INTERVAL
-    maxCandles = {'time': list([]), 'max': list([])}    # Максимумы по ценам за интервал MAX_MIN_INTERVAL
 
     # Условия расчета позиции
     stopAccount = 0.01  # Риск для счета в процентах
     stopLoss = 0.05  # Точка аннулирования для торговой стратегии в процентах
 
     CandlesDF = pd.read_csv("../share_history.csv")  # 1. Получаем готовый датафрейм исторических свечей
-    rsiObject = RSI()                                                    # Добавляем RSI индикатор с интервалом 14
-    SMA_5 = SMA_indicator(MA_interval=ma_interval, CandlesDF=CandlesDF) # Добавляем SMA с интервалом 5
-    MAXInter = 3  # Max количество пересечений на интервал
+    rsiObject = RSI()  # Добавляем RSI индикатор с интервалом 14
+    SMA_5 = SMA_indicator(MA_interval=ma_interval, CandlesDF=CandlesDF)  # Добавляем SMA с интервалом 5
+
+    # Локальные минимумы и максимумы (по свечам и по RSI)
+    minMaxDict = {'time': list([]), 'minC': list([]), 'maxC': list([]), 'minR': list([]), 'maxR': list([])}
+    maxClose = max(list(CandlesDF['close']))
+    locMinC, locMinR = maxClose, maxClose
+    locMaxC, locMaxR = 0, 0
+
+    MAXInter = 5  # Max количество пересечений на интервал
     CNT_timeframe = 10  # Длина проверяемого интервала
     cntInter = 0  # Количество пересечений
-    active_cast = CandlesDF.iloc[-1]['close']  # Рыночная цена актива (типа)
+    active_cast = CandlesDF.iloc[0]['close']  # Рыночная цена актива (типа)
     lot_cast = active_cast * lot  # Рыночная цена одного лота (типа)
     positionSize = 0.0  # Размер позиции
     totalSharePrice = lot_cast * cnt_lots  # Общая стоимость акций Новатэк в портфеле
     start_sum = account_portfolio + totalSharePrice
+    start_cnt_lots = cnt_lots
     cnt_tradeLots = 0
+    positionReal = 0.0        # Реальный размер позиции с учетом комиссии
+    stopLossSize = 0.0        # Размер стоп-лосса
 
+    # Словарь с информацией по сделкам
+    tradeInfo = {"time": list([]), "trade_direct": list([]), "figi": list([]),
+                 "position_size": list([]), "stop_loss_size": list([]), "active_cast": list([]),
+                 "lot_size": list([]), "lot_cast": list([]), "position_size_real": list([]),
+                 "lot_cnt": list([]), "order_type": list([])}
 
-    print("INFO\n-------------\n\nStart sum on account(full): %.2f RUB " % start_sum +
-          f"\nTime: {CandlesDF.iloc[0]['time']}" +
-          "\nStart count of NOVATEK lots: " + str(cnt_lots) +
-          "\nCast per NOVATEK lot: %.2f RUB" % lot_cast +
-          "\nTotal instrument price: %.2f RUB" % floor(totalSharePrice) +
-          "\nAccountant max loss: %.2f" % stopAccount +
-          "\nStop loss: %.2f\n" % stopLoss +
-          "--------------------------\n")
+    # Словарь с информацией по портфелю
+    portfolioInfo = {"time": list([]), "start_full_sum": list([]), "start_cnt_lots": list([]),
+                     "cur_full_sum": list([]), "cur_free_sum": list([]), "cur_cnt_lots": list([]),
+                     "profit_in_rub": list([]), "profit_in_percent": list([])}
 
     # Анализируем свечи из выделенного интервала
     for i in range(CandlesDF.shape[0]):
         BUY_Signal = False
         SELL_Signal = False
-        fullPortfolio = account_portfolio + totalSharePrice
-        profitInRub = fullPortfolio - start_sum              # Прибыль/убыток в рублях (по отношению к общей стоимости портфеля)
-        profitInPercent = (profitInRub / start_sum) * 100    # Прибыль/убыток в процентах (по отношению к общей стоимости портфеля)
 
-        # Вывод информации об аккаунте
+        # Обновляем состояние портфеля с учетом текущих цен имеющихся активов
+        active_cast = CandlesDF.iloc[i]['close']  # Рыночная цена актива (типа)
+        if cnt_lots != 0:
+            totalSharePrice = active_cast * lot * cnt_lots  # Обновляем стоимость имеющихся активов
+
+        fullPortfolio = account_portfolio + totalSharePrice
+        profitInRub = fullPortfolio - start_sum  # Прибыль/убыток в рублях (по отношению к общей стоимости портфеля)
+        profitInPercent = (profitInRub / start_sum) * 100  # Прибыль/убыток в процентах (по отношению к общей стоимости портфеля)
+
+        with open("historyTradingLog.txt", 'a', encoding="utf-8") as f, redirect_stdout(f):
+            # Вывод информации об аккаунте
+            print("INFO ABOUT ACCOUNT\n--------------------------\n" +
+                  f"\nTime: {CandlesDF.iloc[i]['time']}" +
+                  "\nStart sum on account(full): %.2f RUB " % start_sum +
+                  "\nCurrent sum on account(free): %.2f RUB " % account_portfolio +
+                  "\nCurrent sum on account(full): %.2f RUB " % fullPortfolio +
+                  "\nProfit in RUB: %.2f RUB " % profitInRub +
+                  "\nProfit in percent: %.2f %%" % profitInPercent +
+                  "\nCurrent count of NOVATEK lots: " + str(cnt_lots) +
+                  "\nCast per NOVATEK lot: %.2f RUB" % lot_cast +
+                  "\nTotal instrument price: %.2f RUB" % floor(totalSharePrice) +
+                  "--------------------------\n")
+
         print("INFO ABOUT ACCOUNT\n--------------------------\n" +
               f"\nTime: {CandlesDF.iloc[i]['time']}" +
               "\nStart sum on account(full): %.2f RUB " % start_sum +
@@ -174,17 +104,45 @@ def run_main():
               "\nTotal instrument price: %.2f RUB" % floor(totalSharePrice) +
               "--------------------------\n")
 
+        # Обновляем информацию по портфелю
+        portfolioInfo["time"].append(CandlesDF.iloc[i]['time'])
+        portfolioInfo["start_full_sum"].append(start_sum)
+        portfolioInfo["start_cnt_lots"].append(start_cnt_lots)
+        portfolioInfo["cur_full_sum"].append(fullPortfolio)
+        portfolioInfo["cur_free_sum"].append(account_portfolio)
+        portfolioInfo["cur_cnt_lots"].append(cnt_lots)
+        portfolioInfo["profit_in_rub"].append(profitInRub)
+        portfolioInfo["profit_in_percent"].append(profitInPercent)
+
         # Если количество свеч для построения SMA недостаточно, продолжаем цикл
-        if i < ma_interval - 1:                                         # Если номер свечи меньше периода SMA, то просто делаем итерацию без действий
+        if i < ma_interval - 1:  # Если номер свечи меньше периода SMA, то просто делаем итерацию без действий
             continue
 
-        #SMA_Values = SMA_indicator.MA_build(MA_interval=ma_interval, cntOfCandles=i+1)
+        # SMA_Values = SMA_indicator.MA_build(MA_interval=ma_interval, cntOfCandles=i+1)
 
         if i < 0:
             raise IndexError
 
         if i >= MAX_MIN_INTERVAL:
+            # Ищем локальные максимумы и минимумы
 
+            for j in range(i - MAX_MIN_INTERVAL + 1, i):
+                if CandlesDF.iloc[j]['close'] < locMinC:
+                    locMinC = CandlesDF.iloc[j]['close']
+                if CandlesDF.iloc[j]['close'] > locMaxC:
+                    locMaxC = CandlesDF.iloc[j]['close']
+                if rsiObject.get_RSI(j) < locMinR:
+                    locMinR = rsiObject.get_RSI(j)
+                if rsiObject.get_RSI(j) > locMaxR:
+                    locMaxR = rsiObject.get_RSI(j)
+
+            minMaxDict['time'].append(CandlesDF.iloc[i]['time'])
+            minMaxDict['minC'].append(locMinC)
+            minMaxDict['maxC'].append(locMaxC)
+            minMaxDict['minR'].append(locMinR)
+            minMaxDict['maxR'].append(locMaxR)
+            locMinC, locMinR = 10000, 10000
+            locMaxC, locMaxR = 0, 0
 
         sma_prev = SMA_5.get_SMA(i - 1)
         sma_cur = SMA_5.get_SMA(i)
@@ -210,38 +168,91 @@ def run_main():
 
             # Если количество пересечений не очень большое, то совершаем сделку
             if cntInter < MAXInter:
-                positionSize = account_portfolio * stopAccount / stopLoss   # Расчитываем размер позиции (сделки)
+                positionSize = account_portfolio * stopAccount / stopLoss  # Расчитываем размер позиции (сделки)
 
                 if BUY_Signal:
-                    if rsi_val >= 70:      # Если сигнал на покупку и RSI в зоне перекупленности
-                        continue           # то не совершаем покупку
-                    account_portfolio -= positionSize             # Перечисляем деньги за сделку брокеру в случае покупки
+                    if rsi_val >= 70:  # Если сигнал на покупку и RSI в зоне перекупленности
+                        continue  # то не совершаем покупку
                 else:
-                    if rsi_val <= 30:      # Если сигнал на покупку и RSI в зоне перепроданности
-                        continue           # то не совершаем продажу
-                    account_portfolio += positionSize             # Получаем деньги за сделку от брокера в случае продажи
+                    if rsi_val <= 30:  # Если сигнал на покупку и RSI в зоне перепроданности
+                        continue  # то не совершаем продажу
 
-                active_cast = CandlesDF.iloc[j]['close']  # Рыночная цена актива (типа)
-                lot_cast = lot * active_cast              # Рыночная цена одного лота актива (типа)
-                cnt_tradeLots = floor(positionSize / lot_cast)  # Количество покупаемых/продаваемых лотов
+
+                #active_cast = CandlesDF.iloc[i]['close']  # Рыночная цена актива (типа)
+                lot_cast = lot * active_cast  # Рыночная цена одного лота актива (типа)
+                final_lot_cast = 0.0
 
                 if BUY_Signal:
+                    final_lot_cast = lot_cast * (1 + COMMISION) # Рыночная цена одного лота актива с учетом комиссии брокера
+                else:
+                    final_lot_cast = lot_cast * (1 - COMMISION)
+
+                cnt_tradeLots = floor(positionSize / final_lot_cast)  # Количество покупаемых/продаваемых лотов
+                positionReal = cnt_tradeLots * final_lot_cast         # Реальный размер позиции
+
+                # Если размер позиции с учетом комиссии больше рассчитываемого, то уменьшаем количество лотов
+                while positionReal > positionSize:
+                    cnt_tradeLots -= 1
+                    positionReal = cnt_tradeLots * cnt_tradeLots * (1 + COMMISION)
+
+                if BUY_Signal:
+                    # Если размер позиции на покупку с учетом комиссии больше рассчитываемого, то уменьшаем количество лотов
+                    while positionReal > positionSize:
+                        cnt_tradeLots -= 1
+                        positionReal = cnt_tradeLots * final_lot_cast
+
                     cnt_lots += cnt_tradeLots  # Получаем лоты инструмента (акции Тинькофф) на счет
+                    account_portfolio -= positionReal  # Перечисляем деньги за сделку брокеру в случае покупки
+
+                    with open("historyTradingLog.txt", 'a', encoding="utf-8") as f, redirect_stdout(f):
+                        print("INFO ABOUT TRANSACTION\n--------------------------\n" +
+                              "\nBUY - %2.f RUB" % positionReal + "\n+ " + str(cnt_tradeLots) + " NOVATEK lots" +
+                            "--------------------------\n")
+                    print("INFO ABOUT TRANSACTION\n--------------------------\n" +
+                          "\nBUY - %2.f RUB" % positionReal + "\n+ " + str(cnt_tradeLots) + " NOVATEK lots" +
+                          "--------------------------\n")
                 else:
+                    # Если размер позиции на продажу с учетом комиссии меньше рассчитываемого, то увеличиваем количество лотов
+                    while positionReal > positionSize:
+                        cnt_tradeLots += 1
+                        positionReal = cnt_tradeLots * final_lot_cast
+
                     cnt_lots -= cnt_tradeLots  # Продаем лоты инструмента (акции Тинькофф) брокеру
+                    account_portfolio += positionReal  # Получаем деньги за сделку от брокера в случае продажи
+                    with open("historyTradingLog.txt", 'a', encoding="utf-8") as f, redirect_stdout(f):
+                        print("INFO ABOUT TRANSACTION\n--------------------------\n" +
+                            "\nSELL + %2.f RUB" % positionReal + "\n- " + str(cnt_tradeLots) + " NOVATEK lots" +
+                            "--------------------------\n")
+                    print("INFO ABOUT TRANSACTION\n--------------------------\n" +
+                          "\nSELL + %2.f RUB" % positionReal + "\n- " + str(cnt_tradeLots) + " NOVATEK lots" +
+                          "--------------------------\n")
 
-                totalSharePrice = lot_cast * cnt_lots                       # Общая стоимость акций Тинькофф в портфеле
 
-                # Вывод информации о сделке
+                stopLossSize = positionReal * stopLoss  # Рассчитываем размер стоп-лосса (max убытка от позиции)
+
+                # Формируем информацию о сделке
+                tradeInfo['time'].append(CandlesDF.iloc[i]['time'])  # время сделки
+                tradeInfo['figi'].append(figi)                       # FIGI инструмента
+                tradeInfo['position_size'].append(positionSize)      # Расчетный размер позиции
+
                 if BUY_Signal:
-                    print("INFO ABOUT TRANSACTION\n--------------------------\n" +
-                          "\nBUY - %2.f RUB" % positionSize + "\n+ " + str(cnt_tradeLots) + " NOVATEK lots" +
-                          "--------------------------\n")
+                    tradeInfo['trade_direct'].append('BUY')
                 else:
-                    print("INFO ABOUT TRANSACTION\n--------------------------\n" +
-                          "\nSELL + %2.f RUB" % positionSize + "\n- " + str(cnt_tradeLots) + " NOVATEK lots" +
-                          "--------------------------\n")
+                    tradeInfo['trade_direct'].append('SELL')
+                tradeInfo['stop_loss_size'].append(stopLossSize)     # Размер стоп-лосса (рассчитывается от фактического размера позиции)
+                tradeInfo['active_cast'].append(active_cast)         # Цена актива
+                tradeInfo['lot_size'].append(lot)                    # Лотность актива
+                tradeInfo['lot_cast'].append(lot_cast)               # Цена лота
+                tradeInfo['position_size_real'].append(positionReal) # Фактический размер позиции
+                tradeInfo['lot_cnt'].append(cnt_tradeLots)           # Количество реализованных лотов
+                tradeInfo['order_type'].append('MARKET')             # Тип заявки (рыночная)
 
+                totalSharePrice = lot_cast * cnt_lots  # Общая стоимость акций Тинькофф в портфеле
 
-if __name__ == '__main__':
-    run_main()
+    # Формируем датафреймы из словарей
+    dfTrades = pd.DataFrame(tradeInfo)
+    dfPortfolio = pd.DataFrame(portfolioInfo)
+    # записываем их в CSV
+    dfTrades.to_csv("../history_data/trades_" + str(figi) + ".csv")
+    dfPortfolio.to_csv("../history_data/portfolio_train.csv")
+    return dfTrades, dfPortfolio        # возвращаем в вызывающую функцию
