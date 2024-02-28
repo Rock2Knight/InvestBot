@@ -4,41 +4,41 @@ from typing import Union
 import pandas as pd
 
 # Интерфейс для индикатора MA
-class MA_indicator(ABC):
+class MAIndicator(ABC):
     """
     Интерфейс для реализации индикатора "Скользящая средняя" (MA).
     Индикатор вычисляется как среднее значение за N последних таймфреймов
 
     Methods
     -------
-    MA_build(MA_interval: int, param_list: str) - Построение MA по каждому таймфрейму
+    ma_build(ma_interval: int, param_list: str) - Построение MA по каждому таймфрейму
     MA_signal(bars_MA: list[dict[str, Union[float, str]]]) - формирование торговых сигналов
     по значениям скользящей средней
     """
 
     @abstractmethod
-    def __init__(self, MA_interval: int):
+    def __init__(self, ma_interval: int):
         pass
 
     @abstractmethod
-    def MA_build(self, MA_interval: int, cntOfCandles: int) -> dict[str, list]:
+    def ma_build(self, ma_interval: int, cntOfCandles: int) -> dict[str, list]:
         pass
 
     @staticmethod
     @abstractmethod
-    def MA_signal(bars_MA: list[dict[str, Union[float, str]]]):
+    def ma_signal(bars_MA: list[dict[str, Union[float, str]]]):
         pass
 
 
 # Обычная MA
-class SMA_indicator(MA_indicator):
+class SMAIndicator(MAIndicator):
 
-    def __init__(self, MA_interval: int, CandlesDF):
-        self.keyName = 'SMA_' + str(MA_interval)
+    def __init__(self, ma_interval: int, CandlesDF):
+        self.keyName = 'SMA_' + str(ma_interval)
         self.smaValues = dict()  # Словарь для значений SMA
         self.smaValues['time'] = list([])  # Список времени
         self.smaValues[self.keyName] = list([])  # Список значений SMA
-        self.MA_interval = MA_interval
+        self.ma_interval = ma_interval
         self.dfSMA = None
 
         #up_candles = pd.read_csv("../share_history.csv")      # Свечи из опр. периода
@@ -46,13 +46,13 @@ class SMA_indicator(MA_indicator):
         sma_val = 0.0  # SMA значение
 
         for i in range(CandlesDF.shape[0]):
-            if i >= self.MA_interval - 1:
-                start_bar = i - self.MA_interval + 1  # Первая свеча из интервала для расчета SMA
+            if i >= self.ma_interval - 1:
+                start_bar = i - self.ma_interval + 1  # Первая свеча из интервала для расчета SMA
                 end_bar = i + 1  # Последняя свеча из интервала для расчета SMA
                 sum_bar = 0.0
                 for j in range(start_bar, end_bar):
                     sum_bar += CandlesDF.iloc[j]['close']
-                sma_val = sum_bar / self.MA_interval  # Расчет SMA
+                sma_val = sum_bar / self.ma_interval  # Расчет SMA
 
             # Добавляем рассчитаное значение в словарь SMA
             self.smaValues['time'].append(CandlesDF.iloc[i]['time'])
@@ -65,10 +65,10 @@ class SMA_indicator(MA_indicator):
         return self.dfSMA.iloc[index][self.keyName]
 
     # Метод, вычисляющий MA для каждого момента времени из интервала
-    # MA_interval - интервал усреднения для скользящей средней
-    def MA_build(self, MA_interval: int, cntOfCandles: int) -> dict[str, list]:
+    # ma_interval - интервал усреднения для скользящей средней
+    def ma_build(self, ma_interval: int, cntOfCandles: int) -> dict[str, list]:
 
-        if MA_interval <= 0:
+        if ma_interval <= 0:
             raise ValueError(
                 'Invalid value of MA interval')  # Передали в качестве периода скользящей средней некорректное значение
 
@@ -84,23 +84,23 @@ class SMA_indicator(MA_indicator):
 
         smaValues = dict()                               # Словарь для значений SMA
         smaValues['time'] = list([])                     # Список времени
-        smaValues['SMA_'+str(MA_interval)] = list([])    # Список значений SMA
+        smaValues['SMA_'+str(ma_interval)] = list([])    # Список значений SMA
 
         sma_val = 0.0   # SMA
 
         for i in range(left, size):
-            if i - left >= MA_interval - 1:
-                start_bar = i - left - MA_interval + 1  # Первая свеча из интервала для расчета SMA
+            if i - left >= ma_interval - 1:
+                start_bar = i - left - ma_interval + 1  # Первая свеча из интервала для расчета SMA
                 end_bar = i + 1                         # Последняя свеча из интервала для расчета SMA
                 sum_bar = 0.0
                 for j in range(start_bar, end_bar):
                     sum_bar += up_candles.iloc[j]['close']
                     #sum_bar += up_candles[j]['close']
-                sma_val = sum_bar / MA_interval         # Расчет SMA
+                sma_val = sum_bar / ma_interval         # Расчет SMA
 
             # Добавляем рассчитаное значение в словарь SMA
             smaValues['time'].append(up_candles.iloc[i]['time'])
-            smaValues['SMA_'+str(MA_interval)].append(sma_val)
+            smaValues['SMA_'+str(ma_interval)].append(sma_val)
 
         return smaValues        # Возвращаем таблицу значений SMA
 
@@ -113,7 +113,7 @@ class SMA_indicator(MA_indicator):
     '''
 
     @staticmethod
-    def MA_signal(bars_MA: list[dict[str, Union[float, str]]]):
+    def ma_signal(bars_MA: list[dict[str, Union[float, str]]]):
         cmp_close: list[float] = list([0.0, 0.0])  # Список для сравнения цен закрытия
         cmp_ma: list[float] = list([0.0, 0.0])  # Список для сравнения значений MA
         signal = ' '  # Торговый сигнал
@@ -139,13 +139,13 @@ class SMA_indicator(MA_indicator):
 
 
 # Экспоненциальная MA
-class EMA_indicator(MA_indicator):
+class EMAIndicator(MAIndicator):
 
     @staticmethod
-    def MA_build(MA_interval: int, cntOfCandles: int):
+    def ma_build(ma_interval: int, cntOfCandles: int):
         pass
         '''
-        if MA_interval <= 0:
+        if ma_interval <= 0:
             raise ValueError(
                 'Invalid value of MA interval')  # Передали в качестве периода скользящей средней некорректное значение
 
@@ -154,7 +154,7 @@ class EMA_indicator(MA_indicator):
         #up_candles = list([])
         ema_val = 0.0
 
-        Weight = 2 / (MA_interval + 1)  # Вычисляем вес EMA
+        Weight = 2 / (ma_interval + 1)  # Вычисляем вес EMA
         #gen_up_candle = formatCandle(size, candles)
 
         i = 0
@@ -177,7 +177,7 @@ class EMA_indicator(MA_indicator):
         '''
 
     @staticmethod
-    def MA_signal(bars_MA: list[dict[str, Union[float, str]]]):
+    def ma_signal(bars_MA: list[dict[str, Union[float, str]]]):
         cmp_close: list[float] = list([0.0, 0.0])  # Список для сравнения цен закрытия
         cmp_ma: list[float] = list([0.0, 0.0])  # Список для сравнения значений MA
         signal = ' '  # Торговый сигнал

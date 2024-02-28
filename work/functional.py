@@ -1,5 +1,4 @@
 import json
-from datetime import datetime
 from typing import Union
 
 from tinkoff.invest.schemas import Quotation, MoneyValue
@@ -8,6 +7,7 @@ from tinkoff.invest.sandbox.client import SandboxClient
 from telebot.types import Message, User, Chat
 
 from work.bot import bot, TOKEN
+
 sandbox_account_flag = False             # Состояние аккаунта в песочнице
 
 # Список имен, импортируемых из данного модуля при конструкцией "from functional import *"
@@ -19,14 +19,18 @@ __all__ = [
     'Chat',
     'SandboxClient',
     'Quotation',
-    'getAccounts',
+    'get_accounts',
     'cast_money'
 ]
 
 # Список типов ценных бумаг
-figi = {'derivative': 'Фьючерсы и опционы', 'structured_bonds': 'структурные облигации', 'closed_fund': 'закрытые паевые фонды',
-        'bond': 'облигации', 'structured_income_bonds': 'облигации со структурным доходом',
-        'foreign_shares': 'иностранные акции, не включенные в котировальные списки', 'foreign_etf': 'иностранные ETF',
+figi = {'derivative': 'Фьючерсы и опционы',
+        'structured_bonds': 'структурные облигации',
+        'closed_fund': 'закрытые паевые фонды',
+        'bond': 'облигации',
+        'structured_income_bonds': 'облигации со структурным доходом',
+        'foreign_shares': 'иностранные акции, не включенные в котировальные списки',
+        'foreign_etf': 'иностранные ETF',
         'foreign_bond': 'Еврооблигации',
         'russian_shares': 'акции, не включенные в котировальные списки'}
 
@@ -37,7 +41,7 @@ def cast_money(sum: Union[Quotation, MoneyValue]) -> float:
 
 """ Получение всех аккаунтов в песочнице """
 @bot.message_handler(commands=['accounts'])
-def getAccounts(message):
+def get_accounts(message):
     with SandboxClient(TOKEN) as client:                    # Запускаем клиент тинькофф-песочницы
         message_text = ""
         accounts_info = client.users.get_accounts()         # получаем информацию о счете
@@ -52,43 +56,6 @@ def getAccounts(message):
             message_text = "No accounts"
         finally:
             bot.send_message(message.chat.id, message_text)
-
-""" Отладочный метод: получения информации о полях экземпляра Message """
-@bot.message_handler(commands=['message'])
-def getMessageInfo(message: Message):
-    message_id = message.message_id
-    user: User = message.from_user
-    date = message.date                  # Date the message was sent in Unix time
-    from_user = dict()                   # Информация об отправителе сообщения
-    chat_info = dict()                   # Информация о чате
-    message_info = dict()                # Информация о сообщении
-    chat: Chat = message.chat            # Chat of message
-
-    from_user["id"] = user.id                                                     # id юзера
-    from_user["is_bot"] = user.is_bot                                             # бот или нет
-    from_user["first_name"] = user.first_name                                     # Имя
-    from_user["last_name"] = user.last_name                                       # Фамилия
-    from_user["username"] = user.username                                         # Никнейм
-    from_user["language_code"] = user.language_code
-    from_user["is_premium"] = user.is_premium                                     # премиум-аккаунт или нет
-    from_user["added_to_attachment_menu"] = user.added_to_attachment_menu
-    from_user["can_join_groups"] = user.can_join_groups                           # может ли присоединяться ко всем группам
-    from_user["can_read_all_group_messages"] = user.can_read_all_group_messages   # может ли читать сообщения всех групп
-    from_user["supports_inline_queries"] = user.supports_inline_queries
-
-    chat_info["id"] = chat.id
-    chat_info["type"] = chat.type
-
-    message_info["message_id"] = message_id
-    message_info["date"] = date
-    message_info["from_user"] = from_user
-    message_info["chat_info"] = chat_info
-    message_info["content_type"] = list(["text"])
-    message_info["options"] = dict()
-    message_info["json_string"] = ""
-
-    with open("../message_admin_info.json", "w") as write_file:
-        json.dump(message_info, write_file)
 
 
 """ Открытие счета в песочнице """
@@ -112,7 +79,8 @@ def open_account(message):
         SanboxClients.write(sbAccountRescponse.account_id + '\n')
         SanboxClients.close()
 
-# Получение информации о счете в тинькофф-песочнице
+
+""" Получение информации о счете в тинькофф-песочнице """
 @bot.message_handler(commands=['info'])
 def get_info_accountant(message):
     client_info = None
@@ -140,7 +108,7 @@ def get_info_accountant(message):
 
 """ Пополнение счета в песочнице """
 @bot.message_handler(commands=['PayIn'])
-def payIn(message):
+def pay_in(message):
     account_sb_id = ""
     words = message.text.split(' ')        # Разделяем текст строки на слова
     amount = int(words[-1])

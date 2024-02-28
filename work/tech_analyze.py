@@ -1,15 +1,12 @@
 # Модуль отладки инструментов тех. анализа
 from math import floor
 from contextlib import redirect_stdout
-
 from datetime import datetime
+
 import pandas as pd
 
-from MA_indicator import SMA_indicator
+from MA_indicator import SMAIndicator
 from oscillators import RSI
-from core_bot import getSandboxPortfolio, cast_money, SandboxClient, TOKEN, Quotation
-
-from tinkoff.invest.schemas import OrderDirection, OrderType
 
 # Раздел констант
 ACCOUNT_ID = "0a475568-a650-449d-b5a8-ebab32e6b5ce"
@@ -32,7 +29,7 @@ def HistoryTrain(figi, cnt_lots, account_portfolio, ma_interval=5):
 
     CandlesDF = pd.read_csv("../share_history.csv")  # 1. Получаем готовый датафрейм исторических свечей
     rsiObject = RSI()  # Добавляем RSI индикатор с интервалом 14
-    SMA_5 = SMA_indicator(MA_interval=ma_interval, CandlesDF=CandlesDF)  # Добавляем SMA с интервалом 5
+    SMA_5 = SMAIndicator(ma_interval=ma_interval, CandlesDF=CandlesDF)  # Добавляем SMA с интервалом 5
 
     # Локальные минимумы и максимумы (по свечам и по RSI)
     minMaxDict = {'time': list([]), 'minC': list([]), 'maxC': list([]), 'minR': list([]), 'maxR': list([])}

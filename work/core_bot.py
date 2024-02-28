@@ -5,6 +5,7 @@ import json
 from datetime import datetime, timezone, timedelta
 import pytz
 from pathlib import Path
+
 import pandas as pd               # Для датафреймов исторических свечей
 
 from tinkoff.invest import CandleInterval
@@ -32,7 +33,7 @@ I can help you to deal with shares, bonds and other. To get info about account, 
 
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['help'])
-def helpMessage(message):
+def help_message(message):
     message_text = "Краткая справка по командам в InvestBot: \n"
     message_text += "\"/start\" - Приветственное сообщение\n"
     message_text += "\"/help\" - Получить справку\n"
@@ -49,9 +50,8 @@ def helpMessage(message):
 
 
 
-# Получаем баланс счета в песочнице по id
-#@bot.message_handler(commands=['portfolio'])
-def getSandboxPortfolio(account_id: str):
+""" Получаем баланс счета в песочнице по id """
+def get_sandbox_portfolio(account_id: str):
 
     with SandboxClient(TOKEN) as client:             # Запускаем клиент тинькофф-песочницы
         accounts_info = client.users.get_accounts()  # получаем информацию о счете
@@ -82,7 +82,7 @@ def getSandboxPortfolio(account_id: str):
 
 """ Get all actions and write them to json """
 @bot.message_handler(commands=['get_instruments'])
-def getAllInstruments(message):
+def get_all_instruments(message):
 
     SharesDict = dict()
     target_figi, target_name = '', ''      # FIGI и наименование искомого инструмента
@@ -114,7 +114,8 @@ def getAllInstruments(message):
 
 # Преобразует даты и время (начала и конца периода)
 # к типу datetime
-def CandlesParamsSettings(paramList: list[str]):
+""" На основе запроса пользователя формирует кортеж аргументов для вызова функции get_all_candles сервиса котировок """
+def candles_formatter(paramList: list[str]):
 
     moment1_raw = None
     moment1 = None
@@ -146,6 +147,8 @@ def CandlesParamsSettings(paramList: list[str]):
                         tzinfo = timezone.utc)
 
     CI_str = paramList[4]
+    with open("../candle_interval.txt", 'w', encoding='utf-8') as file:
+        file.write(CI_str)
 
     # Определение интервала свечи
     if CI_str == '1_MIN':
@@ -181,13 +184,13 @@ def CandlesParamsSettings(paramList: list[str]):
     return getCandlesParams
 
 
-def getCandles(param_list: str):
+def get_candles(param_list: str):
 
     param_list = param_list.split(' ')  # Список параметров
-    candlesParams = None                  # Список параметров для getCandles
+    candlesParams = None                  # Список параметров для get_candles
 
     try:
-        candlesParams = CandlesParamsSettings(param_list)
+        candlesParams = candles_formatter(param_list)
     except InvestBotValueError as iverror:
         raise InvestBotValueError(iverror.msg)
 
@@ -215,7 +218,7 @@ def getCandles(param_list: str):
 def save_candles(message):
 
     try:
-        candles = getCandles(message.text)
+        candles = get_candles(message.text)
     except InvestBotValueError as iverror:
         raise InvestBotValueError(iverror.msg)
 
@@ -233,8 +236,8 @@ def save_candles(message):
         low = str(cast_money(candles[i].low))
         high = str(cast_money(candles[i].high))
 
-        utc_time = candles[i].time
-        hour_msk = utc_time.hour + 3
+        utc_time = candles[i].time        # Получаем дату и время в UTC
+        hour_msk = utc_time.hour + 3      # Переводим дату и время к Московскому часовому поясу
         moscow_time = datetime(year=utc_time.year, month=utc_time.month, day=utc_time.day,
                                hour=hour_msk, minute=utc_time.minute, second=utc_time.second)
 

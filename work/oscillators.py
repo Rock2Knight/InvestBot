@@ -5,7 +5,7 @@ from tinkoff.invest.schemas import HistoricCandle
 
 import core_bot
 import pandas as pd
-from MA_indicator import EMA_indicator
+from MA_indicator import EMAIndicator
 
 
 def formatCandle(size: int, candles: list[HistoricCandle]):
@@ -148,7 +148,7 @@ class HAS_model:
 
     # Поиск модели ГиП и выставление торговых сигналов
     def build(self, param_list: str):
-        candles = core_bot.getCandles(param_list)  # Лишняя работа, так-как вывается метод, обращающийся к API
+        candles = core_bot.get_candles(param_list)  # Лишняя работа, так-как вывается метод, обращающийся к API
         size = len(candles)  # Количество исторических свечей
         gen_up_candle = formatCandle(size, candles)  # Генератор форматированных свечей
         # up_candles = list([])
@@ -199,27 +199,27 @@ class MACD:
         self.EMA_A = list([])  # Значения EMA_a
 
     def build(self, param_list: str):
-        candles = core_bot.getCandles(param_list)  # Лишняя работа, так-как вывается метод, обращающийся к API
+        candles = core_bot.get_candles(param_list)  # Лишняя работа, так-как вывается метод, обращающийся к API
         size = len(candles)
         up_candles = list([])
         gen_up_candle = formatCandle(size, candles)
 
-        # todo исправить аргументы вызова методов класса EMA_indicator
-        ema_candles_9 = EMA_indicator.MA_build(9, param_list=param_list)
+        # исправить аргументы вызова методов класса EMAIndicator
+        ema_candles_9 = EMAIndicator.ma_build(9, param_list=param_list)
         i = 0
         for elem in ema_candles_9:
             self.EMA_A.append(ema_candles_9[i]['ema'])
             i += 1
         del ema_candles_9
 
-        ema_candles_12 = EMA_indicator.MA_build(12, param_list=param_list)
+        ema_candles_12 = EMAIndicator.ma_build(12, param_list=param_list)
         i = 0
         for elem in ema_candles_12:
             self.EMA_S.append(ema_candles_12[i]['ema'])
             i += 1
         del ema_candles_12
 
-        ema_candles_26 = EMA_indicator.MA_build(26, param_list=param_list)
+        ema_candles_26 = EMAIndicator.ma_build(26, param_list=param_list)
         i = 0
         for elem in ema_candles_26:
             self.EMA_I.append(ema_candles_26[i]['ema'])
