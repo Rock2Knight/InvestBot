@@ -112,8 +112,6 @@ def get_all_instruments(message):
             json.dump(SharesDict, write_file)          # Dump python-dict to json
 
 
-# Преобразует даты и время (начала и конца периода)
-# к типу datetime
 """ На основе запроса пользователя формирует кортеж аргументов для вызова функции get_all_candles сервиса котировок """
 def candles_formatter(paramList: list[str]):
 
@@ -150,38 +148,40 @@ def candles_formatter(paramList: list[str]):
     with open("../candle_interval.txt", 'w', encoding='utf-8') as file:
         file.write(CI_str)
 
-    # Определение интервала свечи
-    if CI_str == '1_MIN':
-        candle_interval = CandleInterval.CANDLE_INTERVAL_1_MIN
-    elif CI_str == '2_MIN':
-        candle_interval = CandleInterval.CANDLE_INTERVAL_2_MIN
-    elif CI_str == '3_MIN':
-        candle_interval = CandleInterval.CANDLE_INTERVAL_3_MIN
-    elif CI_str == '5_MIN':
-        candle_interval = CandleInterval.CANDLE_INTERVAL_5_MIN
-    elif CI_str == '10_MIN':
-        candle_interval = CandleInterval.CANDLE_INTERVAL_10_MIN
-    elif CI_str == '15_MIN':
-        candle_interval = CandleInterval.CANDLE_INTERVAL_15_MIN
-    elif CI_str == '30_MIN':
-        candle_interval = CandleInterval.CANDLE_INTERVAL_30_MIN
-    elif CI_str == 'HOUR':
-        candle_interval = CandleInterval.CANDLE_INTERVAL_HOUR
-    elif CI_str == '2_HOUR':
-        candle_interval = CandleInterval.CANDLE_INTERVAL_2_HOUR
-    elif CI_str == '4_HOUR':
-        candle_interval = CandleInterval.CANDLE_INTERVAL_4_HOUR
-    elif CI_str == 'DAY':
-        candle_interval = CandleInterval.CANDLE_INTERVAL_DAY
-    elif CI_str == 'WEEK':
-        candle_interval = CandleInterval.CANDLE_INTERVAL_WEEK
-    elif CI_str == 'MONTH':
-        candle_interval = CandleInterval.CANDLE_INTERVAL_MONTH
-    else:
-        raise InvestBotValueError("Invalid value of CandleInterval")
+    candle_interval = None   # Длина таймфрейма
 
-    getCandlesParams = (paramList[1], moment1, moment2, candle_interval)
-    return getCandlesParams
+    # Определение интервала свечи
+    match CI_str:
+        case '1_MIN':
+            candle_interval = CandleInterval.CANDLE_INTERVAL_1_MIN
+        case '2_MIN':
+            candle_interval = CandleInterval.CANDLE_INTERVAL_2_MIN
+        case '3_MIN':
+            candle_interval = CandleInterval.CANDLE_INTERVAL_3_MIN
+        case '5_MIN':
+            candle_interval = CandleInterval.CANDLE_INTERVAL_5_MIN
+        case '10_MIN':
+            candle_interval = CandleInterval.CANDLE_INTERVAL_10_MIN
+        case '15_MIN':
+            candle_interval = CandleInterval.CANDLE_INTERVAL_15_MIN
+        case '30_MIN':
+            candle_interval = CandleInterval.CANDLE_INTERVAL_30_MIN
+        case 'HOUR':
+            candle_interval = CandleInterval.CANDLE_INTERVAL_HOUR
+        case '2_HOUR':
+            candle_interval = CandleInterval.CANDLE_INTERVAL_2_HOUR
+        case '4_HOUR':
+            candle_interval = CandleInterval.CANDLE_INTERVAL_4_HOUR
+        case 'DAY':
+            candle_interval = CandleInterval.CANDLE_INTERVAL_DAY
+        case 'WEEK':
+            candle_interval = CandleInterval.CANDLE_INTERVAL_WEEK
+        case 'MONTH':
+            candle_interval = CandleInterval.CANDLE_INTERVAL_MONTH
+        case _:
+            raise InvestBotValueError("Invalid value of CandleInterval")
+
+    return paramList[1], moment1, moment2, candle_interval
 
 
 def get_candles(param_list: str):

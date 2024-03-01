@@ -1,5 +1,5 @@
 # Модуль отладки инструментов тех. анализа
-from math import floor
+from math import floor, fabs
 from contextlib import redirect_stdout
 from datetime import datetime
 
@@ -12,6 +12,36 @@ from oscillators import RSI
 ACCOUNT_ID = "0a475568-a650-449d-b5a8-ebab32e6b5ce"
 MAX_MIN_INTERVAL = 14                                  # Интервал поиска максимумов и минимумов
 COMMISION = 0.003                                      # коммисия брокера
+
+
+class Queue:
+
+    def __init__(self):
+        self.stop_market = list([])
+        self.count = list([])
+        self.size = 0
+
+    def push(self, cast: float, cnt: int):
+        self.stop_market.append(cast)
+        self.count.append(cnt)
+        self.size += 1
+
+    def pop(self):
+        stop_market = self.stop_market.pop(0)
+        cnt_lots = self.count.pop(0)
+        self.size -= 1
+        return stop_market, cnt_lots
+
+    def get_cast(self, index: int):
+        return self.stop_market[index]
+
+    def remove(self, index: int):
+        stop_market = self.stop_market[index]
+        cnt_lots = self.count[index]
+        self.stop_market.remove(index)
+        self.count.remove(index)
+        self.size -= 1
+        return stop_market, cnt_lots
 
 def getDateNow():
     cur_time = datetime.now()
@@ -61,6 +91,9 @@ def HistoryTrain(figi, cnt_lots, account_portfolio, ma_interval=5):
                      "cur_full_sum": list([]), "cur_free_sum": list([]), "cur_cnt_lots": list([]),
                      "profit_in_rub": list([]), "profit_in_percent": list([])}
 
+    # Очередь стоп-маркет заявок
+    stopMarketQueue = Queue()
+
     # Анализируем свечи из выделенного интервала
     for i in range(CandlesDF.shape[0]):
         BUY_Signal = False
@@ -74,6 +107,21 @@ def HistoryTrain(figi, cnt_lots, account_portfolio, ma_interval=5):
         fullPortfolio = account_portfolio + totalSharePrice
         profitInRub = fullPortfolio - start_sum  # Прибыль/убыток в рублях (по отношению к общей стоимости портфеля)
         profitInPercent = (profitInRub / start_sum) * 100  # Прибыль/убыток в процентах (по отношению к общей стоимости портфеля)
+
+        # Цикл для проверки стоп-маркетов
+        lot_cast_pr = active_cast * lot
+        for j in range(stopMarketQueue.size):
+            try:
+                if active_cast <= stopMarketQueue.get_cast(j):
+                    # Срабатывание стоп-маркета на продажу (защита от риска)
+                    rel_stop_market, rel_cnt = stopMarketQueue.remove(j)
+                    final_lot_cast = lot_cast_pr * (1 - COMMISION)
+                    positionReal = rel_cnt * final_lot_cast
+                    cnt_lots -= rel_cnt
+                    account_portfolio += positionReal
+            except IndexError:
+                print(f"Access to stopMarketQueue {j} element error")
+
 
         with open("historyTradingLog.txt", 'a', encoding="utf-8") as f, redirect_stdout(f):
             # Вывод информации об аккаунте
@@ -178,6 +226,7 @@ def HistoryTrain(figi, cnt_lots, account_portfolio, ma_interval=5):
                 #active_cast = CandlesDF.iloc[i]['close']  # Рыночная цена актива (типа)
                 lot_cast = lot * active_cast  # Рыночная цена одного лота актива (типа)
                 final_lot_cast = 0.0
+                stop_cast = active_cast * (1 - stopLoss)  # Рассчитываем стоп-цену для стоп-маркета
 
                 if BUY_Signal:
                     final_lot_cast = lot_cast * (1 + COMMISION) # Рыночная цена одного лота актива с учетом комиссии брокера
@@ -200,6 +249,7 @@ def HistoryTrain(figi, cnt_lots, account_portfolio, ma_interval=5):
 
                     cnt_lots += cnt_tradeLots  # Получаем лоты инструмента (акции Тинькофф) на счет
                     account_portfolio -= positionReal  # Перечисляем деньги за сделку брокеру в случае покупки
+                    stopMarketQueue.push(stop_cast, cnt_tradeLots) # Фиксируем стоп-маркет заявку в журнале заявок
 
                     with open("historyTradingLog.txt", 'a', encoding="utf-8") as f, redirect_stdout(f):
                         print("INFO ABOUT TRANSACTION\n--------------------------\n" +

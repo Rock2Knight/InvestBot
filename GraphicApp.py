@@ -1,12 +1,16 @@
 # Модуль для построения статистики по торговому роботу
+from datetime import datetime
+
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import (
     QMainWindow,
     QDateTimeEdit,
     QMessageBox)
 
-import matplotlib.dates
+import matplotlib.dates as matdates
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
+from matplotlib.axes import Axes
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar)
@@ -15,7 +19,8 @@ from GUI import Ui_MainWindow
 from work import tech_analyze
 
 # Раздел констант
-FIGI = "BBG00475KKY8"
+FIGI = "BBG00475KKY8"  # FIGI анализируемого инструемента
+MAX_CNT_TICKS = 10     # Максимальное количество подписей по оси X
 
 class GraphicApp(QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -97,7 +102,9 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         Метод для рисования линейного графика доходности портфеля по результатам
         тестирования на исторических данных
         """
-        x_set = list(self.dfPortfolio['time'])
+        x_set_str = list(self.dfPortfolio['time'])                             # таймфреймы в строковом формате
+        x_set_raw = [datetime.strptime(x, '%Y-%m-%d_%H:%M:%S') for x in x_set_str] # таймфреймы в python-datetime
+        x_set = [matdates.date2num(x) for x in x_set_raw]                      # таймфреймы в matplotlib-datetime
         y_set = list(self.dfPortfolio['profit_in_percent'])
 
         print(f"Type of date: {type(x_set[0])}")
@@ -109,8 +116,42 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
 
         candle_interval = None
         with open("../candle_interval.txt", 'r', encoding='utf-8') as file:
-            candle_interval = file.readline()
-            print(candle_interval)
+            candle_interval = file.readline()   # Считываем из CSV длину таймфрейма
+
+        sizeX = len(x_set)
+        cnt_ticks = 0
+        tick_step = 0
+        x_ticks = list([])
+        x_ticklabels = list([])
+
+        if sizeX > MAX_CNT_TICKS:
+            # Если количество таймфреймов больше 10, формируем массив
+            # тиков так, чтобы подписи по оси X отображались нормально
+            if sizeX % 10 != 0:
+                cnt_ticks = (sizeX // 10) * 10 + 10
+            else:
+                cnt_ticks = sizeX + 1
+            tick_step = cnt_ticks // 10
+
+            for i in range(0, cnt_ticks, tick_step):
+                x_ticks.append(x_set[i])
+
+                match candle_interval:
+                    case '1_MIN' | '2_MIN' | '3_MIN' | '5_MIN' | '10_MIN' | '15_MIN':
+                        label = x_set_raw[i].strftime("%H:%M")
+                        x_ticklabels.append(label)
+                    case '30_MIN' | 'HOUR' | '2_HOUR' | '4_HOUR':
+                        label = x_set_raw[i].strftime("%d %b, %H:%M")
+                        x_ticklabels.append(label)
+                    case 'DAY' | 'WEEK':
+                        label = x_set_raw[i].strftime("%d.%m.%Y")
+                        x_ticklabels.append(label)
+                    case 'MONTH':
+                        label = x_set_raw[i].strftime("%Y, %b")
+                        x_ticklabels.append(label)
+
         self.axes.plot(x_set, y_set)
+        self.axes.set_xticks(x_ticks)
+        self.axes.set_xticklabels(x_ticklabels, fontsize=14, rotation=25)
         self.axes.grid(True)
         self.canvas.draw()

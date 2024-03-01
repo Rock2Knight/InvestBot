@@ -24,7 +24,7 @@ class Ui_MainWindow(object):
         self.matlayout.setContentsMargins(0, 0, 0, 0)
         self.matlayout.setObjectName("matlayout")
         self.widget = QtWidgets.QWidget(self.centralwidget)
-        self.widget.setGeometry(QtCore.QRect(990, 30, 291, 291))
+        self.widget.setGeometry(QtCore.QRect(990, 30, 291, 391))
         self.widget.setObjectName("widget")
         self.toolsVLayout = QtWidgets.QVBoxLayout(self.widget)
         self.toolsVLayout.setContentsMargins(0, 0, 0, 0)
