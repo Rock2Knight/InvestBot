@@ -38,8 +38,8 @@ class Queue:
     def remove(self, index: int):
         stop_market = self.stop_market[index]
         cnt_lots = self.count[index]
-        self.stop_market.remove(index)
-        self.count.remove(index)
+        self.stop_market.pop(index)
+        self.count.pop(index)
         self.size -= 1
         return stop_market, cnt_lots
 
@@ -48,9 +48,9 @@ def getDateNow():
     print(cur_time)
 
 """ Функция, моделирующая торговлю и формирующая выходные данные в виде датасета """
-def HistoryTrain(figi, cnt_lots, account_portfolio, ma_interval=5):
+def HistoryTrain(figi, cnt_lots, account_portfolio, ma_interval=5, lot=1):
     active_cast = 0  # Текущая цена актива
-    lot = 1  # лотность инструмента
+    #lot = 1  # лотность инструмента
     start_sum = account_portfolio
 
     # Условия расчета позиции

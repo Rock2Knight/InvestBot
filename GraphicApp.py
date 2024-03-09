@@ -1,11 +1,14 @@
 # Модуль для построения статистики по торговому роботу
 from datetime import datetime
+import json
 
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import (
     QMainWindow,
     QDateTimeEdit,
     QMessageBox)
+
+from tinkoff.invest.schemas import InstrumentStatus
 
 import matplotlib.dates as matdates
 import matplotlib.pyplot as plt
@@ -17,10 +20,12 @@ from matplotlib.backends.backend_qt5agg import (
 
 from GUI import Ui_MainWindow
 from work import tech_analyze
+from work.functional import *
 
 # Раздел констант
-FIGI = "BBG00475KKY8"  # FIGI анализируемого инструемента
+FIGI = "BBG00475K6C3"  # FIGI анализируемого инструемента
 MAX_CNT_TICKS = 10     # Максимальное количество подписей по оси X
+LOT = 1                # Лотность торгуемого инструмента
 
 class GraphicApp(QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -37,10 +42,12 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
 
         # Моделируем торговлю на исторических данных
         self.dfTrades, self.dfPortfolio = tech_analyze.HistoryTrain(FIGI, self.cnt_lots,
-                                                                    self.account_portfolio, ma_interval=5)
+                                                                    self.account_portfolio, ma_interval=5,
+                                                                    lot=LOT)
         self.countTrades()                  # Подсчитываем прибыльные и убыточные сделки
         self.btnDraw.clicked.connect(self.checkRadio)     # Если была нажата кнопка рисования, проверяем, какой тип график выбран
         self.btnClear.clicked.connect(self.clear_graph)
+        self.btnGetActiveInfo.clicked.connect(self.get_all_instruments)
         # self.period.activated[str].connect(self.setCSVList)
 
 
@@ -67,8 +74,9 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
 
     def countTrades(self):
         """ Здесь считаются успешные и провальные сделки за каждый период моделирования торговли """
-        start_trade_moment = self.dfTrades.iloc[0]['time']   # Региструем момент первой сделки
-        start_index = 0
+        if self.dfPortfolio.shape[0] == 0:
+            self.successTrades, self.failTrades = 0, 0
+            return
         curPortfolio = self.dfPortfolio.iloc[-1]
 
         tradeMoments = set(self.dfTrades['time'])  # Формируем множество моментов времени, когда совершались сделки
@@ -102,17 +110,15 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         Метод для рисования линейного графика доходности портфеля по результатам
         тестирования на исторических данных
         """
+
+        if self.dfTrades.shape[0] == 0:
+            print("Торговой активности не было, так как не было данных")
+            return
+
         x_set_str = list(self.dfPortfolio['time'])                             # таймфреймы в строковом формате
         x_set_raw = [datetime.strptime(x, '%Y-%m-%d_%H:%M:%S') for x in x_set_str] # таймфреймы в python-datetime
         x_set = [matdates.date2num(x) for x in x_set_raw]                      # таймфреймы в matplotlib-datetime
         y_set = list(self.dfPortfolio['profit_in_percent'])
-
-        print(f"Type of date: {type(x_set[0])}")
-        print(f"Count of dates: {len(x_set)}")
-        print("Dates:")
-        for i in range(10):
-            print(x_set[i])
-        print("\n")
 
         candle_interval = None
         with open("../candle_interval.txt", 'r', encoding='utf-8') as file:
@@ -134,20 +140,44 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
             tick_step = cnt_ticks // 10
 
             for i in range(0, cnt_ticks, tick_step):
-                x_ticks.append(x_set[i])
+                index = None
+                if i == len(x_set):
+                    index = i - 1
+                elif i > len(x_set):
+                    break
+                else:
+                    index = i
+
+                x_ticks.append(x_set[index])
 
                 match candle_interval:
                     case '1_MIN' | '2_MIN' | '3_MIN' | '5_MIN' | '10_MIN' | '15_MIN':
-                        label = x_set_raw[i].strftime("%H:%M")
+                        label = x_set_raw[index].strftime("%H:%M")
                         x_ticklabels.append(label)
                     case '30_MIN' | 'HOUR' | '2_HOUR' | '4_HOUR':
-                        label = x_set_raw[i].strftime("%d %b, %H:%M")
+                        label = x_set_raw[index].strftime("%d %b, %H:%M")
                         x_ticklabels.append(label)
                     case 'DAY' | 'WEEK':
-                        label = x_set_raw[i].strftime("%d.%m.%Y")
+                        label = x_set_raw[index].strftime("%d.%m.%Y")
                         x_ticklabels.append(label)
                     case 'MONTH':
-                        label = x_set_raw[i].strftime("%Y, %b")
+                        label = x_set_raw[index].strftime("%Y, %b")
+                        x_ticklabels.append(label)
+        else:
+            x_ticks = [elem for elem in x_set]
+            for raw in x_set_raw:
+                match candle_interval:
+                    case '1_MIN' | '2_MIN' | '3_MIN' | '5_MIN' | '10_MIN' | '15_MIN':
+                        label = raw.strftime("%H:%M")
+                        x_ticklabels.append(label)
+                    case '30_MIN' | 'HOUR' | '2_HOUR' | '4_HOUR':
+                        label = raw.strftime("%d %b, %H:%M")
+                        x_ticklabels.append(label)
+                    case 'DAY' | 'WEEK':
+                        label = raw.strftime("%d.%m.%Y")
+                        x_ticklabels.append(label)
+                    case 'MONTH':
+                        label = raw.strftime("%Y, %b")
                         x_ticklabels.append(label)
 
         self.axes.plot(x_set, y_set)
@@ -155,3 +185,25 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         self.axes.set_xticklabels(x_ticklabels, fontsize=14, rotation=25)
         self.axes.grid(True)
         self.canvas.draw()
+
+    """ Метод для получения информации о доступных активах в Тинькофф Инвестиции """
+    def get_all_instruments(self):
+
+        SharesDict = dict()
+
+        with SandboxClient(TOKEN) as client:  # Запускаем клиент тинькофф-песочницы
+            # Получаем информацию обо всех акциях
+            shares = client.instruments.shares(instrument_status=InstrumentStatus.INSTRUMENT_STATUS_ALL)
+            for instrument in shares.instruments:
+                SharesDict[instrument.name] = {"figi": instrument.figi,
+                                               "currency": instrument.currency,
+                                               "ticker": instrument.ticker,
+                                               "sector": instrument.sector,
+                                               "isin": instrument.isin,
+                                               "lot": instrument.lot,
+                                               "exchange": instrument.exchange,
+                                               "nominal": cast_money(instrument.nominal)}
+
+            with open("../shares.json", "w") as write_file:
+                json.dump(SharesDict, write_file)  # Dump python-dict to json
+            print("\nInstruments info was been received")

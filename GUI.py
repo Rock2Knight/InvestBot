@@ -30,6 +30,7 @@ class Ui_MainWindow(object):
         self.toolsVLayout.setContentsMargins(0, 0, 0, 0)
         self.toolsVLayout.setObjectName("toolsVLayout")
 
+        ''' Настройки кнопки для рисования графика '''
         self.btnDraw = QtWidgets.QPushButton(self.widget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
@@ -44,6 +45,7 @@ class Ui_MainWindow(object):
         self.btnDraw.setObjectName("btnDraw")
         self.toolsVLayout.addWidget(self.btnDraw)
 
+        ''' Настройка кнопки для очистки графика '''
         self.btnClear = QtWidgets.QPushButton(self.widget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
@@ -58,6 +60,22 @@ class Ui_MainWindow(object):
         self.btnClear.setObjectName("btnDraw")
         self.toolsVLayout.addWidget(self.btnClear)
 
+        ''' Настройка кнопки для получения списка ценных бумаг в формате JSON '''
+        self.btnGetActiveInfo = QtWidgets.QPushButton(self.widget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.btnDraw.sizePolicy().hasHeightForWidth())
+        self.btnDraw.setSizePolicy(sizePolicy)
+        font = QtGui.QFont()
+        font.setPointSize(13)
+        font.setBold(True)
+        font.setWeight(75)
+        self.btnGetActiveInfo.setFont(font)
+        self.btnGetActiveInfo.setObjectName("btnGetActiveInfo")
+        self.toolsVLayout.addWidget(self.btnGetActiveInfo)
+
+        ''' Настройка радио-кнопки "График сделок" '''
         self.cntTradesRadioBtn = QtWidgets.QRadioButton(self.widget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
@@ -72,6 +90,8 @@ class Ui_MainWindow(object):
         self.cntTradesRadioBtn.setFont(font)
         self.cntTradesRadioBtn.setObjectName("cntTradesRadioBtn")
         self.toolsVLayout.addWidget(self.cntTradesRadioBtn)
+
+        ''' Настройка радио-кнопки "Доходность" '''
         self.profitRadioBtn = QtWidgets.QRadioButton(self.widget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
@@ -103,6 +123,7 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.btnDraw.setText(_translate("MainWindow", "Нарисовать"))
         self.btnClear.setText(_translate("MainWindow", "Очистить"))
+        self.btnGetActiveInfo.setText(_translate("MainWindow", "Активы"))
         self.cntTradesRadioBtn.setText(_translate("MainWindow", "Гистограмма сделок"))
         self.profitRadioBtn.setText(_translate("MainWindow", "График доходности"))
 
