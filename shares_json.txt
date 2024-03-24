@@ -9,16 +9,6 @@
     "exchange": "spb_close",
     "nominal": 1
   },
-  "Магнит": {
-    "figi": "TCS00A0JKQU8",
-    "currency": "rub",
-    "ticker": "MGNT",
-    "sector": "consumer",
-    "isin": "RU000A0JKQU8",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.01
-  },
   "Arrival": {
     "figi": "BBG00YFSF9D7",
     "currency": "usd",
@@ -37,6 +27,16 @@
     "isin": "US9100471096",
     "lot": 1,
     "exchange": "spb_close",
+    "nominal": 0.01
+  },
+  "Магнит": {
+    "figi": "TCS00A0JKQU8",
+    "currency": "rub",
+    "ticker": "MGNT",
+    "sector": "consumer",
+    "isin": "RU000A0JKQU8",
+    "lot": 1,
+    "exchange": "Issuance",
     "nominal": 0.01
   },
   "CarMax": {
@@ -589,6 +589,16 @@
     "exchange": "spb_close",
     "nominal": 0.01
   },
+  "Affimed N.V. ORD SHS": {
+    "figi": "TCS115001ZQ0",
+    "currency": "usd",
+    "ticker": "NL0015001ZQ0",
+    "sector": "health_care",
+    "isin": "NL0015001ZQ0",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.1
+  },
   "Johnson & Johnson": {
     "figi": "BBG000BMHYD1",
     "currency": "usd",
@@ -618,6 +628,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.00001
+  },
+  "X5 RetailGroup ГДР": {
+    "figi": "TCS0387E2054",
+    "currency": "usd",
+    "ticker": "FIVE@GS",
+    "sector": "consumer",
+    "isin": "US98387E2054",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.25
   },
   "Arthur J. Gallagher & Co": {
     "figi": "US3635761097",
@@ -709,15 +729,15 @@
     "exchange": "dealer_int_exchange",
     "nominal": 2
   },
-  "MannKind Corporation": {
-    "figi": "BBG000PPL3G9",
+  "Cogent Biosciences": {
+    "figi": "BBG007DHZQR7",
     "currency": "usd",
-    "ticker": "US56400P7069",
+    "ticker": "COGT",
     "sector": "health_care",
-    "isin": "US56400P7069",
+    "isin": "US19240Q2012",
     "lot": 1,
-    "exchange": "nasdaq",
-    "nominal": 0.01
+    "exchange": "Issuance",
+    "nominal": 0.001
   },
   "MMC Norilsk Nickel PJSC": {
     "figi": "BBG000KRLH06",
@@ -729,15 +749,15 @@
     "exchange": "lse",
     "nominal": 0.1
   },
-  "Cogent Biosciences": {
-    "figi": "BBG007DHZQR7",
+  "MannKind Corporation": {
+    "figi": "BBG000PPL3G9",
     "currency": "usd",
-    "ticker": "COGT",
+    "ticker": "US56400P7069",
     "sector": "health_care",
-    "isin": "US19240Q2012",
+    "isin": "US56400P7069",
     "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.001
+    "exchange": "nasdaq",
+    "nominal": 0.01
   },
   "Trevali Mining": {
     "figi": "TCS000GMXFH5",
@@ -839,12 +859,12 @@
     "exchange": "Issuance",
     "nominal": 0.00007
   },
-  "Aileron Therapeutics Inc": {
-    "figi": "TCS002454KR1",
+  "Aileron Therapeutics": {
+    "figi": "BBG002454KR1",
     "currency": "usd",
-    "ticker": "ALRN_old",
+    "ticker": "ALRN",
     "sector": "health_care",
-    "isin": "US00887A1051",
+    "isin": "US00887A2042",
     "lot": 1,
     "exchange": "nasdaq",
     "nominal": 0.001
@@ -1459,22 +1479,22 @@
     "exchange": "MOEX_EVENING_WEEKEND",
     "nominal": 2.5
   },
-  "Consolidated Edison": {
-    "figi": "BBG000BHLYS1",
-    "currency": "usd",
-    "ticker": "ED",
-    "sector": "utilities",
-    "isin": "US2091151041",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.1
-  },
   "Kirby Corp": {
     "figi": "BBG000BMQCP6",
     "currency": "usd",
     "ticker": "KEX",
     "sector": "industrials",
     "isin": "US4972661064",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.1
+  },
+  "Consolidated Edison": {
+    "figi": "BBG000BHLYS1",
+    "currency": "usd",
+    "ticker": "ED",
+    "sector": "utilities",
+    "isin": "US2091151041",
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.1
@@ -1519,16 +1539,6 @@
     "exchange": "Issuance",
     "nominal": 0.01
   },
-  "Мосэнерго": {
-    "figi": "TCS008958863",
-    "currency": "rub",
-    "ticker": "MSNG",
-    "sector": "utilities",
-    "isin": "RU0008958863",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 1
-  },
   "Coupa Software Inc": {
     "figi": "US22266L1061",
     "currency": "usd",
@@ -1538,6 +1548,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.0001
+  },
+  "Мосэнерго": {
+    "figi": "TCS008958863",
+    "currency": "rub",
+    "ticker": "MSNG",
+    "sector": "utilities",
+    "isin": "RU0008958863",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 1
   },
   "GILEAD": {
     "figi": "US3755581036",
@@ -2599,16 +2619,6 @@
     "exchange": "Issuance",
     "nominal": 0.01
   },
-  "RH": {
-    "figi": "US74967X1037",
-    "currency": "usd",
-    "ticker": "US74967X1037",
-    "sector": "consumer",
-    "isin": "US74967X1037",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.0001
-  },
   "Worthington Industries Inc": {
     "figi": "BBG000HL7499",
     "currency": "usd",
@@ -2618,6 +2628,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0
+  },
+  "RH": {
+    "figi": "US74967X1037",
+    "currency": "usd",
+    "ticker": "US74967X1037",
+    "sector": "consumer",
+    "isin": "US74967X1037",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.0001
   },
   "BorgWarner": {
     "figi": "US0997241064",
@@ -3019,16 +3039,6 @@
     "exchange": "spb_close",
     "nominal": 0.001
   },
-  "ABM Industries": {
-    "figi": "US0009571003",
-    "currency": "usd",
-    "ticker": "US0009571003",
-    "sector": "industrials",
-    "isin": "US0009571003",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.01
-  },
   "AMN Healthcare Services Inc": {
     "figi": "BBG000BCT197",
     "currency": "usd",
@@ -3037,6 +3047,16 @@
     "isin": "US0017441017",
     "lot": 1,
     "exchange": "spb_close",
+    "nominal": 0.01
+  },
+  "ABM Industries": {
+    "figi": "US0009571003",
+    "currency": "usd",
+    "ticker": "US0009571003",
+    "sector": "industrials",
+    "isin": "US0009571003",
+    "lot": 1,
+    "exchange": "Issuance",
     "nominal": 0.01
   },
   "Austerlitz Acquisition Corporation II": {
@@ -4009,6 +4029,16 @@
     "exchange": "nyse",
     "nominal": 0.01
   },
+  "Wal-Mart Stores": {
+    "figi": "TCS011421039",
+    "currency": "usd",
+    "ticker": "US9311421039",
+    "sector": "consumer",
+    "isin": "US9311421039",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.1
+  },
   "Cinemark Holdings Inc": {
     "figi": "BBG000QDVR53",
     "currency": "usd",
@@ -4018,16 +4048,6 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.001
-  },
-  "Wal-Mart Stores": {
-    "figi": "US9311421039",
-    "currency": "usd",
-    "ticker": "US9311421039",
-    "sector": "consumer",
-    "isin": "US9311421039",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.1
   },
   "Sarepta Therapeutics Inc": {
     "figi": "BBG000BCJ161",
@@ -4079,16 +4099,6 @@
     "exchange": "spb_close",
     "nominal": 5
   },
-  "BlackRock": {
-    "figi": "BBG000C2PW58",
-    "currency": "usd",
-    "ticker": "BLK",
-    "sector": "financial",
-    "isin": "US09247X1019",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.01
-  },
   "HP": {
     "figi": "US40434L1052",
     "currency": "usd",
@@ -4097,6 +4107,16 @@
     "isin": "US40434L1052",
     "lot": 1,
     "exchange": "dealer_int_exchange",
+    "nominal": 0.01
+  },
+  "BlackRock": {
+    "figi": "BBG000C2PW58",
+    "currency": "usd",
+    "ticker": "BLK",
+    "sector": "financial",
+    "isin": "US09247X1019",
+    "lot": 1,
+    "exchange": "spb_close",
     "nominal": 0.01
   },
   "Surgutneftegas ADR": {
@@ -4169,22 +4189,22 @@
     "exchange": "Issuance",
     "nominal": 0.01
   },
-  "Ouster": {
-    "figi": "US68989M1036",
-    "currency": "usd",
-    "ticker": "US68989M1036",
-    "sector": "it",
-    "isin": "US68989M1036",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.0001
-  },
   "Paymentus Holdings": {
     "figi": "US70439P1084",
     "currency": "usd",
     "ticker": "US70439P1084",
     "sector": "it",
     "isin": "US70439P1084",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.0001
+  },
+  "Ouster": {
+    "figi": "US68989M1036",
+    "currency": "usd",
+    "ticker": "US68989M1036",
+    "sector": "it",
+    "isin": "US68989M1036",
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.0001
@@ -4218,6 +4238,16 @@
     "lot": 10,
     "exchange": "MOEX_EVENING_WEEKEND",
     "nominal": 1
+  },
+  "Aeva Technologies": {
+    "figi": "BBG00RK5L2N3",
+    "currency": "usd",
+    "ticker": "US00835Q1031",
+    "sector": "it",
+    "isin": "US00835Q1031",
+    "lot": 1,
+    "exchange": "nyse",
+    "nominal": 0.0001
   },
   "Cellnex Telecom": {
     "figi": "BBG008G74Z89",
@@ -4299,16 +4329,6 @@
     "exchange": "spb_close",
     "nominal": 0.1
   },
-  "Anaplan Inc": {
-    "figi": "BBG002DZS299",
-    "currency": "usd",
-    "ticker": "PLAN",
-    "sector": "it",
-    "isin": "US03272L1089",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.0001
-  },
   "BankUnited, Inc.": {
     "figi": "BBG000PQPCM6",
     "currency": "usd",
@@ -4318,6 +4338,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.01
+  },
+  "Anaplan Inc": {
+    "figi": "BBG002DZS299",
+    "currency": "usd",
+    "ticker": "PLAN",
+    "sector": "it",
+    "isin": "US03272L1089",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.0001
   },
   "Host Hotels & Resorts REIT": {
     "figi": "BBG000BL8804",
@@ -4369,16 +4399,6 @@
     "exchange": "Issuance",
     "nominal": 1.6
   },
-  "Middleby Corp The": {
-    "figi": "BBG000DQN9R3",
-    "currency": "usd",
-    "ticker": "MIDD",
-    "sector": "industrials",
-    "isin": "US5962781010",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.01
-  },
   "Yum China Holdings": {
     "figi": "US98850P1093",
     "currency": "usd",
@@ -4387,6 +4407,16 @@
     "isin": "US98850P1093",
     "lot": 1,
     "exchange": "Issuance",
+    "nominal": 0.01
+  },
+  "Middleby Corp The": {
+    "figi": "BBG000DQN9R3",
+    "currency": "usd",
+    "ticker": "MIDD",
+    "sector": "industrials",
+    "isin": "US5962781010",
+    "lot": 1,
+    "exchange": "spb_close",
     "nominal": 0.01
   },
   "Lyft Inc": {
@@ -4429,16 +4459,6 @@
     "exchange": "spb_close",
     "nominal": 1
   },
-  "JFrog Ltd.": {
-    "figi": "BBG006PWZX16",
-    "currency": "usd",
-    "ticker": "FROG",
-    "sector": "it",
-    "isin": "IL0011684185",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.01
-  },
   "Eagle Pharmaceuticals Inc": {
     "figi": "BBG005Y3XWH9",
     "currency": "usd",
@@ -4448,6 +4468,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.001
+  },
+  "JFrog Ltd.": {
+    "figi": "BBG006PWZX16",
+    "currency": "usd",
+    "ticker": "FROG",
+    "sector": "it",
+    "isin": "IL0011684185",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.01
   },
   "CBL & Associates Properties REIT": {
     "figi": "BBG000B9YSK6",
@@ -4759,16 +4789,6 @@
     "exchange": "Issuance",
     "nominal": 0.01
   },
-  "X5 RetailGroup ГДР": {
-    "figi": "TCS0387E2054",
-    "currency": "usd",
-    "ticker": "FIVE@GS",
-    "sector": "consumer",
-    "isin": "US98387E2054",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.25
-  },
   "Fortrea Holdings Inc.": {
     "figi": "BBG01GZF9VY6",
     "currency": "usd",
@@ -4830,13 +4850,13 @@
     "nominal": 0.01
   },
   "Объединенная авиастроительная корпорация": {
-    "figi": "BBG000Q7ZZY2",
+    "figi": "TCS00A0JPLZ7",
     "currency": "rub",
     "ticker": "UNAC",
     "sector": "industrials",
     "isin": "RU000A0JPLZ7",
-    "lot": 1000,
-    "exchange": "MOEX_WEEKEND",
+    "lot": 1,
+    "exchange": "moex_close",
     "nominal": 0.27
   },
   "Tapestry": {
@@ -5279,16 +5299,6 @@
     "exchange": "nasdaq",
     "nominal": 15
   },
-  "Nexstar Media Group Inc": {
-    "figi": "US65336K1034",
-    "currency": "usd",
-    "ticker": "US65336K1034",
-    "sector": "telecom",
-    "isin": "US65336K1034",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.01
-  },
   "Joby Aviation": {
     "figi": "BBG00X2MYTC2",
     "currency": "usd",
@@ -5298,6 +5308,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.0001
+  },
+  "Nexstar Media Group Inc": {
+    "figi": "US65336K1034",
+    "currency": "usd",
+    "ticker": "US65336K1034",
+    "sector": "telecom",
+    "isin": "US65336K1034",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.01
   },
   "Array Technologies": {
     "figi": "US04271T1007",
@@ -5539,16 +5559,6 @@
     "exchange": "Issuance",
     "nominal": 0
   },
-  "Zimmer Biomet Holdings": {
-    "figi": "US98956P1021",
-    "currency": "usd",
-    "ticker": "US98956P1021",
-    "sector": "health_care",
-    "isin": "US98956P1021",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.01
-  },
   "Uranium Energy Corp": {
     "figi": "BBG000LCK3Q2",
     "currency": "usd",
@@ -5558,6 +5568,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.001
+  },
+  "Zimmer Biomet Holdings": {
+    "figi": "US98956P1021",
+    "currency": "usd",
+    "ticker": "US98956P1021",
+    "sector": "health_care",
+    "isin": "US98956P1021",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.01
   },
   "Madison Square Garden Co": {
     "figi": "US55825T1034",
@@ -5639,6 +5659,16 @@
     "exchange": "spb_close",
     "nominal": 0.00001
   },
+  "ТКС Холдинг": {
+    "figi": "TCS00A107UL4",
+    "currency": "rub",
+    "ticker": "TCSG",
+    "sector": "financial",
+    "isin": "RU000A107UL4",
+    "lot": 1,
+    "exchange": "MOEX_PLUS",
+    "nominal": 3.6393839999999997
+  },
   "Heska Corp": {
     "figi": "BBG000BWFH48",
     "currency": "usd",
@@ -5719,6 +5749,16 @@
     "exchange": "nasdaq",
     "nominal": 0.01
   },
+  "ВК": {
+    "figi": "TCS10A106YF0",
+    "currency": "rub",
+    "ticker": "RU000A106YF0",
+    "sector": "it",
+    "isin": "RU000A106YF0",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.000450595
+  },
   "Principal Financial Group": {
     "figi": "BBG000NSCNT7",
     "currency": "usd",
@@ -5768,16 +5808,6 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.0001
-  },
-  "ВК": {
-    "figi": "TCS10A106YF0",
-    "currency": "rub",
-    "ticker": "RU000A106YF0",
-    "sector": "it",
-    "isin": "RU000A106YF0",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.000450595
   },
   "Kartoon Studios": {
     "figi": "BBG000NNBY60",
@@ -5969,16 +5999,6 @@
     "exchange": "nasdaq",
     "nominal": 0.01
   },
-  "Realty Income REIT": {
-    "figi": "BBG000DHPN63",
-    "currency": "usd",
-    "ticker": "O",
-    "sector": "real_estate",
-    "isin": "US7561091049",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.01
-  },
   "Stem": {
     "figi": "BBG00XP8NQN4",
     "currency": "usd",
@@ -5988,6 +6008,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.0001
+  },
+  "Realty Income REIT": {
+    "figi": "BBG000DHPN63",
+    "currency": "usd",
+    "ticker": "O",
+    "sector": "real_estate",
+    "isin": "US7561091049",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.01
   },
   "Worldline SA": {
     "figi": "BBG006N9S3T3",
@@ -6349,6 +6379,16 @@
     "exchange": "otcus",
     "nominal": 8
   },
+  "Carnival": {
+    "figi": "BBG000BF6LY3",
+    "currency": "usd",
+    "ticker": "CCL",
+    "sector": "consumer",
+    "isin": "PA1436583006",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.01
+  },
   "OSI Systems Inc": {
     "figi": "US6710441055",
     "currency": "usd",
@@ -6409,16 +6449,6 @@
     "exchange": "spb_close",
     "nominal": 0.001
   },
-  "SiteOne Landscape Supply Inc": {
-    "figi": "BBG009T22D49",
-    "currency": "usd",
-    "ticker": "SITE",
-    "sector": "industrials",
-    "isin": "US82982L1035",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.01
-  },
   "Integra LifeSciences Holdings": {
     "figi": "BBG000BZJQL8",
     "currency": "usd",
@@ -6429,14 +6459,24 @@
     "exchange": "spb_close",
     "nominal": 0.01
   },
-  "Takeda Pharmaceutical Co Ltd": {
-    "figi": "BBG000LF8708",
+  "SiteOne Landscape Supply Inc": {
+    "figi": "BBG009T22D49",
     "currency": "usd",
-    "ticker": "TAK",
+    "ticker": "SITE",
+    "sector": "industrials",
+    "isin": "US82982L1035",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.01
+  },
+  "Takeda Pharmaceutical Co Ltd": {
+    "figi": "TCS140602052",
+    "currency": "usd",
+    "ticker": "US8740602052",
     "sector": "health_care",
     "isin": "US8740602052",
     "lot": 1,
-    "exchange": "spb_close",
+    "exchange": "Issuance",
     "nominal": 0.5
   },
   "Signet Jewelers": {
@@ -6466,7 +6506,7 @@
     "sector": "consumer",
     "isin": "RU0006914488",
     "lot": 1,
-    "exchange": "MOEX_WEEKEND",
+    "exchange": "MOEX_EVENING_WEEKEND",
     "nominal": 12.5
   },
   "US Physical Therapy Inc": {
@@ -6539,6 +6579,16 @@
     "exchange": "Issuance",
     "nominal": 1
   },
+  "Faraday Future Intelligent Electric": {
+    "figi": "US3073595056",
+    "currency": "usd",
+    "ticker": "US3073595056",
+    "sector": "electrocars",
+    "isin": "US3073595056",
+    "lot": 1,
+    "exchange": "nasdaq",
+    "nominal": 0.0001
+  },
   "Axogen Inc": {
     "figi": "BBG000BN46R9",
     "currency": "usd",
@@ -6609,16 +6659,6 @@
     "exchange": "Issuance",
     "nominal": 0.5
   },
-  "Группа Астра": {
-    "figi": "RU000A106T36",
-    "currency": "rub",
-    "ticker": "ASTR",
-    "sector": "it",
-    "isin": "RU000A106T36",
-    "lot": 1,
-    "exchange": "MOEX_EVENING_WEEKEND",
-    "nominal": 0.05
-  },
   "IPO Delimobil": {
     "figi": "ISSUANCEDELI",
     "currency": "rub",
@@ -6628,6 +6668,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0
+  },
+  "Группа Астра": {
+    "figi": "RU000A106T36",
+    "currency": "rub",
+    "ticker": "ASTR",
+    "sector": "it",
+    "isin": "RU000A106T36",
+    "lot": 1,
+    "exchange": "MOEX_EVENING_WEEKEND",
+    "nominal": 0.05
   },
   "TiVo Corp": {
     "figi": "BBG00D2PXQL6",
@@ -6649,16 +6699,6 @@
     "exchange": "Issuance",
     "nominal": 0.0001
   },
-  "ZTE Corporation": {
-    "figi": "BBG000FK8474",
-    "currency": "hkd",
-    "ticker": "763",
-    "sector": "telecom",
-    "isin": "CNE1000004Y2",
-    "lot": 10,
-    "exchange": "spb_close",
-    "nominal": 1
-  },
   "Progress Software Corp": {
     "figi": "US7433121008",
     "currency": "usd",
@@ -6668,6 +6708,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.01
+  },
+  "ZTE Corporation": {
+    "figi": "BBG000FK8474",
+    "currency": "hkd",
+    "ticker": "763",
+    "sector": "telecom",
+    "isin": "CNE1000004Y2",
+    "lot": 10,
+    "exchange": "spb_close",
+    "nominal": 1
   },
   "Harley-Davidson": {
     "figi": "BBG000BKZTP3",
@@ -7019,16 +7069,6 @@
     "exchange": "spb_close",
     "nominal": 0.01
   },
-  "МКБ": {
-    "figi": "BBG009GSYN76",
-    "currency": "rub",
-    "ticker": "CBOM",
-    "sector": "financial",
-    "isin": "RU000A0JUG31",
-    "lot": 100,
-    "exchange": "MOEX_PLUS",
-    "nominal": 1
-  },
   "Nexi": {
     "figi": "BBG00NNG19F1",
     "currency": "eur",
@@ -7038,6 +7078,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0
+  },
+  "МКБ": {
+    "figi": "BBG009GSYN76",
+    "currency": "rub",
+    "ticker": "CBOM",
+    "sector": "financial",
+    "isin": "RU000A0JUG31",
+    "lot": 100,
+    "exchange": "MOEX_PLUS",
+    "nominal": 1
   },
   "Warner Music Group": {
     "figi": "BBG00RP2T9T6",
@@ -7139,16 +7189,6 @@
     "exchange": "spb_close",
     "nominal": 0.000025
   },
-  "Башинформсвязь - Акции привилегированные": {
-    "figi": "BBG000KGXMN1",
-    "currency": "rub",
-    "ticker": "BISVP",
-    "sector": "telecom",
-    "isin": "RU0009100176",
-    "lot": 100,
-    "exchange": "MOEX",
-    "nominal": 1
-  },
   "FormFactor Inc": {
     "figi": "BBG000D1Y3P1",
     "currency": "usd",
@@ -7158,6 +7198,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.001
+  },
+  "Башинформсвязь - Акции привилегированные": {
+    "figi": "BBG000KGXMN1",
+    "currency": "rub",
+    "ticker": "BISVP",
+    "sector": "telecom",
+    "isin": "RU0009100176",
+    "lot": 100,
+    "exchange": "MOEX",
+    "nominal": 1
   },
   "Asos": {
     "figi": "BBG000KL73H8",
@@ -7270,9 +7320,9 @@
     "nominal": 0.00001
   },
   "Ozon Holdings PLC": {
-    "figi": "TCS2269L1044",
+    "figi": "TCS5269L1044",
     "currency": "usd",
-    "ticker": "US69269L1044",
+    "ticker": "OZON@US",
     "sector": "consumer",
     "isin": "US69269L1044",
     "lot": 1,
@@ -7428,6 +7478,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 1
+  },
+  "ТМК Оферта": {
+    "figi": "ISSANCETRMKK",
+    "currency": "rub",
+    "ticker": "ISSANCETRMKK",
+    "sector": "materials",
+    "isin": "ISSANCETRMKK",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0
   },
   "LendingTree Inc": {
     "figi": "BBG000TVRB50",
@@ -7699,16 +7759,6 @@
     "exchange": "Issuance",
     "nominal": 0.0001
   },
-  "Geely Automobile Holdings": {
-    "figi": "BBG000BZ3PX4",
-    "currency": "hkd",
-    "ticker": "175",
-    "sector": "consumer",
-    "isin": "KYG3777B1032",
-    "lot": 100,
-    "exchange": "spb_close",
-    "nominal": 0.02
-  },
   "Fabege AB": {
     "figi": "BBG000BVCPY2",
     "currency": "eur",
@@ -7718,6 +7768,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 15.41
+  },
+  "Geely Automobile Holdings": {
+    "figi": "BBG000BZ3PX4",
+    "currency": "hkd",
+    "ticker": "175",
+    "sector": "consumer",
+    "isin": "KYG3777B1032",
+    "lot": 100,
+    "exchange": "spb_close",
+    "nominal": 0.02
   },
   "Praxis Precision Medicines": {
     "figi": "BBG00W9LF2G5",
@@ -7909,16 +7969,6 @@
     "exchange": "Issuance",
     "nominal": 1
   },
-  "СПБ Биржа": {
-    "figi": "TCS20A0JQ9P9",
-    "currency": "usd",
-    "ticker": "SPBE",
-    "sector": "financial",
-    "isin": "RU000A0JQ9P9",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 3.75
-  },
   "Albemarle": {
     "figi": "US0126531013",
     "currency": "usd",
@@ -7928,6 +7978,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.01
+  },
+  "СПБ Биржа": {
+    "figi": "TCS20A0JQ9P9",
+    "currency": "usd",
+    "ticker": "SPBE",
+    "sector": "financial",
+    "isin": "RU000A0JQ9P9",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 3.75
   },
   "Ionis Pharmaceuticals Inc": {
     "figi": "BBG000JH6683",
@@ -7949,16 +8009,6 @@
     "exchange": "spb_close",
     "nominal": 0.001
   },
-  "ОВК": {
-    "figi": "TCS00A0JVBT9",
-    "currency": "rub",
-    "ticker": "UWGN",
-    "sector": "industrials",
-    "isin": "RU000A0JVBT9",
-    "lot": 1,
-    "exchange": "moex_close",
-    "nominal": 1
-  },
   "CSW Industrials Inc": {
     "figi": "US1264021064",
     "currency": "usd",
@@ -7968,6 +8018,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.01
+  },
+  "ОВК": {
+    "figi": "TCS00A0JVBT9",
+    "currency": "rub",
+    "ticker": "UWGN",
+    "sector": "industrials",
+    "isin": "RU000A0JVBT9",
+    "lot": 1,
+    "exchange": "moex_close",
+    "nominal": 1
   },
   "China Longyuan Power Group": {
     "figi": "BBG000P2MRM9",
@@ -8199,16 +8259,6 @@
     "exchange": "Issuance",
     "nominal": 1
   },
-  "SunPower Corp": {
-    "figi": "US8676524064",
-    "currency": "usd",
-    "ticker": "US8676524064",
-    "sector": "green_energy",
-    "isin": "US8676524064",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.001
-  },
   "Intellia Therapeutics Inc": {
     "figi": "US45826J1051",
     "currency": "usd",
@@ -8218,6 +8268,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.0001
+  },
+  "SunPower Corp": {
+    "figi": "US8676524064",
+    "currency": "usd",
+    "ticker": "US8676524064",
+    "sector": "green_energy",
+    "isin": "US8676524064",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.001
   },
   "Совкомбанк": {
     "figi": "TCS20A0ZZAC4",
@@ -8609,22 +8669,22 @@
     "exchange": "moex_close",
     "nominal": 5
   },
-  "Quest Diagnostics": {
-    "figi": "US74834L1008",
-    "currency": "usd",
-    "ticker": "US74834L1008",
-    "sector": "health_care",
-    "isin": "US74834L1008",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.01
-  },
   "CDW Corp": {
     "figi": "US12514G1085",
     "currency": "usd",
     "ticker": "US12514G1085",
     "sector": "it",
     "isin": "US12514G1085",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.01
+  },
+  "Quest Diagnostics": {
+    "figi": "US74834L1008",
+    "currency": "usd",
+    "ticker": "US74834L1008",
+    "sector": "health_care",
+    "isin": "US74834L1008",
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.01
@@ -8966,7 +9026,7 @@
     "sector": "utilities",
     "isin": "RU000A0JNUD0",
     "lot": 100000,
-    "exchange": "MOEX",
+    "exchange": "MOEX_PLUS",
     "nominal": 0.01
   },
   "Ensign Group Inc": {
@@ -9389,16 +9449,6 @@
     "exchange": "spb_close",
     "nominal": 1
   },
-  "Castlight Health": {
-    "figi": "BBG000PPNW55",
-    "currency": "usd",
-    "ticker": "CSLT",
-    "sector": "health_care",
-    "isin": "US14862Q1004",
-    "lot": 1,
-    "exchange": "nyse",
-    "nominal": 0.0001
-  },
   "АДР Mereo BioPharma Group": {
     "figi": "BBG00KFWZC67",
     "currency": "usd",
@@ -9408,6 +9458,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 5
+  },
+  "Castlight Health": {
+    "figi": "BBG000PPNW55",
+    "currency": "usd",
+    "ticker": "CSLT",
+    "sector": "health_care",
+    "isin": "US14862Q1004",
+    "lot": 1,
+    "exchange": "nyse",
+    "nominal": 0.0001
   },
   "Compute Health Acquisition": {
     "figi": "BBG00Z0X4XG5",
@@ -9419,16 +9479,6 @@
     "exchange": "Issuance",
     "nominal": 0.0001
   },
-  "Piper Sandler Companies": {
-    "figi": "BBG000FQXC75",
-    "currency": "usd",
-    "ticker": "PIPR",
-    "sector": "financial",
-    "isin": "US7240781002",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.01
-  },
   "Perficient Inc": {
     "figi": "US71375U1016",
     "currency": "usd",
@@ -9438,6 +9488,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.001
+  },
+  "Piper Sandler Companies": {
+    "figi": "BBG000FQXC75",
+    "currency": "usd",
+    "ticker": "PIPR",
+    "sector": "financial",
+    "isin": "US7240781002",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.01
   },
   "New Mountain Finance Corp.": {
     "figi": "BBG000BG22J4",
@@ -9559,16 +9619,6 @@
     "exchange": "Issuance",
     "nominal": 0.0001
   },
-  "Etalon Group PLC ГДР": {
-    "figi": "TCS9760G1031",
-    "currency": "usd",
-    "ticker": "ETLN@GS",
-    "sector": "real_estate",
-    "isin": "US29760G1031",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 1
-  },
   "Commerzbank AG": {
     "figi": "TCS000BBYGC6",
     "currency": "eur",
@@ -9578,6 +9628,16 @@
     "lot": 1,
     "exchange": "xetra",
     "nominal": 0
+  },
+  "Etalon Group PLC ГДР": {
+    "figi": "TCS9760G1031",
+    "currency": "usd",
+    "ticker": "ETLN@GS",
+    "sector": "real_estate",
+    "isin": "US29760G1031",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 1
   },
   "Energy Transfer LP": {
     "figi": "US29273V1008",
@@ -9609,16 +9669,6 @@
     "exchange": "spb_close",
     "nominal": 0.001
   },
-  "Lordstown Motors Corp": {
-    "figi": "US54405Q2093",
-    "currency": "usd",
-    "ticker": "US54405Q2093",
-    "sector": "industrials",
-    "isin": "US54405Q2093",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.0001
-  },
   "Wuxi Biologics": {
     "figi": "BBG00GTY47H0",
     "currency": "hkd",
@@ -9628,6 +9678,16 @@
     "lot": 10,
     "exchange": "spb_close",
     "nominal": 0.000025
+  },
+  "Lordstown Motors Corp": {
+    "figi": "US54405Q2093",
+    "currency": "usd",
+    "ticker": "US54405Q2093",
+    "sector": "industrials",
+    "isin": "US54405Q2093",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.0001
   },
   "Cognizant Technology Solutions": {
     "figi": "BBG000BBDV81",
@@ -9879,16 +9939,6 @@
     "exchange": "MOEX_EVENING_WEEKEND",
     "nominal": 10
   },
-  "Aon": {
-    "figi": "BBG00SSQFPK6",
-    "currency": "usd",
-    "ticker": "AON",
-    "sector": "financial",
-    "isin": "IE00BLP1HW54",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.01
-  },
   "Yum!": {
     "figi": "BBG000BH3GZ2",
     "currency": "usd",
@@ -9898,6 +9948,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0
+  },
+  "Aon": {
+    "figi": "BBG00SSQFPK6",
+    "currency": "usd",
+    "ticker": "AON",
+    "sector": "financial",
+    "isin": "IE00BLP1HW54",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.01
   },
   "Timken Co The": {
     "figi": "US8873891043",
@@ -9956,7 +10016,7 @@
     "sector": "telecom",
     "isin": "RU0009046700",
     "lot": 10,
-    "exchange": "MOEX",
+    "exchange": "MOEX_PLUS",
     "nominal": 0.0025
   },
   "Uniper": {
@@ -10719,16 +10779,6 @@
     "exchange": "nyse",
     "nominal": 2
   },
-  "Daimler Truck Holding AG": {
-    "figi": "BBG012SQ7SX1",
-    "currency": "eur",
-    "ticker": "DE000DTR0CK8",
-    "sector": "industrials",
-    "isin": "DE000DTR0CK8",
-    "lot": 1,
-    "exchange": "xetra",
-    "nominal": 0
-  },
   "Permian Resources": {
     "figi": "BBG00CNYBQ76",
     "currency": "usd",
@@ -10738,6 +10788,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.0001
+  },
+  "Daimler Truck Holding AG": {
+    "figi": "BBG012SQ7SX1",
+    "currency": "eur",
+    "ticker": "DE000DTR0CK8",
+    "sector": "industrials",
+    "isin": "DE000DTR0CK8",
+    "lot": 1,
+    "exchange": "xetra",
+    "nominal": 0
   },
   "McKesson": {
     "figi": "BBG000DYGNW7",
@@ -10757,16 +10817,6 @@
     "isin": "US21925D1090",
     "lot": 1,
     "exchange": "nyse",
-    "nominal": 0.01
-  },
-  "Affimed NV": {
-    "figi": "NL0010872420",
-    "currency": "usd",
-    "ticker": "NL0010872420",
-    "sector": "health_care",
-    "isin": "NL0010872420",
-    "lot": 1,
-    "exchange": "Issuance",
     "nominal": 0.01
   },
   "Driven Brands Holdings": {
@@ -10809,16 +10859,6 @@
     "exchange": "spb_close",
     "nominal": 0
   },
-  "Pure Storage Inc": {
-    "figi": "BBG00212PVZ5",
-    "currency": "usd",
-    "ticker": "PSTG",
-    "sector": "it",
-    "isin": "US74624M1027",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.0001
-  },
   "Zoetis": {
     "figi": "US98978V1035",
     "currency": "usd",
@@ -10828,6 +10868,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.01
+  },
+  "Pure Storage Inc": {
+    "figi": "BBG00212PVZ5",
+    "currency": "usd",
+    "ticker": "PSTG",
+    "sector": "it",
+    "isin": "US74624M1027",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.0001
   },
   "Саратовэнерго": {
     "figi": "BBG000CV7ZG5",
@@ -11049,16 +11099,6 @@
     "exchange": "MOEX_EVENING_WEEKEND",
     "nominal": 1
   },
-  "Московская Биржа": {
-    "figi": "BBG004730JJ5",
-    "currency": "rub",
-    "ticker": "MOEX",
-    "sector": "financial",
-    "isin": "RU000A0JR4A1",
-    "lot": 10,
-    "exchange": "MOEX_EVENING_WEEKEND",
-    "nominal": 1
-  },
   "National Health Investors REIT": {
     "figi": "BBG000CGWSJ3",
     "currency": "usd",
@@ -11068,6 +11108,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.01
+  },
+  "Московская Биржа": {
+    "figi": "BBG004730JJ5",
+    "currency": "rub",
+    "ticker": "MOEX",
+    "sector": "financial",
+    "isin": "RU000A0JR4A1",
+    "lot": 10,
+    "exchange": "MOEX_EVENING_WEEKEND",
+    "nominal": 1
   },
   "Lancaster Colony": {
     "figi": "BBG000BN1M88",
@@ -11099,16 +11149,6 @@
     "exchange": "nyse",
     "nominal": 0.01
   },
-  "BOK Financial": {
-    "figi": "BBG000CFZ003",
-    "currency": "usd",
-    "ticker": "BOKF",
-    "sector": "financial",
-    "isin": "US05561Q2012",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.00006
-  },
   "Old Republic International Corporation": {
     "figi": "US6802231042",
     "currency": "usd",
@@ -11118,6 +11158,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 1
+  },
+  "BOK Financial": {
+    "figi": "BBG000CFZ003",
+    "currency": "usd",
+    "ticker": "BOKF",
+    "sector": "financial",
+    "isin": "US05561Q2012",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.00006
   },
   "Atara Biotherapeutics Inc": {
     "figi": "TCS165131078",
@@ -11169,16 +11219,6 @@
     "exchange": "nasdaq",
     "nominal": 0.01
   },
-  "Томская распределительная компания": {
-    "figi": "BBG000MDCJV7",
-    "currency": "rub",
-    "ticker": "TORS",
-    "sector": "utilities",
-    "isin": "RU000A0ETZF2",
-    "lot": 10000,
-    "exchange": "MOEX",
-    "nominal": 0.4916
-  },
   "Lennox International Inc": {
     "figi": "US5261071071",
     "currency": "usd",
@@ -11188,6 +11228,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.01
+  },
+  "Томская распределительная компания": {
+    "figi": "BBG000MDCJV7",
+    "currency": "rub",
+    "ticker": "TORS",
+    "sector": "utilities",
+    "isin": "RU000A0ETZF2",
+    "lot": 10000,
+    "exchange": "MOEX",
+    "nominal": 0.4916
   },
   "Discovery Communications (B)": {
     "figi": "BBG000F7L5N7",
@@ -11230,14 +11280,14 @@
     "nominal": 1
   },
   "АДР Yatsen Holding": {
-    "figi": "BBG00Y1STTN2",
+    "figi": "TCS851942089",
     "currency": "usd",
-    "ticker": "US9851941099",
+    "ticker": "US9851942089",
     "sector": "consumer",
-    "isin": "US9851941099",
+    "isin": "US9851942089",
     "lot": 1,
     "exchange": "nyse",
-    "nominal": 4
+    "nominal": 0
   },
   "Kornit Digital Ltd.": {
     "figi": "BBG0086KNBP4",
@@ -11258,6 +11308,16 @@
     "lot": 1,
     "exchange": "nasdaq",
     "nominal": 0.01
+  },
+  "Astrana Health": {
+    "figi": "TCS3763A2078",
+    "currency": "usd",
+    "ticker": "ASTH",
+    "sector": "health_care",
+    "isin": "US03763A2078",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.001
   },
   "Central Puerto SA": {
     "figi": "BBG00JNMX8W5",
@@ -11739,16 +11799,6 @@
     "exchange": "Issuance",
     "nominal": 0.001
   },
-  "HENDERSON": {
-    "figi": "TCS20A106XF2",
-    "currency": "rub",
-    "ticker": "HNFG",
-    "sector": "consumer",
-    "isin": "RU000A106XF2",
-    "lot": 1,
-    "exchange": "moex_ipo",
-    "nominal": 50
-  },
   "Chiasma": {
     "figi": "BBG0026ZCS06",
     "currency": "usd",
@@ -11758,6 +11808,16 @@
     "lot": 1,
     "exchange": "nasdaq",
     "nominal": 0.01
+  },
+  "HENDERSON": {
+    "figi": "TCS20A106XF2",
+    "currency": "rub",
+    "ticker": "HNFG",
+    "sector": "consumer",
+    "isin": "RU000A106XF2",
+    "lot": 1,
+    "exchange": "moex_ipo",
+    "nominal": 50
   },
   "Royalty Pharma plc": {
     "figi": "BBG00V1L5YZ5",
@@ -11819,16 +11879,6 @@
     "exchange": "spb_close",
     "nominal": 0.01
   },
-  "Anhui Conch Cement": {
-    "figi": "BBG000BVKWW0",
-    "currency": "hkd",
-    "ticker": "914",
-    "sector": "other",
-    "isin": "CNE1000001W2",
-    "lot": 10,
-    "exchange": "spb_close",
-    "nominal": 1
-  },
   "Deutsche Telekom AG": {
     "figi": "BBG000HJTMS9",
     "currency": "eur",
@@ -11838,6 +11888,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0
+  },
+  "Anhui Conch Cement": {
+    "figi": "BBG000BVKWW0",
+    "currency": "hkd",
+    "ticker": "914",
+    "sector": "other",
+    "isin": "CNE1000001W2",
+    "lot": 10,
+    "exchange": "spb_close",
+    "nominal": 1
   },
   "Universal Forest Products Inc": {
     "figi": "TCS135431040",
@@ -11969,16 +12029,6 @@
     "exchange": "spb_close",
     "nominal": 0.000001
   },
-  "M/I Homes Inc": {
-    "figi": "US55305B1017",
-    "currency": "usd",
-    "ticker": "US55305B1017",
-    "sector": "consumer",
-    "isin": "US55305B1017",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.01
-  },
   "Cummins": {
     "figi": "US2310211063",
     "currency": "usd",
@@ -11988,6 +12038,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 2.5
+  },
+  "M/I Homes Inc": {
+    "figi": "US55305B1017",
+    "currency": "usd",
+    "ticker": "US55305B1017",
+    "sector": "consumer",
+    "isin": "US55305B1017",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.01
   },
   "CarParts.com": {
     "figi": "US14427M1071",
@@ -12428,6 +12488,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.01
+  },
+  "Affimed NV": {
+    "figi": "NL0015001ZQ0",
+    "currency": "usd",
+    "ticker": "NL0015001ZQ0",
+    "sector": "health_care",
+    "isin": "NL0015001ZQ0",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.1
   },
   "Monmouth REIT": {
     "figi": "BBG000BLZD12",
@@ -13079,16 +13149,6 @@
     "exchange": "Issuance",
     "nominal": 1
   },
-  "SVB Financial Group": {
-    "figi": "US78486Q1013",
-    "currency": "usd",
-    "ticker": "US78486Q1013",
-    "sector": "financial",
-    "isin": "US78486Q1013",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.001
-  },
   "Omnicom Group": {
     "figi": "BBG000BS9489",
     "currency": "usd",
@@ -13098,6 +13158,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.15
+  },
+  "SVB Financial Group": {
+    "figi": "US78486Q1013",
+    "currency": "usd",
+    "ticker": "US78486Q1013",
+    "sector": "financial",
+    "isin": "US78486Q1013",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.001
   },
   "Zynex Inc": {
     "figi": "US98986M1036",
@@ -13749,16 +13819,6 @@
     "exchange": "Issuance",
     "nominal": 1
   },
-  "B Riley Financial": {
-    "figi": "BBG000RTNP69",
-    "currency": "usd",
-    "ticker": "US05580M1080",
-    "sector": "financial",
-    "isin": "US05580M1080",
-    "lot": 1,
-    "exchange": "nasdaq",
-    "nominal": 0.0001
-  },
   "Alpine Immune Sciences": {
     "figi": "BBG001J2LL66",
     "currency": "usd",
@@ -13768,6 +13828,16 @@
     "lot": 1,
     "exchange": "nasdaq",
     "nominal": 0.001
+  },
+  "B Riley Financial": {
+    "figi": "BBG000RTNP69",
+    "currency": "usd",
+    "ticker": "US05580M1080",
+    "sector": "financial",
+    "isin": "US05580M1080",
+    "lot": 1,
+    "exchange": "nasdaq",
+    "nominal": 0.0001
   },
   "TeamViewer AG": {
     "figi": "BBG00Q79ZD62",
@@ -14179,15 +14249,15 @@
     "exchange": "Issuance",
     "nominal": 0
   },
-  "China Mengniu Dairy": {
-    "figi": "BBG000PXTGY5",
-    "currency": "hkd",
-    "ticker": "2319",
-    "sector": "consumer",
-    "isin": "KYG210961051",
-    "lot": 10,
-    "exchange": "spb_close",
-    "nominal": 0.1
+  "Blade Air Mobility, Inc.": {
+    "figi": "TCS926671043",
+    "currency": "usd",
+    "ticker": "US0926671043",
+    "sector": "industrials",
+    "isin": "US0926671043",
+    "lot": 1,
+    "exchange": "nasdaq",
+    "nominal": 0.0001
   },
   "DSP Group, Inc.": {
     "figi": "BBG000BGMCG3",
@@ -14199,15 +14269,15 @@
     "exchange": "nasdaq",
     "nominal": 0.001
   },
-  "Blade Air Mobility, Inc.": {
-    "figi": "TCS926671043",
-    "currency": "usd",
-    "ticker": "US0926671043",
-    "sector": "industrials",
-    "isin": "US0926671043",
-    "lot": 1,
-    "exchange": "nasdaq",
-    "nominal": 0.0001
+  "China Mengniu Dairy": {
+    "figi": "BBG000PXTGY5",
+    "currency": "hkd",
+    "ticker": "2319",
+    "sector": "consumer",
+    "isin": "KYG210961051",
+    "lot": 10,
+    "exchange": "spb_close",
+    "nominal": 0.1
   },
   "Affirm Holdings": {
     "figi": "US00827B1061",
@@ -14319,16 +14389,6 @@
     "exchange": "nasdaq",
     "nominal": 0.0001
   },
-  "АДР SAP": {
-    "figi": "BBG000BDSLD7",
-    "currency": "usd",
-    "ticker": "SAP",
-    "sector": "it",
-    "isin": "US8030542042",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 1
-  },
   "Fisker": {
     "figi": "BBG00LPWLFD4",
     "currency": "usd",
@@ -14338,6 +14398,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.00001
+  },
+  "АДР SAP": {
+    "figi": "BBG000BDSLD7",
+    "currency": "usd",
+    "ticker": "SAP",
+    "sector": "it",
+    "isin": "US8030542042",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 1
   },
   "Outset Medical, Inc.": {
     "figi": "BBG0026ZJTQ9",
@@ -14356,7 +14426,7 @@
     "sector": "materials",
     "isin": "RU000A0B90N8",
     "lot": 10,
-    "exchange": "MOEX_WEEKEND",
+    "exchange": "MOEX_EVENING_WEEKEND",
     "nominal": 0.004
   },
   "Ramaco Resources": {
@@ -14399,16 +14469,6 @@
     "exchange": "spb_close",
     "nominal": 0.000333
   },
-  "Aytu BioScience Inc": {
-    "figi": "TCS000VC2PT9",
-    "currency": "usd",
-    "ticker": "AYTUold",
-    "sector": "health_care",
-    "isin": "US0547548745",
-    "lot": 1,
-    "exchange": "nasdaq",
-    "nominal": 0.0001
-  },
   "Deckers Outdoor Corp": {
     "figi": "US2435371073",
     "currency": "usd",
@@ -14418,6 +14478,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.01
+  },
+  "Aytu BioScience Inc": {
+    "figi": "TCS000VC2PT9",
+    "currency": "usd",
+    "ticker": "AYTUold",
+    "sector": "health_care",
+    "isin": "US0547548745",
+    "lot": 1,
+    "exchange": "nasdaq",
+    "nominal": 0.0001
   },
   "АДР Empresa Distribuidora y Comercializadora Norte": {
     "figi": "BBG000PMM892",
@@ -14539,16 +14609,6 @@
     "exchange": "MOEX",
     "nominal": 0.1
   },
-  "10X Genomics Inc": {
-    "figi": "BBG007WX14X0",
-    "currency": "usd",
-    "ticker": "TXG",
-    "sector": "health_care",
-    "isin": "US88025U1097",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.00001
-  },
   "Alpha and Omega Semiconductor": {
     "figi": "BBG000QLW222",
     "currency": "usd",
@@ -14558,6 +14618,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.002
+  },
+  "10X Genomics Inc": {
+    "figi": "BBG007WX14X0",
+    "currency": "usd",
+    "ticker": "TXG",
+    "sector": "health_care",
+    "isin": "US88025U1097",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.00001
   },
   "Mosaic": {
     "figi": "US61945C1036",
@@ -14659,16 +14729,6 @@
     "exchange": "Issuance",
     "nominal": 0.001
   },
-  "PCSB Financial Corp": {
-    "figi": "BBG00FY94WC1",
-    "currency": "usd",
-    "ticker": "PCSB",
-    "sector": "financial",
-    "isin": "US69324R1041",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.01
-  },
   "YRC Worldwide": {
     "figi": "BBG000BX6PW7",
     "currency": "usd",
@@ -14677,6 +14737,16 @@
     "isin": "US9855101062",
     "lot": 1,
     "exchange": "nasdaq",
+    "nominal": 0.01
+  },
+  "PCSB Financial Corp": {
+    "figi": "BBG00FY94WC1",
+    "currency": "usd",
+    "ticker": "PCSB",
+    "sector": "financial",
+    "isin": "US69324R1041",
+    "lot": 1,
+    "exchange": "Issuance",
     "nominal": 0.01
   },
   "ProQR Therapeutics": {
@@ -14739,22 +14809,22 @@
     "exchange": "moex_close",
     "nominal": 0.1
   },
-  "Nevro": {
-    "figi": "BBG001K61W36",
-    "currency": "usd",
-    "ticker": "NVRO",
-    "sector": "health_care",
-    "isin": "US64157F1030",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.001
-  },
   "Masimo Corporation": {
     "figi": "BBG000C3W281",
     "currency": "usd",
     "ticker": "MASI",
     "sector": "health_care",
     "isin": "US5747951003",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.001
+  },
+  "Nevro": {
+    "figi": "BBG001K61W36",
+    "currency": "usd",
+    "ticker": "NVRO",
+    "sector": "health_care",
+    "isin": "US64157F1030",
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.001
@@ -14769,16 +14839,6 @@
     "exchange": "spb_close",
     "nominal": 0.01
   },
-  "ESCO Technologies Inc.": {
-    "figi": "BBG000C4S3P3",
-    "currency": "usd",
-    "ticker": "ESE",
-    "sector": "industrials",
-    "isin": "US2963151046",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.01
-  },
   "Graco": {
     "figi": "US3841091040",
     "currency": "usd",
@@ -14788,6 +14848,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 1
+  },
+  "ESCO Technologies Inc.": {
+    "figi": "BBG000C4S3P3",
+    "currency": "usd",
+    "ticker": "ESE",
+    "sector": "industrials",
+    "isin": "US2963151046",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.01
   },
   "OceanPal": {
     "figi": "MHY6430L1609",
@@ -14909,16 +14979,6 @@
     "exchange": "nasdaq",
     "nominal": 0.001
   },
-  "Intercontinental Exchange": {
-    "figi": "BBG000C1FB75",
-    "currency": "usd",
-    "ticker": "ICE",
-    "sector": "financial",
-    "isin": "US45866F1049",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.01
-  },
   "Columbia Banking System": {
     "figi": "BBG000CTGXS2",
     "currency": "usd",
@@ -14928,6 +14988,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0
+  },
+  "Intercontinental Exchange": {
+    "figi": "BBG000C1FB75",
+    "currency": "usd",
+    "ticker": "ICE",
+    "sector": "financial",
+    "isin": "US45866F1049",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.01
   },
   "Hapag-Lloyd AG": {
     "figi": "TCS00B3Y0LM6",
@@ -15008,16 +15078,6 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 10
-  },
-  "Aileron Therapeutics": {
-    "figi": "BBG002454KR1",
-    "currency": "usd",
-    "ticker": "ALRN",
-    "sector": "health_care",
-    "isin": "US00887A2042",
-    "lot": 1,
-    "exchange": "nasdaq",
-    "nominal": 0.001
   },
   "Pennant Group Inc": {
     "figi": "US70805E1091",
@@ -15539,16 +15599,6 @@
     "exchange": "MOEX",
     "nominal": 1
   },
-  "Bakkt Holdings": {
-    "figi": "BBG00XRJ7Y40",
-    "currency": "usd",
-    "ticker": "BKKT",
-    "sector": "it",
-    "isin": "US05759B1070",
-    "lot": 1,
-    "exchange": "dealer_int_exchange",
-    "nominal": 0.0001
-  },
   "Rimini Street": {
     "figi": "BBG008W23T50",
     "currency": "usd",
@@ -15557,6 +15607,16 @@
     "isin": "US76674Q1076",
     "lot": 1,
     "exchange": "nasdaq",
+    "nominal": 0.0001
+  },
+  "Bakkt Holdings": {
+    "figi": "BBG00XRJ7Y40",
+    "currency": "usd",
+    "ticker": "BKKT",
+    "sector": "it",
+    "isin": "US05759B1070",
+    "lot": 1,
+    "exchange": "dealer_int_exchange",
     "nominal": 0.0001
   },
   "Avanti Acquisition Corp": {
@@ -16059,16 +16119,6 @@
     "exchange": "MOEX",
     "nominal": 7.2
   },
-  "Dicerna Pharmaceuticals": {
-    "figi": "BBG001J1DB23",
-    "currency": "usd",
-    "ticker": "DRNA",
-    "sector": "health_care",
-    "isin": "US2530311081",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.0001
-  },
   "Deutsche EuroShop AG": {
     "figi": "TCS000DRC225",
     "currency": "eur",
@@ -16078,6 +16128,16 @@
     "lot": 1,
     "exchange": "otcus",
     "nominal": 0
+  },
+  "Dicerna Pharmaceuticals": {
+    "figi": "BBG001J1DB23",
+    "currency": "usd",
+    "ticker": "DRNA",
+    "sector": "health_care",
+    "isin": "US2530311081",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.0001
   },
   "Forum Energy Technologies": {
     "figi": "TCS4984V1008",
@@ -16209,16 +16269,6 @@
     "exchange": "Issuance",
     "nominal": 0
   },
-  "ГК Самолет": {
-    "figi": "TCS10A0ZZG02",
-    "currency": "rub",
-    "ticker": "RU000A0ZZG02",
-    "sector": "real_estate",
-    "isin": "RU000A0ZZG02",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 25
-  },
   "China Eastern Airlines": {
     "figi": "US16937R1041",
     "currency": "usd",
@@ -16228,6 +16278,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 50
+  },
+  "ГК Самолет": {
+    "figi": "TCS10A0ZZG02",
+    "currency": "rub",
+    "ticker": "RU000A0ZZG02",
+    "sector": "real_estate",
+    "isin": "RU000A0ZZG02",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 25
   },
   "Bridgebio Pharma": {
     "figi": "BBG00P9KDZK6",
@@ -16419,16 +16479,6 @@
     "exchange": "spb_close",
     "nominal": 0.0001
   },
-  "KnowBe4": {
-    "figi": "US49926T1043",
-    "currency": "usd",
-    "ticker": "US49926T1043",
-    "sector": "it",
-    "isin": "US49926T1043",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.00001
-  },
   "Brookfield Asset Management": {
     "figi": "TCS000C9KL89",
     "currency": "usd",
@@ -16438,6 +16488,16 @@
     "lot": 1,
     "exchange": "nyse",
     "nominal": 0
+  },
+  "KnowBe4": {
+    "figi": "US49926T1043",
+    "currency": "usd",
+    "ticker": "US49926T1043",
+    "sector": "it",
+    "isin": "US49926T1043",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.00001
   },
   "Башнефть": {
     "figi": "RU0007976957",
@@ -17029,15 +17089,15 @@
     "exchange": "spb_close",
     "nominal": 0.001
   },
-  "НКХП": {
-    "figi": "TCS00A0BLWD7",
-    "currency": "rub",
-    "ticker": "RU000A0BLWD7",
-    "sector": "industrials",
-    "isin": "RU000A0BLWD7",
+  "Freshworks": {
+    "figi": "BBG0029KYGL5",
+    "currency": "usd",
+    "ticker": "FRSH",
+    "sector": "it",
+    "isin": "US3580541049",
     "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 1
+    "exchange": "nasdaq",
+    "nominal": 0.00001
   },
   "Air Liquide S.A.": {
     "figi": "BBG000BLGLW1",
@@ -17049,15 +17109,15 @@
     "exchange": "Issuance",
     "nominal": 5.5
   },
-  "Freshworks": {
-    "figi": "BBG0029KYGL5",
-    "currency": "usd",
-    "ticker": "FRSH",
-    "sector": "it",
-    "isin": "US3580541049",
+  "НКХП": {
+    "figi": "TCS00A0BLWD7",
+    "currency": "rub",
+    "ticker": "RU000A0BLWD7",
+    "sector": "industrials",
+    "isin": "RU000A0BLWD7",
     "lot": 1,
-    "exchange": "nasdaq",
-    "nominal": 0.00001
+    "exchange": "Issuance",
+    "nominal": 1
   },
   "Global-E Online Ltd": {
     "figi": "IL0011741688",
@@ -17229,16 +17289,6 @@
     "exchange": "nasdaq",
     "nominal": 0.001
   },
-  "Cloudera Inc": {
-    "figi": "BBG000DRJFC8",
-    "currency": "usd",
-    "ticker": "CLDR",
-    "sector": "it",
-    "isin": "US18914U1007",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.00005
-  },
   "The St. Joe Company": {
     "figi": "BBG000D6TC94",
     "currency": "usd",
@@ -17248,6 +17298,16 @@
     "lot": 1,
     "exchange": "nyse",
     "nominal": 0
+  },
+  "Cloudera Inc": {
+    "figi": "BBG000DRJFC8",
+    "currency": "usd",
+    "ticker": "CLDR",
+    "sector": "it",
+    "isin": "US18914U1007",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.00005
   },
   "Россети Центр": {
     "figi": "BBG000VH7TZ8",
@@ -17499,16 +17559,6 @@
     "exchange": "spb_close",
     "nominal": 0
   },
-  "Visa": {
-    "figi": "BBG000PSKYX7",
-    "currency": "usd",
-    "ticker": "V",
-    "sector": "financial",
-    "isin": "US92826C8394",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.0001
-  },
   "Compugen": {
     "figi": "IL0010852080",
     "currency": "usd",
@@ -17518,6 +17568,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.01
+  },
+  "Visa": {
+    "figi": "BBG000PSKYX7",
+    "currency": "usd",
+    "ticker": "V",
+    "sector": "financial",
+    "isin": "US92826C8394",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.0001
   },
   "GrowGeneration Corporation": {
     "figi": "BBG00DBKBYB5",
@@ -17639,10 +17699,10 @@
     "exchange": "Issuance",
     "nominal": 0.01
   },
-  "Computer Programs and Systems": {
+  "Computer Programs and Systems, Inc.": {
     "figi": "BBG000BHY9T1",
     "currency": "usd",
-    "ticker": "CPSI",
+    "ticker": "US2053061030",
     "sector": "it",
     "isin": "US2053061030",
     "lot": 1,
@@ -18329,16 +18389,6 @@
     "exchange": "MOEX",
     "nominal": 1
   },
-  "Church & Dwight": {
-    "figi": "US1713401024",
-    "currency": "usd",
-    "ticker": "US1713401024",
-    "sector": "consumer",
-    "isin": "US1713401024",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 1
-  },
   "Inter Parfums Inc": {
     "figi": "BBG000GCSWR5",
     "currency": "usd",
@@ -18348,6 +18398,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.001
+  },
+  "Church & Dwight": {
+    "figi": "US1713401024",
+    "currency": "usd",
+    "ticker": "US1713401024",
+    "sector": "consumer",
+    "isin": "US1713401024",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 1
   },
   "Bath & Body Works": {
     "figi": "US0708301041",
@@ -18499,16 +18559,6 @@
     "exchange": "spb_close",
     "nominal": 1
   },
-  "Teledyne Technologies Inc": {
-    "figi": "BBG000BMT9T6",
-    "currency": "usd",
-    "ticker": "TDY",
-    "sector": "industrials",
-    "isin": "US8793601050",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.01
-  },
   "MarketAxess Holdings Inc": {
     "figi": "BBG000BJBZ23",
     "currency": "usd",
@@ -18518,6 +18568,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.003
+  },
+  "Teledyne Technologies Inc": {
+    "figi": "BBG000BMT9T6",
+    "currency": "usd",
+    "ticker": "TDY",
+    "sector": "industrials",
+    "isin": "US8793601050",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.01
   },
   "Canadian Pacific Kansas City": {
     "figi": "CA13646K1084",
@@ -18749,16 +18809,6 @@
     "exchange": "spb_close",
     "nominal": 0.0001
   },
-  "Talkspace": {
-    "figi": "BBG00V317301",
-    "currency": "usd",
-    "ticker": "TALK",
-    "sector": "health_care",
-    "isin": "US87427V1035",
-    "lot": 1,
-    "exchange": "nasdaq",
-    "nominal": 0.0001
-  },
   "ASM International": {
     "figi": "BBG000FQS2J0",
     "currency": "eur",
@@ -18768,6 +18818,16 @@
     "lot": 1,
     "exchange": "xetra",
     "nominal": 0.04
+  },
+  "Talkspace": {
+    "figi": "BBG00V317301",
+    "currency": "usd",
+    "ticker": "TALK",
+    "sector": "health_care",
+    "isin": "US87427V1035",
+    "lot": 1,
+    "exchange": "nasdaq",
+    "nominal": 0.0001
   },
   "AVEO Pharmaceuticals Inc": {
     "figi": "BBG000W5G4L3",
@@ -18799,16 +18859,6 @@
     "exchange": "spb_close",
     "nominal": 0.001
   },
-  "Skillz Inc.": {
-    "figi": "US83067L2088",
-    "currency": "usd",
-    "ticker": "US83067L2088",
-    "sector": "it",
-    "isin": "US83067L2088",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.0001
-  },
   "Hewlett Packard Enterprise": {
     "figi": "BBG0078W3NQ3",
     "currency": "usd",
@@ -18818,6 +18868,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.01
+  },
+  "Skillz Inc.": {
+    "figi": "US83067L2088",
+    "currency": "usd",
+    "ticker": "US83067L2088",
+    "sector": "it",
+    "isin": "US83067L2088",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.0001
   },
   "Yankuang Energy Group": {
     "figi": "BBG000BKZ1H3",
@@ -19039,16 +19099,6 @@
     "exchange": "Issuance",
     "nominal": 1
   },
-  "Anavex Life Sciences Corp.": {
-    "figi": "US0327973006",
-    "currency": "usd",
-    "ticker": "US0327973006",
-    "sector": "health_care",
-    "isin": "US0327973006",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.001
-  },
   "ACI Worldwide, Inc.": {
     "figi": "US0044981019",
     "currency": "usd",
@@ -19058,6 +19108,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.005
+  },
+  "Anavex Life Sciences Corp.": {
+    "figi": "US0327973006",
+    "currency": "usd",
+    "ticker": "US0327973006",
+    "sector": "health_care",
+    "isin": "US0327973006",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.001
   },
   "La-Z-Boy": {
     "figi": "BBG000BNLC97",
@@ -19570,7 +19630,7 @@
     "nominal": 0.0001
   },
   "BioNTech SE": {
-    "figi": "US09075V1026",
+    "figi": "TCS9075V1026",
     "currency": "usd",
     "ticker": "US09075V1026",
     "sector": "health_care",
@@ -19669,16 +19729,6 @@
     "exchange": "Issuance",
     "nominal": 0.52
   },
-  "М.видео": {
-    "figi": "TCS10A0JPGA0",
-    "currency": "rub",
-    "ticker": "RU000A0JPGA0",
-    "sector": "consumer",
-    "isin": "RU000A0JPGA0",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 10
-  },
   "Pitney Bowes": {
     "figi": "BBG000BQTMJ9",
     "currency": "usd",
@@ -19688,6 +19738,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 1
+  },
+  "М.видео": {
+    "figi": "TCS10A0JPGA0",
+    "currency": "rub",
+    "ticker": "RU000A0JPGA0",
+    "sector": "consumer",
+    "isin": "RU000A0JPGA0",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 10
   },
   "Customers Bancorp": {
     "figi": "BBG0023XX761",
@@ -20059,6 +20119,16 @@
     "exchange": "Issuance",
     "nominal": 0.01
   },
+  "Finnair Oyj": {
+    "figi": "BBG000BRP820",
+    "currency": "eur",
+    "ticker": "FI0009003230",
+    "sector": "industrials",
+    "isin": "FI0009003230",
+    "lot": 1,
+    "exchange": "helsinki",
+    "nominal": 0
+  },
   "Kforce": {
     "figi": "BBG000LK07B3",
     "currency": "usd",
@@ -20069,16 +20139,6 @@
     "exchange": "nasdaq",
     "nominal": 0.01
   },
-  "Webster Financial Corporation": {
-    "figi": "US9478901096",
-    "currency": "usd",
-    "ticker": "US9478901096",
-    "sector": "financial",
-    "isin": "US9478901096",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.01
-  },
   "Cracker Barrel Old Country Sto": {
     "figi": "BBG000BF33K1",
     "currency": "usd",
@@ -20087,6 +20147,16 @@
     "isin": "US22410J1060",
     "lot": 1,
     "exchange": "spb_close",
+    "nominal": 0.01
+  },
+  "Webster Financial Corporation": {
+    "figi": "US9478901096",
+    "currency": "usd",
+    "ticker": "US9478901096",
+    "sector": "financial",
+    "isin": "US9478901096",
+    "lot": 1,
+    "exchange": "Issuance",
     "nominal": 0.01
   },
   "SCANA": {
@@ -20129,16 +20199,6 @@
     "exchange": "dealer_int_exchange",
     "nominal": 0.0001
   },
-  "Sanderson Farms Inc": {
-    "figi": "BBG000BSHJ96",
-    "currency": "usd",
-    "ticker": "SAFM",
-    "sector": "consumer",
-    "isin": "US8000131040",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 1
-  },
   "Mallinckrodt PLC": {
     "figi": "BBG002BHBHM1",
     "currency": "usd",
@@ -20148,6 +20208,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.2
+  },
+  "Sanderson Farms Inc": {
+    "figi": "BBG000BSHJ96",
+    "currency": "usd",
+    "ticker": "SAFM",
+    "sector": "consumer",
+    "isin": "US8000131040",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 1
   },
   "The Aarons Company": {
     "figi": "BBG00WCNDCZ6",
@@ -20159,16 +20229,6 @@
     "exchange": "spb_close",
     "nominal": 0.5
   },
-  "Tootsie Roll Industries": {
-    "figi": "BBG000BVJNQ9",
-    "currency": "usd",
-    "ticker": "TR",
-    "sector": "consumer",
-    "isin": "US8905161076",
-    "lot": 1,
-    "exchange": "nyse",
-    "nominal": 0.69
-  },
   "АДР Woori Financial Group Inc": {
     "figi": "BBG00MYXJJ27",
     "currency": "usd",
@@ -20178,6 +20238,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 3
+  },
+  "Tootsie Roll Industries": {
+    "figi": "BBG000BVJNQ9",
+    "currency": "usd",
+    "ticker": "TR",
+    "sector": "consumer",
+    "isin": "US8905161076",
+    "lot": 1,
+    "exchange": "nyse",
+    "nominal": 0.69
   },
   "Beacon Roofing Supply Inc": {
     "figi": "US0736851090",
@@ -20396,7 +20466,7 @@
     "sector": "energy",
     "isin": "RU0007976965",
     "lot": 1,
-    "exchange": "MOEX_WEEKEND",
+    "exchange": "MOEX_EVENING_WEEKEND",
     "nominal": 1
   },
   "Garmin": {
@@ -20809,16 +20879,6 @@
     "exchange": "spb_close",
     "nominal": 0.0001
   },
-  "Design Therapeutics": {
-    "figi": "BBG00SNC49V8",
-    "currency": "usd",
-    "ticker": "DSGN",
-    "sector": "health_care",
-    "isin": "US25056L1035",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.0001
-  },
   "Samsung SDI": {
     "figi": "BBG000BCY1G3",
     "currency": "usd",
@@ -20828,6 +20888,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0
+  },
+  "Design Therapeutics": {
+    "figi": "BBG00SNC49V8",
+    "currency": "usd",
+    "ticker": "DSGN",
+    "sector": "health_care",
+    "isin": "US25056L1035",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.0001
   },
   "TherapeuticsMD": {
     "figi": "BBG000LKB954",
@@ -21490,11 +21560,11 @@
     "nominal": 3
   },
   "The Cooper Companies": {
-    "figi": "BBG000BG3445",
+    "figi": "TCS166485019",
     "currency": "usd",
     "ticker": "COO",
     "sector": "health_care",
-    "isin": "US2166484020",
+    "isin": "US2166485019",
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.1
@@ -21549,16 +21619,6 @@
     "exchange": "spb_close",
     "nominal": 0.01
   },
-  "Россети Центр и Приволжье": {
-    "figi": "TCS00A0JPN96",
-    "currency": "rub",
-    "ticker": "RU000A0JPN96",
-    "sector": "utilities",
-    "isin": "RU000A0JPN96",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.1
-  },
   "fuboTV": {
     "figi": "BBG002CV4Q74",
     "currency": "usd",
@@ -21568,6 +21628,16 @@
     "lot": 1,
     "exchange": "nyse",
     "nominal": 0.0001
+  },
+  "Россети Центр и Приволжье": {
+    "figi": "TCS00A0JPN96",
+    "currency": "rub",
+    "ticker": "RU000A0JPN96",
+    "sector": "utilities",
+    "isin": "RU000A0JPN96",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.1
   },
   "SM Energy": {
     "figi": "BBG000BFV115",
@@ -21579,16 +21649,6 @@
     "exchange": "nyse",
     "nominal": 0.01
   },
-  "RWE AG": {
-    "figi": "BBGRWE000000",
-    "currency": "eur",
-    "ticker": "BBGRWE000000",
-    "sector": "utilities",
-    "isin": "BBGRWE000000",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0
-  },
   "XPEL": {
     "figi": "BBG000R5XCX9",
     "currency": "usd",
@@ -21598,6 +21658,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.001
+  },
+  "RWE AG": {
+    "figi": "BBGRWE000000",
+    "currency": "eur",
+    "ticker": "BBGRWE000000",
+    "sector": "utilities",
+    "isin": "BBGRWE000000",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0
   },
   "Taronis Technologies Inc": {
     "figi": "BBG000JCHY90",
@@ -22829,22 +22899,22 @@
     "exchange": "nyse",
     "nominal": 60
   },
-  "Cowen, Inc.": {
-    "figi": "BBG000ND1SB0",
-    "currency": "usd",
-    "ticker": "COWN",
-    "sector": "financial",
-    "isin": "US2236226062",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.01
-  },
   "ePlus Inc": {
     "figi": "BBG000HN7W02",
     "currency": "usd",
     "ticker": "PLUS",
     "sector": "it",
     "isin": "US2942681071",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.01
+  },
+  "Cowen, Inc.": {
+    "figi": "BBG000ND1SB0",
+    "currency": "usd",
+    "ticker": "COWN",
+    "sector": "financial",
+    "isin": "US2236226062",
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.01
@@ -22909,16 +22979,6 @@
     "exchange": "nyse",
     "nominal": 0.01
   },
-  "thyssenkrupp AG": {
-    "figi": "BBG000BHPVF7",
-    "currency": "eur",
-    "ticker": "TKA",
-    "sector": "materials",
-    "isin": "DE0007500001",
-    "lot": 1,
-    "exchange": "xetra",
-    "nominal": 0
-  },
   "Galectin Therapeutics Inc.": {
     "figi": "BBG000BK6FP5",
     "currency": "usd",
@@ -22928,6 +22988,16 @@
     "lot": 1,
     "exchange": "nasdaq",
     "nominal": 0.001
+  },
+  "thyssenkrupp AG": {
+    "figi": "BBG000BHPVF7",
+    "currency": "eur",
+    "ticker": "TKA",
+    "sector": "materials",
+    "isin": "DE0007500001",
+    "lot": 1,
+    "exchange": "xetra",
+    "nominal": 0
   },
   "ДИОД": {
     "figi": "BBG000R0L782",
@@ -23427,16 +23497,6 @@
     "isin": "US8269171067",
     "lot": 1,
     "exchange": "spb_close",
-    "nominal": 0.0001
-  },
-  "Faraday Future Intelligent Electric": {
-    "figi": "US3073595056",
-    "currency": "usd",
-    "ticker": "US3073595056",
-    "sector": "electrocars",
-    "isin": "US3073595056",
-    "lot": 1,
-    "exchange": "nasdaq",
     "nominal": 0.0001
   },
   "Ollie's Bargain Outlet Holding": {
@@ -24029,16 +24089,6 @@
     "exchange": "nasdaq",
     "nominal": 0.0001
   },
-  "Terex Corporation": {
-    "figi": "US8807791038",
-    "currency": "usd",
-    "ticker": "US8807791038",
-    "sector": "industrials",
-    "isin": "US8807791038",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.01
-  },
   "Caesars Entertainment Corporation": {
     "figi": "BBG0074Q3NK6",
     "currency": "usd",
@@ -24048,6 +24098,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.00001
+  },
+  "Terex Corporation": {
+    "figi": "US8807791038",
+    "currency": "usd",
+    "ticker": "US8807791038",
+    "sector": "industrials",
+    "isin": "US8807791038",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.01
   },
   "Ingersoll-Rand": {
     "figi": "BBG002R1CW27",
@@ -24139,16 +24199,6 @@
     "exchange": "nasdaq",
     "nominal": 0.001
   },
-  "АЛРОСА-Нюрба": {
-    "figi": "BBG002B25NL9",
-    "currency": "rub",
-    "ticker": "ALNU",
-    "sector": "materials",
-    "isin": "RU000A0JP468",
-    "lot": 1,
-    "exchange": "moex_close",
-    "nominal": 25
-  },
   "Cisco": {
     "figi": "TCS7275R1023",
     "currency": "rub",
@@ -24158,6 +24208,16 @@
     "lot": 1,
     "exchange": "moex_close",
     "nominal": 0.001
+  },
+  "АЛРОСА-Нюрба": {
+    "figi": "BBG002B25NL9",
+    "currency": "rub",
+    "ticker": "ALNU",
+    "sector": "materials",
+    "isin": "RU000A0JP468",
+    "lot": 1,
+    "exchange": "moex_close",
+    "nominal": 25
   },
   "Dick's Sporting Goods Inc": {
     "figi": "BBG000F6ZWH2",
@@ -24429,16 +24489,6 @@
     "exchange": "xetra",
     "nominal": 0.02
   },
-  "Вторая генерирующая компания оптового рынка электроэнергии": {
-    "figi": "BBG000RK52V1",
-    "currency": "rub",
-    "ticker": "OGKB",
-    "sector": "utilities",
-    "isin": "RU000A0JNG55",
-    "lot": 1000,
-    "exchange": "MOEX_EVENING_WEEKEND",
-    "nominal": 0.3627
-  },
   "Carney Technology Acquisition Corp II": {
     "figi": "BBG00XTVXMB0",
     "currency": "usd",
@@ -24448,6 +24498,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.0001
+  },
+  "Вторая генерирующая компания оптового рынка электроэнергии": {
+    "figi": "BBG000RK52V1",
+    "currency": "rub",
+    "ticker": "OGKB",
+    "sector": "utilities",
+    "isin": "RU000A0JNG55",
+    "lot": 1000,
+    "exchange": "MOEX_EVENING_WEEKEND",
+    "nominal": 0.3627
   },
   "Capgemini SE": {
     "figi": "BBG000BBY7M5",
@@ -24529,16 +24589,6 @@
     "exchange": "spb_close",
     "nominal": 0.01
   },
-  "Zendesk Inc": {
-    "figi": "US98936J1016",
-    "currency": "usd",
-    "ticker": "US98936J1016",
-    "sector": "it",
-    "isin": "US98936J1016",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.01
-  },
   "Evelo Biosciences": {
     "figi": "US2997341035",
     "currency": "usd",
@@ -24548,6 +24598,16 @@
     "lot": 1,
     "exchange": "nasdaq",
     "nominal": 0.001
+  },
+  "Zendesk Inc": {
+    "figi": "US98936J1016",
+    "currency": "usd",
+    "ticker": "US98936J1016",
+    "sector": "it",
+    "isin": "US98936J1016",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.01
   },
   "АДР Gracell Biotechnologies": {
     "figi": "BBG00YM43758",
@@ -25199,16 +25259,6 @@
     "exchange": "Issuance",
     "nominal": 0.01
   },
-  "Tilray": {
-    "figi": "BBG00L7XTP60",
-    "currency": "usd",
-    "ticker": "TLRY",
-    "sector": "health_care",
-    "isin": "US88688T1007",
-    "lot": 1,
-    "exchange": "dealer_int_exchange",
-    "nominal": 0.0001
-  },
   "RingCentral Inc": {
     "figi": "US76680R2067",
     "currency": "usd",
@@ -25217,6 +25267,16 @@
     "isin": "US76680R2067",
     "lot": 1,
     "exchange": "Issuance",
+    "nominal": 0.0001
+  },
+  "Tilray": {
+    "figi": "BBG00L7XTP60",
+    "currency": "usd",
+    "ticker": "TLRY",
+    "sector": "health_care",
+    "isin": "US88688T1007",
+    "lot": 1,
+    "exchange": "dealer_int_exchange",
     "nominal": 0.0001
   },
   "Agenus Inc.": {
@@ -25379,16 +25439,6 @@
     "exchange": "Issuance",
     "nominal": 0.01
   },
-  "Якутскэнерго - привилегированные акции": {
-    "figi": "BBG100PQYM17",
-    "currency": "rub",
-    "ticker": "YKENP",
-    "sector": "utilities",
-    "isin": "RU0007796827",
-    "lot": 1,
-    "exchange": "MOEX",
-    "nominal": 2.22
-  },
   "Xcel Energy": {
     "figi": "US98389B1008",
     "currency": "usd",
@@ -25398,6 +25448,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 2.5
+  },
+  "Якутскэнерго - привилегированные акции": {
+    "figi": "BBG100PQYM17",
+    "currency": "rub",
+    "ticker": "YKENP",
+    "sector": "utilities",
+    "isin": "RU0007796827",
+    "lot": 1,
+    "exchange": "MOEX",
+    "nominal": 2.22
   },
   "Сбер Банк - привилегированные акции": {
     "figi": "TCS009029557",
@@ -25619,16 +25679,6 @@
     "exchange": "spb_close",
     "nominal": 0.0001
   },
-  "TWC Tech Holdings II Corp": {
-    "figi": "BBG00XLQN448",
-    "currency": "usd",
-    "ticker": "TWCT",
-    "sector": "financial",
-    "isin": "US90117G1058",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.0001
-  },
   "Clovis Oncology": {
     "figi": "BBG001QSGW81",
     "currency": "usd",
@@ -25638,6 +25688,16 @@
     "lot": 1,
     "exchange": "nasdaq",
     "nominal": 0.001
+  },
+  "TWC Tech Holdings II Corp": {
+    "figi": "BBG00XLQN448",
+    "currency": "usd",
+    "ticker": "TWCT",
+    "sector": "financial",
+    "isin": "US90117G1058",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.0001
   },
   "Frontier Communications Parent": {
     "figi": "BBG010MVVVW7",
@@ -25709,16 +25769,6 @@
     "exchange": "spb_close",
     "nominal": 1
   },
-  "Diageo PLC": {
-    "figi": "BBG000BWZSZ8",
-    "currency": "usd",
-    "ticker": "DEO",
-    "sector": "consumer",
-    "isin": "US25243Q2057",
-    "lot": 1,
-    "exchange": "nyse",
-    "nominal": 4
-  },
   "Rambus Inc.": {
     "figi": "BBG000BR32C6",
     "currency": "usd",
@@ -25728,6 +25778,16 @@
     "lot": 1,
     "exchange": "nasdaq",
     "nominal": 0.001
+  },
+  "Diageo PLC": {
+    "figi": "BBG000BWZSZ8",
+    "currency": "usd",
+    "ticker": "DEO",
+    "sector": "consumer",
+    "isin": "US25243Q2057",
+    "lot": 1,
+    "exchange": "nyse",
+    "nominal": 4
   },
   "ImmunityBio": {
     "figi": "BBG007T9DYW9",
@@ -25768,6 +25828,16 @@
     "lot": 1,
     "exchange": "nasdaq",
     "nominal": 0.01
+  },
+  "РКК Энергия": {
+    "figi": "RU000A107MH9",
+    "currency": "rub",
+    "ticker": "RU000A107MH9",
+    "sector": "other",
+    "isin": "RU000A107MH9",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 1000
   },
   "Essential Utilities, Inc.": {
     "figi": "BBG000BRMJN6",
@@ -25918,6 +25988,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0
+  },
+  "China Tourism Group Duty Free": {
+    "figi": "BBG0195DR728",
+    "currency": "hkd",
+    "ticker": "1880",
+    "sector": "consumer",
+    "isin": "CNE100004YZ4",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 1
   },
   "Regency Centers REIT": {
     "figi": "BBG000BL46Q4",
@@ -26779,16 +26859,6 @@
     "exchange": "spb_close",
     "nominal": 0.01
   },
-  "Audacy, Inc.": {
-    "figi": "BBG000C55NZ0",
-    "currency": "usd",
-    "ticker": "AUD",
-    "sector": "telecom",
-    "isin": "US05070N1037",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.01
-  },
   "Ichor Holdings Ltd": {
     "figi": "BBG00F9VSCH3",
     "currency": "usd",
@@ -26798,6 +26868,16 @@
     "lot": 1,
     "exchange": "nasdaq",
     "nominal": 0.0001
+  },
+  "Audacy, Inc.": {
+    "figi": "BBG000C55NZ0",
+    "currency": "usd",
+    "ticker": "AUD",
+    "sector": "telecom",
+    "isin": "US05070N1037",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.01
   },
   "Cadence Bank": {
     "figi": "BBG000D3MJP5",
@@ -27159,16 +27239,6 @@
     "exchange": "spb_close",
     "nominal": 0.01
   },
-  "New China Life Insurance": {
-    "figi": "BBG0028VY3J4",
-    "currency": "hkd",
-    "ticker": "1336",
-    "sector": "financial",
-    "isin": "CNE100001922",
-    "lot": 10,
-    "exchange": "spb_close",
-    "nominal": 1
-  },
   "Coterra Energy": {
     "figi": "BBG000C3GN47",
     "currency": "usd",
@@ -27178,6 +27248,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.1
+  },
+  "New China Life Insurance": {
+    "figi": "BBG0028VY3J4",
+    "currency": "hkd",
+    "ticker": "1336",
+    "sector": "financial",
+    "isin": "CNE100001922",
+    "lot": 10,
+    "exchange": "spb_close",
+    "nominal": 1
   },
   "Aphria Inc": {
     "figi": "BBG00805D2Z3",
@@ -29599,6 +29679,16 @@
     "exchange": "nasdaq",
     "nominal": 0
   },
+  "ЛК Европлан ао01": {
+    "figi": "TCS20A0ZZFS9",
+    "currency": "rub",
+    "ticker": "LEAS",
+    "sector": "other",
+    "isin": "RU000A0ZZFS9",
+    "lot": 1,
+    "exchange": "moex_close",
+    "nominal": 1
+  },
   "ASGN Inc": {
     "figi": "BBG000CRN8N8",
     "currency": "usd",
@@ -30019,16 +30109,6 @@
     "exchange": "Issuance",
     "nominal": 0.0001
   },
-  "Hong Kong Exchanges and Clearing": {
-    "figi": "BBG000BGW354",
-    "currency": "hkd",
-    "ticker": "388",
-    "sector": "financial",
-    "isin": "HK0388045442",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 1
-  },
   "Marcus & Millichap Inc": {
     "figi": "BBG005GBRSR6",
     "currency": "usd",
@@ -30038,6 +30118,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.0001
+  },
+  "Hong Kong Exchanges and Clearing": {
+    "figi": "BBG000BGW354",
+    "currency": "hkd",
+    "ticker": "388",
+    "sector": "financial",
+    "isin": "HK0388045442",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 1
   },
   "EastGroup Properties REIT": {
     "figi": "BBG000BHRBT4",
@@ -30119,16 +30209,6 @@
     "exchange": "spb_close",
     "nominal": 0.01
   },
-  "Applied Industrial Technologies": {
-    "figi": "BBG000BBHHP9",
-    "currency": "usd",
-    "ticker": "AIT",
-    "sector": "industrials",
-    "isin": "US03820C1053",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0
-  },
   "Gibraltar Industries Inc": {
     "figi": "BBG000BKQDQ7",
     "currency": "usd",
@@ -30138,6 +30218,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.01
+  },
+  "Applied Industrial Technologies": {
+    "figi": "BBG000BBHHP9",
+    "currency": "usd",
+    "ticker": "AIT",
+    "sector": "industrials",
+    "isin": "US03820C1053",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0
   },
   "Barclays PLC": {
     "figi": "BBG000BCZ4M9",
@@ -30269,16 +30359,6 @@
     "exchange": "spb_close",
     "nominal": 0.01
   },
-  "Мультисистема": {
-    "figi": "BBG001BBSZV8",
-    "currency": "rub",
-    "ticker": "MSST",
-    "sector": "other",
-    "isin": "RU000A0JTFH9",
-    "lot": 100,
-    "exchange": "moex_close",
-    "nominal": 0.001
-  },
   "АДР Niu Technologies": {
     "figi": "BBG00M37BS44",
     "currency": "usd",
@@ -30288,6 +30368,16 @@
     "lot": 1,
     "exchange": "nasdaq",
     "nominal": 2
+  },
+  "Мультисистема": {
+    "figi": "BBG001BBSZV8",
+    "currency": "rub",
+    "ticker": "MSST",
+    "sector": "other",
+    "isin": "RU000A0JTFH9",
+    "lot": 100,
+    "exchange": "moex_close",
+    "nominal": 0.001
   },
   "Cohu Inc.": {
     "figi": "BBG000DKMJ86",
@@ -30849,16 +30939,6 @@
     "exchange": "Issuance",
     "nominal": 0.001
   },
-  "BB&T Corporation": {
-    "figi": "OLD000BYYLS8",
-    "currency": "usd",
-    "ticker": "BBTold",
-    "sector": "financial",
-    "isin": "US0549371070",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 5
-  },
   "CK Asset Holdings": {
     "figi": "BBG007WDD4B5",
     "currency": "hkd",
@@ -30868,6 +30948,16 @@
     "lot": 10,
     "exchange": "spb_close",
     "nominal": 1
+  },
+  "BB&T Corporation": {
+    "figi": "OLD000BYYLS8",
+    "currency": "usd",
+    "ticker": "BBTold",
+    "sector": "financial",
+    "isin": "US0549371070",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 5
   },
   "Eos Energy Enterprises, Inc.": {
     "figi": "BBG00V1KJ6F5",
@@ -31048,16 +31138,6 @@
     "lot": 100,
     "exchange": "MOEX",
     "nominal": 10
-  },
-  "Apollo Medical Holdings": {
-    "figi": "BBG000H7ZK57",
-    "currency": "usd",
-    "ticker": "AMEH",
-    "sector": "health_care",
-    "isin": "US03763A2078",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.001
   },
   "Schneider National": {
     "figi": "BBG000DR87M7",
@@ -31459,16 +31539,6 @@
     "exchange": "Issuance",
     "nominal": 0.001
   },
-  "Deutsche Wohnen SE": {
-    "figi": "DE000A0HN5C6",
-    "currency": "eur",
-    "ticker": "DE000A0HN5C6",
-    "sector": "real_estate",
-    "isin": "DE000A0HN5C6",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0
-  },
   "AMC Entertainment Holdings Inc": {
     "figi": "TCS0165C1045",
     "currency": "usd",
@@ -31478,6 +31548,16 @@
     "lot": 1,
     "exchange": "nyse",
     "nominal": 0.01
+  },
+  "Deutsche Wohnen SE": {
+    "figi": "DE000A0HN5C6",
+    "currency": "eur",
+    "ticker": "DE000A0HN5C6",
+    "sector": "real_estate",
+    "isin": "DE000A0HN5C6",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0
   },
   "VYNE Therapeutics": {
     "figi": "BBG00H5W8GM8",
@@ -32099,16 +32179,6 @@
     "exchange": "nasdaq",
     "nominal": 0
   },
-  "Аквамарин": {
-    "figi": "RU000A107PR1",
-    "currency": "rub",
-    "ticker": "RU000A107PR1",
-    "sector": "other",
-    "isin": "RU000A107PR1",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 1
-  },
   "Argenx SE": {
     "figi": "BBG00GHB88X9",
     "currency": "usd",
@@ -32117,6 +32187,16 @@
     "isin": "US04016X1019",
     "lot": 1,
     "exchange": "nasdaq",
+    "nominal": 1
+  },
+  "Аквамарин": {
+    "figi": "RU000A107PR1",
+    "currency": "rub",
+    "ticker": "RU000A107PR1",
+    "sector": "other",
+    "isin": "RU000A107PR1",
+    "lot": 1,
+    "exchange": "Issuance",
     "nominal": 1
   },
   "Лензолото - привилегированные акции": {
@@ -32678,6 +32758,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.0001
+  },
+  "IPO Европлан": {
+    "figi": "ISSUANCEEURP",
+    "currency": "rub",
+    "ticker": "ISSUANCEEURP",
+    "sector": "other",
+    "isin": "ISSUANCEEURP",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0
   },
   "ManTech International Corp VA": {
     "figi": "BBG000BGF8B5",
@@ -33599,16 +33689,6 @@
     "exchange": "spb_close",
     "nominal": 1
   },
-  "Ростовоблгаз": {
-    "figi": "BBG003M5Q5B5",
-    "currency": "rub",
-    "ticker": "RTGZ",
-    "sector": "energy",
-    "isin": "RU000A0JPG04",
-    "lot": 1,
-    "exchange": "MOEX",
-    "nominal": 2000
-  },
   "Vy Global Growth": {
     "figi": "BBG00Y6V2640",
     "currency": "usd",
@@ -33618,6 +33698,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.0001
+  },
+  "Ростовоблгаз": {
+    "figi": "BBG003M5Q5B5",
+    "currency": "rub",
+    "ticker": "RTGZ",
+    "sector": "energy",
+    "isin": "RU000A0JPG04",
+    "lot": 1,
+    "exchange": "MOEX",
+    "nominal": 2000
   },
   "Denso Corp": {
     "figi": "BBG000BGN9N1",
@@ -34659,16 +34749,6 @@
     "exchange": "nasdaq",
     "nominal": 0.0001
   },
-  "Новошип - привилегированные акции": {
-    "figi": "TCS009177281",
-    "currency": "rub",
-    "ticker": "NOMPP",
-    "sector": "industrials",
-    "isin": "RU0009177281",
-    "lot": 1,
-    "exchange": "otc_ncc",
-    "nominal": 1
-  },
   "Owl Rock Capital": {
     "figi": "BBG00DB0XYC4",
     "currency": "usd",
@@ -34678,6 +34758,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.01
+  },
+  "Новошип - привилегированные акции": {
+    "figi": "TCS009177281",
+    "currency": "rub",
+    "ticker": "NOMPP",
+    "sector": "industrials",
+    "isin": "RU0009177281",
+    "lot": 1,
+    "exchange": "otc_ncc",
+    "nominal": 1
   },
   "Monster Beverage": {
     "figi": "BBG008NVB1C0",
@@ -35839,16 +35929,6 @@
     "exchange": "Issuance",
     "nominal": 0.001
   },
-  "АДР Compania de Minas Buenaventura": {
-    "figi": "BBG000GPXR82",
-    "currency": "usd",
-    "ticker": "BVN",
-    "sector": "materials",
-    "isin": "US2044481040",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 1
-  },
   "IAA, Inc.": {
     "figi": "BBG00K7ZQ662",
     "currency": "usd",
@@ -35858,6 +35938,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.01
+  },
+  "АДР Compania de Minas Buenaventura": {
+    "figi": "BBG000GPXR82",
+    "currency": "usd",
+    "ticker": "BVN",
+    "sector": "materials",
+    "isin": "US2044481040",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 1
   },
   "ICBC": {
     "figi": "BBG000Q16VR4",
@@ -36189,16 +36279,6 @@
     "exchange": "nasdaq",
     "nominal": 0.00001
   },
-  "A10 Networks Inc": {
-    "figi": "US0021211018",
-    "currency": "usd",
-    "ticker": "US0021211018",
-    "sector": "it",
-    "isin": "US0021211018",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.00001
-  },
   "MasterBrand": {
     "figi": "BBG01B9G42Y3",
     "currency": "usd",
@@ -36208,6 +36288,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.01
+  },
+  "A10 Networks Inc": {
+    "figi": "US0021211018",
+    "currency": "usd",
+    "ticker": "US0021211018",
+    "sector": "it",
+    "isin": "US0021211018",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.00001
   },
   "Telaria Inc": {
     "figi": "BBG0022FSWP1",
@@ -36329,16 +36419,6 @@
     "exchange": "Issuance",
     "nominal": 0.01
   },
-  "Россети Кубань": {
-    "figi": "BBG000CV6PB3",
-    "currency": "rub",
-    "ticker": "KUBE",
-    "sector": "utilities",
-    "isin": "RU0009046767",
-    "lot": 10,
-    "exchange": "MOEX",
-    "nominal": 100
-  },
   "SPAC Li-Cycle": {
     "figi": "BBG00Y2JBLW7",
     "currency": "usd",
@@ -36348,6 +36428,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.0001
+  },
+  "Россети Кубань": {
+    "figi": "BBG000CV6PB3",
+    "currency": "rub",
+    "ticker": "KUBE",
+    "sector": "utilities",
+    "isin": "RU0009046767",
+    "lot": 10,
+    "exchange": "MOEX",
+    "nominal": 100
   },
   "Arista Networks Inc": {
     "figi": "US0404131064",
@@ -36749,16 +36839,6 @@
     "exchange": "nasdaq",
     "nominal": 0.4
   },
-  "Carnival": {
-    "figi": "BBG000BF6LY3",
-    "currency": "usd",
-    "ticker": "CCL",
-    "sector": "consumer",
-    "isin": "PA1436583006",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.01
-  },
   "Equinor ASA": {
     "figi": "BBG000NT0ZZ4",
     "currency": "usd",
@@ -36819,16 +36899,6 @@
     "exchange": "spb_close",
     "nominal": 0.0001
   },
-  "Employers Holdings Inc": {
-    "figi": "BBG000DJX7Q3",
-    "currency": "usd",
-    "ticker": "EIG",
-    "sector": "financial",
-    "isin": "US2922181043",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 0.01
-  },
   "Thoma Bravo Advantage": {
     "figi": "BBG00YQ7B9M5",
     "currency": "usd",
@@ -36838,6 +36908,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0
+  },
+  "Employers Holdings Inc": {
+    "figi": "BBG000DJX7Q3",
+    "currency": "usd",
+    "ticker": "EIG",
+    "sector": "financial",
+    "isin": "US2922181043",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 0.01
   },
   "Luna Innovations Incorporated": {
     "figi": "BBG000GP4ZR5",
@@ -37049,16 +37129,6 @@
     "exchange": "Issuance",
     "nominal": 1
   },
-  "ГДР Commercial International Bank Egypt": {
-    "figi": "BBG000CLC0L2",
-    "currency": "usd",
-    "ticker": "CBKD",
-    "sector": "financial",
-    "isin": "US2017122050",
-    "lot": 1,
-    "exchange": "Issuance",
-    "nominal": 1
-  },
   "Primoris Services Corp": {
     "figi": "BBG000BBLPH5",
     "currency": "usd",
@@ -37068,6 +37138,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0.0001
+  },
+  "ГДР Commercial International Bank Egypt": {
+    "figi": "BBG000CLC0L2",
+    "currency": "usd",
+    "ticker": "CBKD",
+    "sector": "financial",
+    "isin": "US2017122050",
+    "lot": 1,
+    "exchange": "Issuance",
+    "nominal": 1
   },
   "L'Oreal SA": {
     "figi": "BBG000BC98G6",
@@ -37348,16 +37428,6 @@
     "lot": 1,
     "exchange": "nasdaq",
     "nominal": 400
-  },
-  "China Tourism Group Duty Free": {
-    "figi": "BBG0195DR728",
-    "currency": "hkd",
-    "ticker": "1880",
-    "sector": "consumer",
-    "isin": "CNE100004YZ4",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 1
   },
   "Leap Therapeutics": {
     "figi": "BBG00DQ929W6",
@@ -37919,16 +37989,6 @@
     "exchange": "MOEX",
     "nominal": 1
   },
-  "Pluralsight Inc": {
-    "figi": "BBG00KMYC574",
-    "currency": "usd",
-    "ticker": "PS",
-    "sector": "it",
-    "isin": "US72941B1061",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.0001
-  },
   "Mitek Systems": {
     "figi": "BBG000BP3D45",
     "currency": "usd",
@@ -37938,6 +37998,16 @@
     "lot": 1,
     "exchange": "nasdaq",
     "nominal": 0.001
+  },
+  "Pluralsight Inc": {
+    "figi": "BBG00KMYC574",
+    "currency": "usd",
+    "ticker": "PS",
+    "sector": "it",
+    "isin": "US72941B1061",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.0001
   },
   "ТНС энерго Ростов-на-Дону - привилегированные акции": {
     "figi": "BBG000GVFKL9",
@@ -38159,16 +38229,6 @@
     "exchange": "xetra",
     "nominal": 0
   },
-  "Finnair Oyj": {
-    "figi": "BBG000BRP820",
-    "currency": "eur",
-    "ticker": "FIA1S",
-    "sector": "industrials",
-    "isin": "FI0009003230",
-    "lot": 1,
-    "exchange": "helsinki",
-    "nominal": 0
-  },
   "Koninklijke Philips NV": {
     "figi": "BBG000JX4KH9",
     "currency": "eur",
@@ -38339,16 +38399,6 @@
     "exchange": "nasdaq",
     "nominal": 1
   },
-  "Agricultural Bank of China": {
-    "figi": "BBG000T9PJD5",
-    "currency": "hkd",
-    "ticker": "1288",
-    "sector": "financial",
-    "isin": "CNE100000Q43",
-    "lot": 100,
-    "exchange": "spb_close",
-    "nominal": 1
-  },
   "Gulf Keystone Petroleum": {
     "figi": "BBG000QYNHN8",
     "currency": "eur",
@@ -38358,6 +38408,16 @@
     "lot": 1,
     "exchange": "xetra",
     "nominal": 0.01
+  },
+  "Agricultural Bank of China": {
+    "figi": "BBG000T9PJD5",
+    "currency": "hkd",
+    "ticker": "1288",
+    "sector": "financial",
+    "isin": "CNE100000Q43",
+    "lot": 100,
+    "exchange": "spb_close",
+    "nominal": 1
   },
   "Lazard Growth Acquisition Corp I": {
     "figi": "BBG00Z3161S7",
@@ -38369,16 +38429,6 @@
     "exchange": "Issuance",
     "nominal": 0.0001
   },
-  "Галс-Девелопмент": {
-    "figi": "BBG000GVC474",
-    "currency": "rub",
-    "ticker": "HALS",
-    "sector": "real_estate",
-    "isin": "RU000A0JNP96",
-    "lot": 1,
-    "exchange": "moex_close",
-    "nominal": 50
-  },
   "ExOne Company": {
     "figi": "BBG003T67W19",
     "currency": "usd",
@@ -38388,6 +38438,16 @@
     "lot": 1,
     "exchange": "nasdaq",
     "nominal": 0.01
+  },
+  "Галс-Девелопмент": {
+    "figi": "BBG000GVC474",
+    "currency": "rub",
+    "ticker": "HALS",
+    "sector": "real_estate",
+    "isin": "RU000A0JNP96",
+    "lot": 1,
+    "exchange": "moex_close",
+    "nominal": 50
   },
   "Apollo Global Management LLC": {
     "figi": "BBG001LRKS55",
@@ -38449,16 +38509,6 @@
     "exchange": "spb_close",
     "nominal": 0.00125
   },
-  "Akeso Inc": {
-    "figi": "BBG00T5THBS4",
-    "currency": "hkd",
-    "ticker": "9926",
-    "sector": "health_care",
-    "isin": "KYG0146B1032",
-    "lot": 10,
-    "exchange": "spb_close",
-    "nominal": 0.00001
-  },
   "Wendy's": {
     "figi": "BBG000D52545",
     "currency": "usd",
@@ -38468,6 +38518,16 @@
     "lot": 1,
     "exchange": "nasdaq",
     "nominal": 0.1
+  },
+  "Akeso Inc": {
+    "figi": "BBG00T5THBS4",
+    "currency": "hkd",
+    "ticker": "9926",
+    "sector": "health_care",
+    "isin": "KYG0146B1032",
+    "lot": 10,
+    "exchange": "spb_close",
+    "nominal": 0.00001
   },
   "Lions Gate Entertainment Corp": {
     "figi": "BBG000K1T0M8",
@@ -38659,16 +38719,6 @@
     "exchange": "spb_close",
     "nominal": 0.001
   },
-  "Aeva Technologies": {
-    "figi": "BBG00RK5L2N3",
-    "currency": "usd",
-    "ticker": "US00835Q1031",
-    "sector": "it",
-    "isin": "US00835Q1031",
-    "lot": 1,
-    "exchange": "nyse",
-    "nominal": 0.0001
-  },
   "Beam Global": {
     "figi": "BBG000BBJG06",
     "currency": "usd",
@@ -38728,6 +38778,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 0
+  },
+  "Edgio": {
+    "figi": "BBG000P63Y91",
+    "currency": "usd",
+    "ticker": "US53261M1045",
+    "sector": "it",
+    "isin": "US53261M1045",
+    "lot": 1,
+    "exchange": "nasdaq",
+    "nominal": 0.001
   },
   "Pyxus International Inc": {
     "figi": "BBG000BV0800",
@@ -38819,16 +38879,6 @@
     "exchange": "nyse",
     "nominal": 0.0001
   },
-  "Simmons First National Corp": {
-    "figi": "BBG000BSTBM5",
-    "currency": "usd",
-    "ticker": "US8287302009",
-    "sector": "financial",
-    "isin": "US8287302009",
-    "lot": 1,
-    "exchange": "nasdaq",
-    "nominal": 0.01
-  },
   "NACCO Industries": {
     "figi": "BBG000BPTTM2",
     "currency": "usd",
@@ -38838,6 +38888,16 @@
     "lot": 1,
     "exchange": "nyse",
     "nominal": 1
+  },
+  "Simmons First National Corp": {
+    "figi": "BBG000BSTBM5",
+    "currency": "usd",
+    "ticker": "US8287302009",
+    "sector": "financial",
+    "isin": "US8287302009",
+    "lot": 1,
+    "exchange": "nasdaq",
+    "nominal": 0.01
   },
   "Texas Roadhouse Inc": {
     "figi": "BBG000PSJMV7",
@@ -38859,16 +38919,6 @@
     "exchange": "MOEX",
     "nominal": 0.1
   },
-  "Eidos Therapeutics Inc": {
-    "figi": "BBG00KJQGPM0",
-    "currency": "usd",
-    "ticker": "EIDX",
-    "sector": "health_care",
-    "isin": "US28249H1041",
-    "lot": 1,
-    "exchange": "nasdaq",
-    "nominal": 0.001
-  },
   "Royal Dutch Shell (B)": {
     "figi": "BBG000QWMWR6",
     "currency": "usd",
@@ -38878,6 +38928,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 2
+  },
+  "Eidos Therapeutics Inc": {
+    "figi": "BBG00KJQGPM0",
+    "currency": "usd",
+    "ticker": "EIDX",
+    "sector": "health_care",
+    "isin": "US28249H1041",
+    "lot": 1,
+    "exchange": "nasdaq",
+    "nominal": 0.001
   },
   "Friedman Industries": {
     "figi": "BBG000BJTD50",
@@ -39099,16 +39159,6 @@
     "exchange": "nyse",
     "nominal": 0.01
   },
-  "Mimecast Limited": {
-    "figi": "BBG00B6W26V8",
-    "currency": "usd",
-    "ticker": "MIME",
-    "sector": "it",
-    "isin": "GB00BYT5JK65",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.012
-  },
   "STMicroelectronics NV": {
     "figi": "BBG000BHHK06",
     "currency": "eur",
@@ -39118,6 +39168,16 @@
     "lot": 1,
     "exchange": "Issuance",
     "nominal": 1.04
+  },
+  "Mimecast Limited": {
+    "figi": "BBG00B6W26V8",
+    "currency": "usd",
+    "ticker": "MIME",
+    "sector": "it",
+    "isin": "GB00BYT5JK65",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0.012
   },
   "MFA Financial Inc": {
     "figi": "BBG000BL6138",
@@ -39779,16 +39839,6 @@
     "exchange": "spb_close",
     "nominal": 0.25
   },
-  "Hyundai Motor Company АДР": {
-    "figi": "BBG000BL6094",
-    "currency": "usd",
-    "ticker": "USY384721251",
-    "sector": "consumer",
-    "isin": "USY384721251",
-    "lot": 1,
-    "exchange": "lse",
-    "nominal": 0.5
-  },
   "Acorda Therapeutics": {
     "figi": "BBG000FD10V8",
     "currency": "usd",
@@ -39798,6 +39848,16 @@
     "lot": 1,
     "exchange": "nasdaq",
     "nominal": 0.001
+  },
+  "Hyundai Motor Company АДР": {
+    "figi": "BBG000BL6094",
+    "currency": "usd",
+    "ticker": "USY384721251",
+    "sector": "consumer",
+    "isin": "USY384721251",
+    "lot": 1,
+    "exchange": "lse",
+    "nominal": 0.5
   },
   "BioTelemetry Inc": {
     "figi": "BBG000R3RKT8",
@@ -39829,16 +39889,6 @@
     "exchange": "nasdaq",
     "nominal": 0.01
   },
-  "Магаданэнерго - привилегированные акции": {
-    "figi": "BBG0018X75N2",
-    "currency": "rub",
-    "ticker": "MAGEP",
-    "sector": "utilities",
-    "isin": "RU0006758893",
-    "lot": 100,
-    "exchange": "MOEX",
-    "nominal": 1
-  },
   "Chatham Lodging REIT": {
     "figi": "BBG000PT6BR8",
     "currency": "usd",
@@ -39848,6 +39898,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.01
+  },
+  "Магаданэнерго - привилегированные акции": {
+    "figi": "BBG0018X75N2",
+    "currency": "rub",
+    "ticker": "MAGEP",
+    "sector": "utilities",
+    "isin": "RU0006758893",
+    "lot": 100,
+    "exchange": "MOEX",
+    "nominal": 1
   },
   "Northern Genesis Acquisition Corp II": {
     "figi": "BBG00YPS2DZ7",
@@ -41019,16 +41079,6 @@
     "exchange": "spb_close",
     "nominal": 0.1
   },
-  "Infineon Technologies AG": {
-    "figi": "BBG000C8L273",
-    "currency": "eur",
-    "ticker": "IFX@DE",
-    "sector": "it",
-    "isin": "DE0006231004",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0
-  },
   "Clarus Corp": {
     "figi": "BBG000C6QPN3",
     "currency": "usd",
@@ -41048,6 +41098,16 @@
     "lot": 1,
     "exchange": "spb_close",
     "nominal": 0.001
+  },
+  "Infineon Technologies AG": {
+    "figi": "BBG000C8L273",
+    "currency": "eur",
+    "ticker": "IFX@DE",
+    "sector": "it",
+    "isin": "DE0006231004",
+    "lot": 1,
+    "exchange": "spb_close",
+    "nominal": 0
   },
   "SVMK Inc. V": {
     "figi": "BBG00LVGQZL4",
@@ -42179,16 +42239,6 @@
     "exchange": "Issuance",
     "nominal": 0.0001
   },
-  "Edgio": {
-    "figi": "BBG000P63Y91",
-    "currency": "usd",
-    "ticker": "US53261M1045",
-    "sector": "it",
-    "isin": "US53261M1045",
-    "lot": 1,
-    "exchange": "nasdaq",
-    "nominal": 0.001
-  },
   "CASI Pharmaceuticals Inc": {
     "figi": "BBG000GW8ML1",
     "currency": "usd",
@@ -42319,16 +42369,6 @@
     "exchange": "spb_close",
     "nominal": 0.01
   },
-  "Tencent Holdings Ltd": {
-    "figi": "BBG000SGZ3Z0",
-    "currency": "usd",
-    "ticker": "TCEHY",
-    "sector": "telecom",
-    "isin": "US88032Q1094",
-    "lot": 1,
-    "exchange": "dealer_int_exchange",
-    "nominal": 1
-  },
   "Rexford Industrial Realty REIT": {
     "figi": "BBG004MB82R0",
     "currency": "usd",
@@ -42338,6 +42378,16 @@
     "lot": 1,
     "exchange": "nasdaq",
     "nominal": 0.01
+  },
+  "Tencent Holdings Ltd": {
+    "figi": "BBG000SGZ3Z0",
+    "currency": "usd",
+    "ticker": "TCEHY",
+    "sector": "telecom",
+    "isin": "US88032Q1094",
+    "lot": 1,
+    "exchange": "dealer_int_exchange",
+    "nominal": 1
   },
   "Zai Lab Ltd": {
     "figi": "BBG00HFX3N90",
@@ -42609,16 +42659,6 @@
     "exchange": "spb_close",
     "nominal": 0.001
   },
-  "Delphi Technologies": {
-    "figi": "BBG00GTWPCQ0",
-    "currency": "usd",
-    "ticker": "DLPH",
-    "sector": "consumer",
-    "isin": "JE00BD85SC56",
-    "lot": 1,
-    "exchange": "spb_close",
-    "nominal": 0.01
-  },
   "Diamond Offshore Drilling Inc": {
     "figi": "BBG000FJRZ68",
     "currency": "usd",
@@ -42627,6 +42667,16 @@
     "isin": "US25271C1027",
     "lot": 1,
     "exchange": "Issuance",
+    "nominal": 0.01
+  },
+  "Delphi Technologies": {
+    "figi": "BBG00GTWPCQ0",
+    "currency": "usd",
+    "ticker": "DLPH",
+    "sector": "consumer",
+    "isin": "JE00BD85SC56",
+    "lot": 1,
+    "exchange": "spb_close",
     "nominal": 0.01
   },
   "Credit Agricole SA": {

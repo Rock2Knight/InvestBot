@@ -48,14 +48,33 @@ def getDateNow():
     print(cur_time)
 
 """ Функция, моделирующая торговлю и формирующая выходные данные в виде датасета """
-def HistoryTrain(figi, cnt_lots, account_portfolio, ma_interval=5, lot=1):
+def HistoryTrain(figi, cnt_lots, account_portfolio, **kwargs):
+    """ Моделирует торговую активность по историческим данным
+    в соответствии с заданной торговой стратегией.
+
+    :param figi: FIGI-идентификатор торгового инструемнта
+    :param cnt_lots: количество лотов торгуемого иснструмента в портфеле
+    :param account_portfolio: сумма свободных денег в портфеле
+
+    :return:
+    - dfTrades - Pandas-датафрейм со всеми совершенными сделками
+    - dfPortfolio - Pandas-датафрейм с состоянием портфеля в каждый момент времени
+
+    Keyword arguments:
+    :param lot - лотность инструмента
+    :param ma_interval - Интервал SMA
+    :param stopAccount - риск для счета в процентах
+    :param stopLoss - стоп-лосс (максимальный риск для одной позиции) в процентах
+    """
+
     active_cast = 0  # Текущая цена актива
-    #lot = 1  # лотность инструмента
     start_sum = account_portfolio
+    lot = kwargs['lot']
+    ma_interval = kwargs['ma_interval']
 
     # Условия расчета позиции
-    stopAccount = 0.01  # Риск для счета в процентах
-    stopLoss = 0.05  # Точка аннулирования для торговой стратегии в процентах
+    stopAccount = kwargs['stopAccount']  # Риск для счета в процентах
+    stopLoss = kwargs['stopLoss']  # Точка аннулирования для торговой стратегии в процентах
 
     CandlesDF = pd.read_csv("../share_history.csv")  # 1. Получаем готовый датафрейм исторических свечей
     rsiObject = RSI()  # Добавляем RSI индикатор с интервалом 14

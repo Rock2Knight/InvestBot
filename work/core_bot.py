@@ -5,18 +5,22 @@ import json
 from datetime import datetime, timezone, timedelta
 import pytz
 from pathlib import Path
+from typing import Generator
 
 import pandas as pd               # Для датафреймов исторических свечей
 
 from tinkoff.invest import CandleInterval
-from tinkoff.invest.schemas import MoneyValue, InstrumentStatus, Quotation
+from tinkoff.invest.schemas import MoneyValue, InstrumentStatus, Quotation, InstrumentIdType, AssetType, InstrumentType
+from tinkoff.invest.exceptions import RequestError
 
 # Для исторических свечей
-from tinkoff.invest.services import MarketDataCache, MarketDataStreamService
+from tinkoff.invest.services import MarketDataCache, MarketDataStreamService, MarketDataService
 from tinkoff.invest.caching.market_data_cache.cache_settings import (
     MarketDataCacheSettings,
 )
 
+#from .functional import *
+#from .exceptions import *
 from functional import *
 from exceptions import *
 
@@ -107,9 +111,83 @@ def get_all_instruments(message):
             if target_figi == instrument.figi:
                 target_name = instrument.name
 
-        bot.send_message(message.chat.id, target_name+' '+target_figi)
+        #bot.send_message(message.chat.id, target_name+' '+target_figi)
         with open("../shares.json", "w") as write_file:
             json.dump(SharesDict, write_file)          # Dump python-dict to json
+
+
+""" Получение информации об активах """
+@bot.message_handler(commands=['get_assets'])
+def get_all_assets(message):
+    func_time1 = datetime.now(timezone.utc)
+
+    # Создаем словарь для хранения информации о активах
+    #activeDict = {'asset_uid': [], 'type': [], 'asset_name': [], 'instruments': []}
+    activeDict = dict()
+
+    with SandboxClient(TOKEN) as client:   # Запускаем клиент тинькофф-песочницы
+        moment1 = datetime.now(timezone.utc)
+        response = client.instruments.get_assets() # Получаем список всех активов
+        moment2 = datetime.now(timezone.utc)
+        delta = moment2 - moment1
+
+        print(f"Время выполнения метода GetAssets: {delta} секунд\n")
+
+        for asset in response.assets:
+            # Если актив не относится к ценным бумагам, пропускаем, его
+            if asset.type != AssetType.ASSET_TYPE_SECURITY:
+                continue
+
+            activeDict[asset.name] = {'asset_uid': asset.uid, 'instruments': None}
+
+            '''
+            Создаем словарь для списка инструментов по активу
+            instrument_uid - уникальный идентификатор инструмента
+            position_uid - id позиции
+            figi - FIGI инструмента
+            instrument_type - тип инструмента
+            ticker - тикер инструмента
+            class_code - класс-код (секция торгов)
+            links - массив связанных инструментов
+            instrument_kind - тип инструмента
+            '''
+            instrumentDict = dict()
+
+            # Собираем в словарь все инструменты, входящие в актив
+            for instrument in asset.instruments:
+                # Если инструмент не является акцией, пропускаем его
+                if instrument.instrument_kind != InstrumentType.INSTRUMENT_TYPE_SHARE:
+                    continue
+
+                instrumentDict[instrument.uid] = {'instrument_uid': instrument.uid, 'figi': instrument.figi,
+                                                    'instrument_type': instrument.instrument_type,
+                                                    'ticker': instrument.ticker,
+                                                    'class_code': instrument.class_code,
+                                                    'position_uid': instrument.position_uid,
+                                                    'instrument_kind': 'Акция'}
+                '''
+                Словарь связанных инструментов
+                
+                type - тип связи
+                instrument_uid - уникальный идентификатор инструмента
+                '''
+                linkDict = {'type': [], 'instrument_uid': []}
+
+                for link in instrument.links:
+                    linkDict['type'].append(link.type)
+                    linkDict['instrument_uid'].append(link.instrument_uid)
+
+                instrumentDict[instrument.uid]['link'] = linkDict # Добавляем массив связанных инструментов в словарь
+
+            activeDict[asset.name]['instruments'] = instrumentDict  # Добавляем массив инструментов актива в словарь
+
+    with open("../assets.json", 'w') as assets_json:
+        json.dump(activeDict, assets_json)  # Конвертируем датафрейм с активами в json-файл
+
+    func_time2 = datetime.now(timezone.utc)
+    func_delta = func_time2 - func_time1
+    print('Assets are seccessfully loaded!')
+    print(f'Время выполнения функции: {func_delta} секунд')
 
 
 """ На основе запроса пользователя формирует кортеж аргументов для вызова функции get_all_candles сервиса котировок """
@@ -189,6 +267,8 @@ def get_candles(param_list: str):
     param_list = param_list.split(' ')  # Список параметров
     candlesParams = None                  # Список параметров для get_candles
 
+    mode_uid = int(param_list[-1])
+
     try:
         candlesParams = candles_formatter(param_list)
     except InvestBotValueError as iverror:
@@ -201,15 +281,32 @@ def get_candles(param_list: str):
         market_data_cache = MarketDataCache(settings=settings, services=client)
 
         candles = list([])
-        candles_raw = market_data_cache.get_all_candles(        # Test candle
-                figi=candlesParams[0],
-                from_=candlesParams[1],
-                to=candlesParams[2],
-                interval=candlesParams[3],
-        )
-
-        for candle in candles_raw:
-            candles.append(candle)
+        candles_raw = None
+        try:
+            if mode_uid == 0:
+                candles_raw = market_data_cache.get_all_candles(        # Test candle
+                    figi=candlesParams[0],
+                    from_=candlesParams[1],
+                    to=candlesParams[2],
+                    interval=candlesParams[3],
+                )
+            else:
+                candles_raw = client.market_data.get_candles(
+                    instrument_id=candlesParams[0],
+                    from_=candlesParams[1],
+                    to=candlesParams[2],
+                    interval=candlesParams[3]
+                )
+        except Exception as irerror:
+            print('\n\n', irerror.args, '\n')
+            raise irerror
+        finally:
+            if mode_uid == 0:
+                for candle in candles_raw:
+                    candles.append(candle)
+            else:
+                for candle in candles_raw.candles:
+                    candles.append(candle)
 
     return candles
 
@@ -256,6 +353,30 @@ def save_candles(message):
     df_candles.to_csv("../share_history.csv", sep=',')
 
     print("Data have been written")
+
+
+@bot.message_handler(commands=['find_instrument'])
+def find_instrument(message):
+    words = message.text.split(' ')
+    if not words or len(words) < 2:
+        bot.send_message(message.chat.id, 'Неправильный формат команды')
+
+    figi_name = words[-1]
+
+    with SandboxClient(TOKEN) as client:
+        #instrument_info = client.instruments.share_by(id_type=InstrumentIdType.INSTRUMENT_ID_TYPE_FIGI, id=figi_name)
+        instruments_info = client.instruments.find_instrument(query=figi_name)
+
+        for instrument in instruments_info.instruments:
+            print(f"Info about instrument with name = {instrument.name}")
+            print(f"FIGI = {instrument.figi}")
+            print(f"ticker = {instrument.ticker}")
+            print(f"isin = {instrument.isin}")
+            print(f"postion_uid = {instrument.position_uid}")
+            print(f"uid = {instrument.uid}")
+            print(f"class_code = {instrument.class_code}")
+            print("\n\n")
+
 
 if __name__ == '__main__':
     bot.infinity_polling()

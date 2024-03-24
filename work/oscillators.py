@@ -3,9 +3,9 @@ from datetime import datetime
 
 from tinkoff.invest.schemas import HistoricCandle
 
-import core_bot
 import pandas as pd
 from MA_indicator import EMAIndicator
+from .functional import cast_money
 
 
 def formatCandle(size: int, candles: list[HistoricCandle]):
@@ -22,10 +22,10 @@ def formatCandle(size: int, candles: list[HistoricCandle]):
     while i != size:
         up_candle = dict()
         up_candle['time'] = candles[i].time.strftime('%Y-%m-%d_%H:%M:%S')
-        up_candle['open'] = core_bot.cast_money(candles[i].open)
-        up_candle['close'] = core_bot.cast_money(candles[i].close)
-        up_candle['min'] = core_bot.cast_money(candles[i].low)
-        up_candle['max'] = core_bot.cast_money(candles[i].high)
+        up_candle['open'] = cast_money(candles[i].open)
+        up_candle['close'] = cast_money(candles[i].close)
+        up_candle['min'] = cast_money(candles[i].low)
+        up_candle['max'] = cast_money(candles[i].high)
         yield up_candle
         i += 1
 

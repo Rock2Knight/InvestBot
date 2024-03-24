@@ -23,9 +23,11 @@ from work import tech_analyze
 from work.functional import *
 
 # Раздел констант
-FIGI = "BBG00475K6C3"  # FIGI анализируемого инструемента
+FIGI = "BBG00475KKY8"  # FIGI анализируемого инструемента
 MAX_CNT_TICKS = 10     # Максимальное количество подписей по оси X
 LOT = 1                # Лотность торгуемого инструмента
+STOP_ACCOUNT = 0.01    # Риск для счета
+STOP_LOSS = 0.05       # Стоп-лосс для актива
 
 class GraphicApp(QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -43,7 +45,8 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         # Моделируем торговлю на исторических данных
         self.dfTrades, self.dfPortfolio = tech_analyze.HistoryTrain(FIGI, self.cnt_lots,
                                                                     self.account_portfolio, ma_interval=5,
-                                                                    lot=LOT)
+                                                                    lot=LOT, stopAccount=STOP_ACCOUNT,
+                                                                    stopLoss=STOP_LOSS)
         self.countTrades()                  # Подсчитываем прибыльные и убыточные сделки
         self.btnDraw.clicked.connect(self.checkRadio)     # Если была нажата кнопка рисования, проверяем, какой тип график выбран
         self.btnClear.clicked.connect(self.clear_graph)

@@ -61,7 +61,7 @@ def get_accounts(message):
 """ Открытие счета в песочнице """
 @bot.message_handler(commands=['open'])
 def open_account(message):
-    global sandbox_account_flag
+    global sandbox_account_flag         #  Состояние аккаунта в песочнице
 
     if sandbox_account_flag:                                      # если счет в песочнице уже есть,
         message_text = "У вас уже есть аккаунт в песочнице!"      # то выводим соответствующее оповщение
