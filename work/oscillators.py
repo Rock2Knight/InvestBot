@@ -5,7 +5,7 @@ from tinkoff.invest.schemas import HistoricCandle
 
 import pandas as pd
 from MA_indicator import EMAIndicator
-from .functional import cast_money
+from functional import cast_money
 
 
 def formatCandle(size: int, candles: list[HistoricCandle]):

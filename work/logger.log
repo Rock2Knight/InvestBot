@@ -1,0 +1,41 @@
+ERROR:tinkoff.invest.logging:af67a003cf8cae864c9d3518a19026f4 CurrencyBy NOT_FOUND 50002
+ERROR:TeleBot:Infinity polling exception: (<StatusCode.NOT_FOUND: (5, 'not found')>, '50002', Metadata(tracking_id='af67a003cf8cae864c9d3518a19026f4', ratelimit_limit='200, 200;w=60', ratelimit_remaining=199, ratelimit_reset=22, message='instrument not found'))
+ERROR:TeleBot:Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\tinkoff\invest\_errors.py", line 23, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\tinkoff\invest\services.py", line 470, in currency_by
+    response, call = self.stub.CurrencyBy.with_call(
+  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\grpc\_channel.py", line 1043, in with_call
+    return _end_unary_response_blocking(state, call, True, None)
+  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\grpc\_channel.py", line 910, in _end_unary_response_blocking
+    raise _InactiveRpcError(state)  # pytype: disable=not-instantiable
+grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with:
+	status = StatusCode.NOT_FOUND
+	details = "50002"
+	debug_error_string = "UNKNOWN:Error received from peer  {grpc_message:"50002", grpc_status:5, created_time:"2024-03-24T15:55:38.2820411+00:00"}"
+>
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\telebot\__init__.py", line 1016, in infinity_polling
+    self.polling(non_stop=True, timeout=timeout, long_polling_timeout=long_polling_timeout,
+  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\telebot\__init__.py", line 1104, in polling
+    self.__threaded_polling(non_stop=non_stop, interval=interval, timeout=timeout, long_polling_timeout=long_polling_timeout,
+  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\telebot\__init__.py", line 1179, in __threaded_polling
+    raise e
+  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\telebot\__init__.py", line 1141, in __threaded_polling
+    self.worker_pool.raise_exceptions()
+  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\telebot\util.py", line 149, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\telebot\util.py", line 92, in run
+    task(*args, **kwargs)
+  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\telebot\__init__.py", line 7868, in _run_middlewares_and_handler
+    result = handler['function'](message)
+  File "C:\Users\gibad\PycharmProjects\teleBotTest\work\core_bot.py", line 388, in get_currency
+    currency = client.instruments.currency_by(id_type=InstrumentIdType.INSTRUMENT_ID_TYPE_UID,
+  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\tinkoff\invest\_errors.py", line 41, in wrapper
+    raise RequestError(status_code, details, metadata) from e
+tinkoff.invest.exceptions.RequestError: (<StatusCode.NOT_FOUND: (5, 'not found')>, '50002', Metadata(tracking_id='af67a003cf8cae864c9d3518a19026f4', ratelimit_limit='200, 200;w=60', ratelimit_remaining=199, ratelimit_reset=22, message='instrument not found'))
+

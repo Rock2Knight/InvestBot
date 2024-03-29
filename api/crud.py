@@ -1,5 +1,6 @@
 """ CRUD-операции. Пока без схем FastAPI """
 from typing import Optional
+from functools import cache
 
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import UnmappedInstanceError
@@ -17,9 +18,9 @@ def get_exchange_list(db: Session, skip: int = 0, limit: int = 100) -> list[Opti
 def get_sectors_list(db: Session, skip: int = 0, limit: int = 100) -> list[Optional[models.Sector]]:
     return db.query(models.Sector).offset(skip).limit(limit).all()
 
-""" Получение списка бумаг """
-def get_instrument_list(db: Session, skip: int = 0, limit: int = 100) -> Optional[list[models.Instrument]]:
-    return db.query(models.Instrument).offset(skip).limit(limit).all()
+""" Получение списка активов """
+def get_assets_list(db: Session, skip: int = 0, limit: int = 100) -> Optional[list[models.Asset]]:
+    return db.query(models.Asset).offset(skip).limit(limit).all()
 
 """ Получение названия валюты по id """
 def get_currency(db: Session, currency_id: int) -> Optional[models.Currency]:
@@ -63,12 +64,78 @@ def get_last_sector_id(db: Session) -> Optional[int]:
     db_sector = db.query(models.Sector).order_by(models.Sector.id.desc()).first()
     return db_sector.id if db_sector else None
 
+
+""" GET-запросы для типов активов """
+''' Получение типа актива по id '''
+def get_asset_type(db: Session, asset_type_id: int) -> Optional[models.AssetType]:
+    db_asset_type = db.query(models.AssetType).filter(models.AssetType.id == asset_type_id).first()
+    return db_asset_type if db_asset_type else None
+
+""" Получение типа актива по имени """
+def get_asset_type_name(db: Session, asset_type_name: str) -> Optional[models.AssetType]:
+    db_asset_type = db.query(models.AssetType).filter(models.AssetType.name == asset_type_name).first()
+    return db_asset_type if db_asset_type else None
+
+''' Получение id последенго типа актива в таблице '''
+def get_last_asset_type_id(db: Session) -> Optional[int]:
+    db_asset_type = db.query(models.AssetType).order_by(models.AssetType.id.desc()).first()
+    return db_asset_type.id if db_asset_type else None
+
+
+""" GET-запросы для типов инструментов """
+''' Получение типа инструмента по id '''
+def get_instrument_type(db: Session, instrument_type_id: int) -> Optional[models.InstrumentType]:
+    db_instrument_type = db.query(models.InstrumentType).filter(models.InstrumentType.id == instrument_type_id).first()
+    return db_instrument_type if db_instrument_type else None
+
+""" Получение типа инструмента по имени """
+def get_instrument_type_name(db: Session, instrument_type_name: str) -> Optional[models.InstrumentType]:
+    db_instrument_type = db.query(models.InstrumentType).filter(models.InstrumentType.name == instrument_type_name).first()
+    return db_instrument_type if db_instrument_type else None
+
+''' Получение id последенго типа инструмента в таблице '''
+def get_last_instrument_type_id(db: Session) -> Optional[int]:
+    db_instrument_type = db.query(models.InstrumentType).order_by(models.InstrumentType.id.desc()).first()
+    return db_instrument_type.id if db_instrument_type else None
+
+
+""" GET-запросы для активов"""
+''' Получение списка активов '''
+def get_asset_list(db: Session, skip: int = 0, limit: int = 100) -> Optional[list[models.Asset]]:
+    return db.query(models.Asset).offset(skip).limit(limit).all()
+
+''' Получение актива по id '''
+def get_asset(db: Session, asset_id: int) -> Optional[models.Asset]:
+    db_asset = db.query(models.Asset).filter(models.Asset.id == asset_id).first()
+    return db_asset if db_asset else None
+
+''' Получение актива по uid '''
+def get_asset_uid(db: Session, asset_uid: str) -> Optional[models.Asset]:
+    db_asset = db.query(models.Asset).filter(models.Asset.uid == asset_uid).first()
+    return db_asset if db_asset else None
+
+''' Получение актива по имени'''
+def get_asset_name(db: Session, asset_name: str) -> Optional[models.Asset]:
+    db_asset = db.query(models.Asset).filter(models.Asset.name == asset_name).first()
+    return db_asset if db_asset else None
+
+''' Получение id последнего актива в таблице '''
+def get_last_asset_id(db: Session) -> Optional[int]:
+    db_asset = db.query(models.Asset).order_by(models.Asset.id.desc()).first()
+    return db_asset.id if db_asset else None
+
+
+""" GET-запросы для инструментов """
+""" Получение списка бумаг """
+def get_instrument_list(db: Session, skip: int = 0, limit: int = 100) -> Optional[list[models.Instrument]]:
+    return db.query(models.Instrument).offset(skip).limit(limit).all()
+
 """ Получение бумаги по id """
-def get_active(db: Session, active_id: int) -> Optional[models.Instrument]:
-    return db.query(models.Instrument).filter(models.Instrument.id == active_id).first()
+def get_instrument(db: Session, instrument_id: int) -> Optional[models.Instrument]:
+    return db.query(models.Instrument).filter(models.Instrument.id == instrument_id).first()
 
 """ Получение последнего id инструмента"""
-def get_last_active_id(db: Session) -> int:
+def get_last_instrument_id(db: Session) -> int:
     model_instrument = db.query(models.Instrument).order_by(models.Instrument.id.desc()).first()
 
     if not model_instrument:
@@ -76,80 +143,110 @@ def get_last_active_id(db: Session) -> int:
     else:
         return model_instrument.id
 
+""" Получение инструмента  по FIGI """
+def get_instrument_by_figi(db: Session, figi: str, exchange_id: int = 1) -> Optional[models.Instrument]:
+    db_figi = db.query(models.Instrument).filter(models.Instrument.figi == figi).first()
+    return db_figi
+
+""" Получение инструмента по тикеру """
+def get_instrument_by_ticker(db: Session, ticker: str) -> Optional[models.Instrument]:
+    return db.query(models.Instrument).filter(models.Instrument.ticker == ticker).first()
+
+""" Получение инструмента по uid """
+def get_instrument_uid(db: Session, instrument_uid: str) -> Optional[models.Instrument]:
+    return db.query(models.Instrument).filter(models.Instrument.uid == instrument_uid).first()
+
+""" Получение инструмента по position_uid """
+def get_instrument_by_position_uid(db: Session, position_uid: str) -> Optional[models.Instrument]:
+    return db.query(models.Instrument).filter(models.Instrument.position_uid == position_uid).first()
+
+""" Получение инструментов определенной биржи """
+def get_instruments_by_exchange(db: Session, exchange_id: int) -> Optional[list[models.Instrument]]:
+    return db.query(models.Instrument).filter(models.Instrument.id_exchange == exchange_id).order_by(models.Instrument.name).all()
+
+""" Получение бумаги по название """
+def get_instrument_by_name(db: Session, instrument_name: str) -> Optional[models.Instrument]:
+    return db.query(models.Instrument).filter(models.Instrument.name == instrument_name).first()
+
+''' Получение списка инструментов определенных бирж '''
+def get_filter_by_exchange_instruments(db: Session, exchange_id: list[int]) -> Optional[list[models.Instrument]]:
+    return db.query(models.Instrument).filter(models.Instrument.id_exchange.in_(exchange_id)).order_by(models.Instrument.name).all()
+
+
+
+""" GET-запросы для таймфреймов """
 """ Получение таймфрейма по id """
+@cache
 def get_timeframe(db: Session, timeframe_id: int) -> Optional[models.Timeframe]:
     return db.query(models.Timeframe).filter(models.Timeframe.id == timeframe_id).first()
 
 """ Получение id последней записи в таблице "Timeframe" """
+@cache
 def get_last_timeframe_id(db: Session) -> Optional[int]:
     db_timeframe = db.query(models.Timeframe).order_by(models.Timeframe.id.desc()).first()
     return db_timeframe.id if db_timeframe else None
 
 """ Получение id таймфрейма по названию """
+@cache
 def get_timeframe_id(db: Session, timeframe_name: str) -> Optional[int]:
     db_timeframe = db.query(models.Timeframe).filter(models.Timeframe.name == timeframe_name).first()
     return db_timeframe.id if db_timeframe else None
 
 """ Проверка на наличие таймфрейма в базе """
+@cache
 def check_timeframe(db: Session, timeframe_name: str) -> bool:
     db_timeframe = db.query(models.Timeframe).filter(models.Timeframe.name == timeframe_name).first()
     return True if db_timeframe else False
 
-""" Получение бумаги по название """
-def get_active_by_name(db: Session, active_name: str) -> Optional[models.Instrument]:
-    return db.query(models.Instrument).filter(models.Instrument.name == active_name).first()
-
-""" Получение бумаги по FIGI """
-def get_active_by_figi(db: Session, figi: str, exchange_id: int = 1) -> Optional[models.Instrument]:
-    db_figi = db.query(models.Instrument).filter(models.Instrument.figi == figi).first()
-    return db_figi
-
-""" Получение бумаги по тикеру """
-def get_active_by_ticker(db: Session, ticker: str) -> Optional[models.Instrument]:
-    return db.query(models.Instrument).filter(models.Instrument.ticker == ticker).first()
-
-""" Получение инструментов определенной биржи """
-def get_actives_by_exchange(db: Session, exchange_id: int) -> Optional[list[models.Instrument]]:
-    return db.query(models.Instrument).filter(models.Instrument.id_exchange == exchange_id).order_by(models.Instrument.name).all()
-
-def get_filter_by_exchange_actives(db: Session, exchange_id: list[int]) -> Optional[list[models.Instrument]]:
-    return db.query(models.Instrument).filter(models.Instrument.id_exchange.in_(exchange_id)).order_by(models.Instrument.name).all()
-
 """ Получение списка бирж """
+@cache
 def get_exchange_list(db: Session, skip: int = 0, limit: int = 100) -> list[Optional[models.Exchange]]:
     return db.query(models.Exchange).offset(skip).limit(limit).all()
 
 """ Получение списка секторов """
+@cache
 def get_sectors_list(db: Session, skip: int = 0, limit: int = 100) -> list[Optional[models.Sector]]:
     return db.query(models.Sector).offset(skip).limit(limit).all()
 
-""" Получение списка бумаг """
-def get_instrument_list(db: Session, skip: int = 0, limit: int = 100) -> list[Optional[models.Instrument]]:
-    return db.query(models.Instrument).offset(skip).limit(limit).all()
 
+"""GET-запросы для свеч """
 """ Получение списка 10 свеч по инструменту за определенный таймфрейм"""
-def get_candles_list(db: Session, figi_id: int, frame_id: int) -> list[Optional[models.Candle]]:
+@cache
+def get_candles_list(db: Session, instrument_id: int, frame_id: int) -> list[Optional[models.Candle]]:
     # Выбираем 10 последних свечей по инструменту за заданный таймфрейм
-    return db.query(models.Candle).filter(models.Candle.id_instrument == figi_id,
+    return db.query(models.Candle).filter(models.Candle.id_instrument == instrument_id,
                                           models.Candle.id_timeframe == frame_id).order_by(
         models.Candle.time_m.desc()).limit(10).all()
 
 """ Получение свечи по id """
+@cache
 def get_candle(db: Session, candle_id: int) -> Optional[models.Candle]:
     return db.query(models.Candle).filter(models.Candle.id == candle_id).first()
 
 """ Поулчаем последнюю свечу """
-def get_last_candle(db: Session, figi_id: int, frame_id: int) -> Optional[models.Candle]:
-    return db.query(models.Candle).filter(models.Candle.id_instrument == figi_id,
+@cache
+def get_last_candle(db: Session, instrument_id: int, frame_id: int) -> Optional[models.Candle]:
+    return db.query(models.Candle).filter(models.Candle.id_instrument == instrument_id,
                                           models.Candle.id_timeframe == frame_id).order_by(
         models.Candle.time_m.desc()).limit(1)
 
+@cache
+def check_candle_by_time(db: Session, time_obj) -> bool:
+    db_candle = db.query(models.Candle).filter(models.Candle.time_m == time_obj).first()
+    return True if db_candle else False
+
+
 """ Получаем id последней свечи по figi иснтрумента"""
 def get_last_candle_id(db: Session) -> Optional[int]:
-    return db.query(models.Candle).order_by(models.Candle.id.desc()).first().id
+    db_candle = db.query(models.Candle).order_by(models.Candle.id.desc()).first()
+    if not db_candle:
+        return 0
+    else:
+        return db_candle.id
 
 
 """ Поулчаем две последние свечи """
+@cache
 def get_last_candles(db: Session, figi_id: int, frame_id: int) -> tuple[Optional[models.Candle]]:
     last_candles = db.query(models.Candle).filter(models.Candle.id_instrument == figi_id,
                                                   models.Candle.id_timeframe == frame_id).order_by(models.Candle.time_m.desc()).limit(2)
@@ -158,16 +255,19 @@ def get_last_candles(db: Session, figi_id: int, frame_id: int) -> tuple[Optional
     return last_candles[1], last_candles[0]
 
 
-""" (1) Отладочный метод """
+""" (1) Отладочный метод 
 def get_last_active_rezerve_id(db: Session) -> int:
     db_instrument_rezerve = db.query(models.InstrumentRezerve).order_by(models.InstrumentRezerve.id.desc()).first()
     if not db_instrument_rezerve:
         return 0
     return db_instrument_rezerve.id
 
-""" (3) Отладочный метод"""
+ (3) Отладочный метод
 def get_rezerve_active_by_figi(db: Session, figi: str) -> Optional[models.InstrumentRezerve]:
     return db.query(models.InstrumentRezerve).filter(models.InstrumentRezerve.figi == figi).first()
+"""
+
+
 
 
 """ CREATE-операции """
@@ -231,9 +331,69 @@ def create_timeframe(db: Session, id: Optional[int], name: str) -> models.Timefr
     db.refresh(db_timeframe)
     return db_timeframe
 
+""" Создание типа актива """
+def create_asset_type(db: Session, id: Optional[int], name: str) -> models.AssetType:
+    new_id = None
+    if id:
+        new_id = id
+    else:
+        new_id = get_last_asset_type_id()
+        new_id = 1 if not new_id else new_id + 1
+
+    db_asset_type = models.AssetType(id=new_id, name=name)
+    db.add(db_asset_type)
+    db.commit()
+    db.refresh(db_asset_type)
+    return db_asset_type
+
+
+""" Создание типа инструмента """
+def create_instrument_type(db: Session, id: Optional[int], name: str) -> models.InstrumentType:
+    new_id = None
+    if id:
+        new_id = id
+    else:
+        new_id = get_last_instrument_type_id(db)
+        new_id = 1 if not new_id else new_id + 1
+
+    db_instrument_type = models.InstrumentType(id=new_id, name=name)
+    db.add(db_instrument_type)
+    db.commit()
+    db.refresh(db_instrument_type)
+
+
+""" Добаление нового актива в базу данных """
+def create_asset(db: Session, **kwargs) -> models.Asset:
+
+    db_asset_type = get_asset_type(db, kwargs['type_id'])
+    if not db_asset_type:
+        raise ValueError("Тип актива не найден")
+
+    last_asset_id = get_last_asset_id(db)
+    new_id = None
+    if not last_asset_id:
+        new_id = 1
+    else:
+        new_id = last_asset_id + 1
+
+    asset = models.Asset(id=new_id, uid=kwargs['uid'],
+                         name=kwargs['name'], type_id=kwargs['type_id'])
+
+    db.add(asset)
+    db.commit()
+    db.refresh(asset)
+    return asset
 
 """ Добавление нового инструмена в базу данных """
 def create_instrument(db: Session, **kwargs):
+
+    db_instrument_type = get_instrument_type(db, kwargs['type_id'])
+    if not db_instrument_type:
+        raise ValueError("Тип инструмента не найден")
+
+    db_asset = get_asset(db, kwargs['asset_id'])
+    if not db_asset:
+        raise ValueError("Актив не найден")
 
     db_currency = get_currency(db, kwargs['currency_id'])
     if not db_currency:
@@ -247,23 +407,26 @@ def create_instrument(db: Session, **kwargs):
     if not db_sector:
         raise ValueError("Сектор не найден")
 
-    last_active_id = get_last_active_id(db)
+    last_instrument_id = get_last_instrument_id(db)
     new_id = None
 
-    if last_active_id == 0:
+    if last_instrument_id == 0:
         new_id = 1
     else:
-        new_id = last_active_id + 1
+        new_id = last_instrument_id + 1
 
-    instrument = models.Instrument(id=new_id, figi=kwargs['figi'], name=kwargs['name'],
-                                   ticker=kwargs['ticker'], lot=kwargs['lot'], id_currency=kwargs['currency_id'],
-                                   id_exchange=kwargs['exchange_id'], id_sector=kwargs['sector_id'])
+    instrument = models.Instrument(id=new_id, uid=kwargs['uid'], position_uid=kwargs['position_uid'],
+                                   figi=kwargs['figi'], name=kwargs['name'], class_code=kwargs['class_code'],
+                                   ticker=kwargs['ticker'], lot=kwargs['lot'],
+                                   currency_id=kwargs['currency_id'], exchange_id=kwargs['exchange_id'],
+                                   sector_id=kwargs['sector_id'], type_id=kwargs['type_id'],
+                                   asset_id=kwargs['asset_id'])
     db.add(instrument)
     db.commit()
     db.refresh(instrument)
     return instrument
 
-""" (2) Отладочный метод """
+""" (2) Отладочный метод 
 def create_instrument_rezerve(db: Session, orig_instrument: models.Instrument, is_data: bool):
 
     last_active_id = get_last_active_rezerve_id(db)
@@ -281,12 +444,13 @@ def create_instrument_rezerve(db: Session, orig_instrument: models.Instrument, i
     db.commit()
     db.refresh(instrument_rez)
     return instrument_rez
+"""
 
 
 """ Добавление новой свечи в базу данных """
 def create_candle(db: Session, **kwargs):
 
-    db_instrument = get_active(db, kwargs['id_figi'])
+    db_instrument = get_instrument(db, instrument_id=kwargs['id_instrument'])
     if not db_instrument:
         raise ValueError("Инструмент не найден")
 
@@ -294,9 +458,16 @@ def create_candle(db: Session, **kwargs):
     if not db_timeframe:
         raise ValueError("Таймфрейм не найден")
 
+    last_id = get_last_candle_id(db)
+    if not last_id:
+        last_id = 1
+    else:
+        last_id += 1
+
     candle = models.Candle(id=kwargs['id'], time_m=kwargs['time_m'], open=kwargs['open'],
                            high=kwargs['high'], low=kwargs['low'], close=kwargs['close'],
-                           volume=kwargs['volume'], id_figi=kwargs['id_figi'], id_timeframe=kwargs['id_timeframe'])
+                           volume=kwargs['volume'], id_instrument=kwargs['id_instrument'],
+                           id_timeframe=kwargs['id_timeframe'])
 
     try:
         db.add(candle)
@@ -307,7 +478,28 @@ def create_candle(db: Session, **kwargs):
     db.refresh(candle)
     return candle
 
+
+
 """DELETE-операции"""
+
+""" Удаление типа актива """
+def delete_asset_type(db: Session, id: int):
+    db_asset_type = get_asset_type(db, id)
+    if not db_asset_type:
+        raise ValueError("Тип актива не найден")
+    db.delete(db_asset_type)
+    db.commit()
+    return db_asset_type
+
+""" Удаление типа инструмента """
+def delete_instrument_type(db: Session, id: int):
+    db_instrument_type = get_instrument_type(db, id)
+    if not db_instrument_type:
+        raise ValueError("Тип инструмента не найден")
+    db.delete(db_instrument_type)
+    db.commit()
+    return db_instrument_type
+
 
 """ Удаление сектора """
 def delete_sector(db: Session, id: int):
@@ -343,9 +535,17 @@ def delete_timeframe(db: Session, id: int):
     db.delete(db_timeframe)
     db.commit()
 
+"""" Удаление актива """
+def delete_asset(db: Session, id: int):
+    db_asset = get_asset(db, id)
+    if not db_asset:
+        raise ValueError("Актив не найден")
+    db.delete(db_asset)
+    db.commit()
+
 """ Удаление иснтрумента """
 def delete_instrument(db: Session, id: int):
-    db_instrument = get_active(db, id)
+    db_instrument = get_instrument(db, id)
     if not db_instrument:
         raise ValueError("Инструмент не найден")
     db.delete(db_instrument)

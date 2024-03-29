@@ -1,7 +1,9 @@
 # Модуль, содержащий реализацию индикатора скользящей средней
 from abc import ABC, abstractmethod  # Для абстрактных классов и интерфейсов
-from typing import Union
+from typing import Union, Any
 import pandas as pd
+
+from api.models import Candle
 
 # Интерфейс для индикатора MA
 class MAIndicator(ABC):
@@ -33,7 +35,14 @@ class MAIndicator(ABC):
 # Обычная MA
 class SMAIndicator(MAIndicator):
 
-    def __init__(self, ma_interval: int, CandlesDF):
+    def __init__(self, ma_interval: int, CandlesDF: Any, model=True):
+        if model:
+            self.model_init(ma_interval, CandlesDF)
+        else:
+            self.sandbox_init(ma_interval, CandlesDF)
+
+
+    def model_init(self, ma_interval: int, CandlesDF):
         self.keyName = 'SMA_' + str(ma_interval)
         self.smaValues = dict()  # Словарь для значений SMA
         self.smaValues['time'] = list([])  # Список времени
@@ -60,6 +69,11 @@ class SMAIndicator(MAIndicator):
 
         self.dfSMA = pd.DataFrame(self.smaValues)
         self.dfSMA.to_csv("../sma_history.csv")
+
+
+    def sandbox_init(self, ma_interval: int, CandlesDF: Any):
+        pass
+
 
     def get_SMA(self, index: int):
         return self.dfSMA.iloc[index][self.keyName]

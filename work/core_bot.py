@@ -204,6 +204,8 @@ def candles_formatter(paramList: list[str]):
         hour_value = 0
         if UTC_OFFSET == "Europe/Moscow":
             hour_value = moment1_raw.hour - 3
+            if hour_value < 0:
+                hour_value = 0
         moment1 = datetime(year=moment1_raw.year, month=moment1_raw.month, day=moment1_raw.day,
                        hour=hour_value, minute=moment1_raw.minute, second=moment1_raw.second,
                        tzinfo=timezone.utc)
@@ -218,6 +220,8 @@ def candles_formatter(paramList: list[str]):
         hour_value = 0
         if UTC_OFFSET == "Europe/Moscow":
             hour_value = moment2_raw.hour - 3
+            if hour_value < 0:
+                hour_value = 0
         moment2 = datetime(year=moment2_raw.year, month=moment2_raw.month, day=moment2_raw.day,
                         hour=hour_value, minute=moment2_raw.minute, second = moment2_raw.second,
                         tzinfo = timezone.utc)
@@ -267,7 +271,7 @@ def get_candles(param_list: str):
     param_list = param_list.split(' ')  # Список параметров
     candlesParams = None                  # Список параметров для get_candles
 
-    mode_uid = int(param_list[-1])
+    #mode_uid = int(param_list[-1])
 
     try:
         candlesParams = candles_formatter(param_list)
@@ -283,30 +287,22 @@ def get_candles(param_list: str):
         candles = list([])
         candles_raw = None
         try:
-            if mode_uid == 0:
-                candles_raw = market_data_cache.get_all_candles(        # Test candle
-                    figi=candlesParams[0],
-                    from_=candlesParams[1],
-                    to=candlesParams[2],
-                    interval=candlesParams[3],
-                )
-            else:
-                candles_raw = client.market_data.get_candles(
-                    instrument_id=candlesParams[0],
-                    from_=candlesParams[1],
-                    to=candlesParams[2],
-                    interval=candlesParams[3]
-                )
+            candles_raw = client.market_data.get_candles(
+                instrument_id=candlesParams[0],
+                from_=candlesParams[1],
+                to=candlesParams[2],
+                interval=candlesParams[3]
+            )
         except Exception as irerror:
             print('\n\n', irerror.args, '\n')
             raise irerror
         finally:
-            if mode_uid == 0:
-                for candle in candles_raw:
-                    candles.append(candle)
-            else:
-                for candle in candles_raw.candles:
-                    candles.append(candle)
+            #if mode_uid == 0:
+            #    for candle in candles_raw:
+            #        candles.append(candle)
+            #else:
+            for candle in candles_raw.candles:
+                candles.append(candle)
 
     return candles
 
@@ -377,6 +373,20 @@ def find_instrument(message):
             print(f"class_code = {instrument.class_code}")
             print("\n\n")
 
+@bot.message_handler(commands=['currency'])
+def get_currency(message):
+    words = message.text.split(' ')
+    if not words or len(words) < 2:
+        raise ValueError('Неправильный формат команды')
+
+    uid = words[-1]
+    with SandboxClient(TOKEN) as client:
+        currency = client.instruments.currency_by(id_type=InstrumentIdType.INSTRUMENT_ID_TYPE_UID,
+                                                  id=uid)
+        if currency:
+            bot.send_message(message.chat.id, f"Валюта инструмента = {currency.name}")
+        else:
+            bot.send_message(message.chat.id, f"Валюта инструмента не найдена")
 
 if __name__ == '__main__':
     bot.infinity_polling()
