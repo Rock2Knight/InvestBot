@@ -11,6 +11,7 @@ class InvestBotValueError(ValueError):
         super().__init__(message)
         self.msg = message
 
+
 class InvestBotRequestError(RequestError):
     def __init__(self, code: StatusCode, details: str, metadata: Any):
         super().__init__(code, details, metadata)
@@ -18,3 +19,9 @@ class InvestBotRequestError(RequestError):
         self.details = details
         self.metadata = metadata
         self.msg = "Error in GetCandles request\n"
+
+# Ошибка при работке c GUI бота
+class GuiError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+        self.msg = message

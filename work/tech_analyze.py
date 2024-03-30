@@ -2,6 +2,7 @@
 from math import floor, fabs
 from contextlib import redirect_stdout
 from datetime import datetime
+import asyncio
 
 import pandas as pd
 
@@ -48,11 +49,11 @@ def getDateNow():
     print(cur_time)
 
 """ Функция, моделирующая торговлю и формирующая выходные данные в виде датасета """
-def HistoryTrain(figi, cnt_lots, account_portfolio, **kwargs):
+async def HistoryTrain(uid, cnt_lots, account_portfolio, **kwargs):
     """ Моделирует торговую активность по историческим данным
     в соответствии с заданной торговой стратегией.
 
-    :param figi: FIGI-идентификатор торгового инструемнта
+    :param uid: FIGI-идентификатор торгового инструемнта
     :param cnt_lots: количество лотов торгуемого иснструмента в портфеле
     :param account_portfolio: сумма свободных денег в портфеле
 
@@ -65,6 +66,9 @@ def HistoryTrain(figi, cnt_lots, account_portfolio, **kwargs):
     :param ma_interval - Интервал SMA
     :param stopAccount - риск для счета в процентах
     :param stopLoss - стоп-лосс (максимальный риск для одной позиции) в процентах
+    :param time_from - время начала торговой стратегии в секундах
+    :param time_to - время конца торговой стратегии в секундах
+    :param timeframe - таймфрейм
     """
 
     active_cast = 0  # Текущая цена актива
@@ -76,7 +80,9 @@ def HistoryTrain(figi, cnt_lots, account_portfolio, **kwargs):
     stopAccount = kwargs['stopAccount']  # Риск для счета в процентах
     stopLoss = kwargs['stopLoss']  # Точка аннулирования для торговой стратегии в процентах
 
-    CandlesDF = pd.read_csv("../share_history.csv")  # 1. Получаем готовый датафрейм исторических свечей
+    # 1. Получаем готовый датафрейм исторических свечей
+    CandlesDF = pd.read_csv("../share_history.csv")
+
     rsiObject = RSI()  # Добавляем RSI индикатор с интервалом 14
     SMA_5 = SMAIndicator(ma_interval=ma_interval, CandlesDF=CandlesDF)  # Добавляем SMA с интервалом 5
 
@@ -100,7 +106,7 @@ def HistoryTrain(figi, cnt_lots, account_portfolio, **kwargs):
     stopLossSize = 0.0        # Размер стоп-лосса
 
     # Словарь с информацией по сделкам
-    tradeInfo = {"time": list([]), "trade_direct": list([]), "figi": list([]),
+    tradeInfo = {"time": list([]), "trade_direct": list([]), "uid": list([]),
                  "position_size": list([]), "stop_loss_size": list([]), "active_cast": list([]),
                  "lot_size": list([]), "lot_cast": list([]), "position_size_real": list([]),
                  "lot_cnt": list([]), "order_type": list([])}
@@ -298,7 +304,7 @@ def HistoryTrain(figi, cnt_lots, account_portfolio, **kwargs):
 
                 # Формируем информацию о сделке
                 tradeInfo['time'].append(CandlesDF.iloc[i]['time'])  # время сделки
-                tradeInfo['figi'].append(figi)                       # FIGI инструмента
+                tradeInfo['uid'].append(uid)                       # FIGI инструмента
                 tradeInfo['position_size'].append(positionSize)      # Расчетный размер позиции
 
                 if BUY_Signal:
@@ -319,6 +325,6 @@ def HistoryTrain(figi, cnt_lots, account_portfolio, **kwargs):
     dfTrades = pd.DataFrame(tradeInfo)
     dfPortfolio = pd.DataFrame(portfolioInfo)
     # записываем их в CSV
-    dfTrades.to_csv("../history_data/trades_" + str(figi) + ".csv")
+    dfTrades.to_csv("../history_data/trades_" + str(uid) + ".csv")
     dfPortfolio.to_csv("../history_data/portfolio_train.csv")
     return dfTrades, dfPortfolio        # возвращаем в вызывающую функцию

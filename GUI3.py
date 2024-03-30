@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1504, 803)
+        MainWindow.resize(1349, 803)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
@@ -23,15 +23,30 @@ class Ui_MainWindow(object):
         self.matlayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
         self.matlayout.setContentsMargins(0, 0, 0, 0)
         self.matlayout.setObjectName("matlayout")
-        self.widget = QtWidgets.QWidget(self.centralwidget)
-        self.widget.setGeometry(QtCore.QRect(990, 30, 291, 391))
-        self.widget.setObjectName("widget")
-        self.toolsVLayout = QtWidgets.QVBoxLayout(self.widget)
+        self.layoutWidget = QtWidgets.QWidget(self.centralwidget)
+        self.layoutWidget.setGeometry(QtCore.QRect(990, 30, 291, 251))
+        self.layoutWidget.setObjectName("layoutWidget")
+        self.toolsVLayout = QtWidgets.QVBoxLayout(self.layoutWidget)
         self.toolsVLayout.setContentsMargins(0, 0, 0, 0)
         self.toolsVLayout.setObjectName("toolsVLayout")
 
-        ''' Настройки кнопки для рисования графика '''
-        self.btnDraw = QtWidgets.QPushButton(self.widget)
+        # Настройка кнопки для получения данных
+        self.btnGetData = QtWidgets.QPushButton(self.layoutWidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.btnGetData.sizePolicy().hasHeightForWidth())
+        self.btnGetData.setSizePolicy(sizePolicy)
+        font = QtGui.QFont()
+        font.setPointSize(13)
+        font.setBold(True)
+        font.setWeight(75)
+        self.btnGetData.setFont(font)
+        self.btnGetData.setObjectName("btnGetData")
+        self.toolsVLayout.addWidget(self.btnGetData)
+
+        # Настройка кнопки для рисования
+        self.btnDraw = QtWidgets.QPushButton(self.layoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -46,7 +61,7 @@ class Ui_MainWindow(object):
         self.toolsVLayout.addWidget(self.btnDraw)
 
         ''' Настройка кнопки для очистки графика '''
-        self.btnClear = QtWidgets.QPushButton(self.widget)
+        self.btnClear = QtWidgets.QPushButton(self.layoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -60,23 +75,7 @@ class Ui_MainWindow(object):
         self.btnClear.setObjectName("btnDraw")
         self.toolsVLayout.addWidget(self.btnClear)
 
-        ''' Настройка кнопки для получения списка ценных бумаг в формате JSON '''
-        self.btnGetActiveInfo = QtWidgets.QPushButton(self.widget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.btnDraw.sizePolicy().hasHeightForWidth())
-        self.btnDraw.setSizePolicy(sizePolicy)
-        font = QtGui.QFont()
-        font.setPointSize(13)
-        font.setBold(True)
-        font.setWeight(75)
-        self.btnGetActiveInfo.setFont(font)
-        self.btnGetActiveInfo.setObjectName("btnGetActiveInfo")
-        self.toolsVLayout.addWidget(self.btnGetActiveInfo)
-
-        ''' Настройка радио-кнопки "График сделок" '''
-        self.cntTradesRadioBtn = QtWidgets.QRadioButton(self.widget)
+        self.cntTradesRadioBtn = QtWidgets.QRadioButton(self.layoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -90,9 +89,7 @@ class Ui_MainWindow(object):
         self.cntTradesRadioBtn.setFont(font)
         self.cntTradesRadioBtn.setObjectName("cntTradesRadioBtn")
         self.toolsVLayout.addWidget(self.cntTradesRadioBtn)
-
-        ''' Настройка радио-кнопки "Доходность" '''
-        self.profitRadioBtn = QtWidgets.QRadioButton(self.widget)
+        self.profitRadioBtn = QtWidgets.QRadioButton(self.layoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -104,48 +101,33 @@ class Ui_MainWindow(object):
         font.setItalic(False)
         font.setWeight(50)
         self.profitRadioBtn.setFont(font)
-        self.profitRadioBtn.setObjectName("cntTradesRadioBtn_2")
+        self.profitRadioBtn.setObjectName("profitRadioBtn")
+
         self.toolsVLayout.addWidget(self.profitRadioBtn)
 
-        # Лэйаут времени начала периода
+        self.tfComboBox = QtWidgets.QComboBox()
+        self.tfComboBox.addItems(["1_MIN", "2_MIN", "3_MIN", "5_MIN",
+                                  "10_MIN", "15_MIN", "30_MIN", "HOUR",
+                                  "2_HOUR", "4_HOUR", "DAY", "WEEK", "MONTH"])
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        font.setBold(False)
+        font.setItalic(False)
+        font.setWeight(50)
+        self.tfComboBox.setFont(font)
+        self.tfComboBox.setObjectName("tfComboBox")
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.tfComboBox.sizePolicy().hasHeightForWidth())
+
+        self.toolsVLayout.addWidget(self.tfComboBox)
+
+
         self.timeFromLayout = QtWidgets.QHBoxLayout()
         self.timeFromLayout.setObjectName("timeFromLayout")
 
-        self.time_from = QtWidgets.QLabel(self.widget)
-        font = QtGui.QFont()
-        font.setPointSize(12)
-        font.setBold(True)
-        font.setWeight(75)
-        self.time_from.setFont(font)
-        self.time_from.setObjectName("time_from")
-
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Maximum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.time_from.sizePolicy().hasHeightForWidth())
-        self.time_from.setSizePolicy(sizePolicy)
-
-        self.timeFromLayout.addWidget(self.time_from)
-
-
-        '''
-        self.edit_time_from = QtWidgets.QPlainTextEdit(self.widget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Maximum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.edit_time_from.sizePolicy().hasHeightForWidth())
-        self.edit_time_from.setSizePolicy(sizePolicy)
-        self.edit_time_from.setMaximumSize(QtCore.QSize(16777215, 1000))
-        self.edit_time_from.setObjectName("edit_time_from")
-        self.timeFromLayout.addWidget(self.edit_time_from)
-        '''
-
-        # Лэйаут времени окончания периода
-        '''
-        self.timeToLayout = QtWidgets.QHBoxLayout()
-        self.timeToLayout.setObjectName("timeToLayout")
-
-        self.time_to = QtWidgets.QLabel(self.widget)  # Time to label
+        self.time_to = QtWidgets.QLabel(self.layoutWidget) # Time to label
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -157,27 +139,48 @@ class Ui_MainWindow(object):
         font.setWeight(75)
         self.time_to.setFont(font)
         self.time_to.setObjectName("time_to")
-        self.timeToLayout.addWidget(self.time_to)
-        '''
+        self.timeFromLayout.addWidget(self.time_to)
 
-        '''
-        self.edit_time_to = QtWidgets.QPlainTextEdit(self.widget)  # Текстовое поле time_to
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Maximum)
+        self.edit_time_to = QtWidgets.QPlainTextEdit(self.layoutWidget) # Текстовое поле time_to
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.edit_time_to.sizePolicy().hasHeightForWidth())
         self.edit_time_to.setSizePolicy(sizePolicy)
         self.edit_time_to.setMaximumSize(QtCore.QSize(16777215, 50000))
         self.edit_time_to.setObjectName("edit_time_to")
-        self.timeToLayout.addWidget(self.edit_time_to)
-        '''
+        self.timeFromLayout.addWidget(self.edit_time_to)
 
         self.toolsVLayout.addLayout(self.timeFromLayout)
-        #self.toolsVLayout.addLayout(self.timeToLayout)
 
+        self.timeToLayout = QtWidgets.QHBoxLayout()
+        self.timeToLayout.setObjectName("timeToLayout")
+        self.time_from = QtWidgets.QLabel(self.layoutWidget)
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        font.setBold(True)
+        font.setWeight(75)
+        self.time_from.setFont(font)
+        self.time_from.setObjectName("time_from")
+        self.timeToLayout.addWidget(self.time_from)
+
+
+        self.edit_time_from = QtWidgets.QPlainTextEdit(self.layoutWidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Maximum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.edit_time_from.sizePolicy().hasHeightForWidth())
+        self.edit_time_from.setSizePolicy(sizePolicy)
+        self.edit_time_from.setMaximumSize(QtCore.QSize(16777215, 1000))
+        self.edit_time_from.setObjectName("edit_time_from")
+
+
+        self.timeToLayout.addWidget(self.edit_time_from)
+
+        self.toolsVLayout.addLayout(self.timeToLayout)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1304, 26))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1349, 26))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
@@ -190,11 +193,13 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.btnGetData.setText(_translate("MainWindow", "Получить данные"))
         self.btnDraw.setText(_translate("MainWindow", "Нарисовать"))
         self.btnClear.setText(_translate("MainWindow", "Очистить"))
-        self.btnGetActiveInfo.setText(_translate("MainWindow", "Активы"))
         self.cntTradesRadioBtn.setText(_translate("MainWindow", "Гистограмма сделок"))
         self.profitRadioBtn.setText(_translate("MainWindow", "График доходности"))
+        self.time_to.setText(_translate("MainWindow", "T (конца):"))
+        self.time_from.setText(_translate("MainWindow", "T (начала):"))
 
 
 if __name__ == "__main__":

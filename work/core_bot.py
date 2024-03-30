@@ -14,10 +14,7 @@ from tinkoff.invest.schemas import MoneyValue, InstrumentStatus, Quotation, Inst
 from tinkoff.invest.exceptions import RequestError
 
 # Для исторических свечей
-from tinkoff.invest.services import MarketDataCache, MarketDataStreamService, MarketDataService
-from tinkoff.invest.caching.market_data_cache.cache_settings import (
-    MarketDataCacheSettings,
-)
+from tinkoff.invest.services import MarketDataStreamService, MarketDataService
 
 #from .functional import *
 #from .exceptions import *
@@ -280,9 +277,6 @@ def get_candles(param_list: str):
 
 
     with SandboxClient(TOKEN) as client:             # Запускаем клиент тинькофф-песочницы
-        # Set MarketDataCache
-        settings = MarketDataCacheSettings(base_cache_dir=Path("../market_data_cache"))
-        market_data_cache = MarketDataCache(settings=settings, services=client)
 
         candles = list([])
         candles_raw = None
@@ -305,6 +299,69 @@ def get_candles(param_list: str):
                 candles.append(candle)
 
     return candles
+
+
+async def async_get_candles(param_list: str):
+
+    param_list = param_list.split(' ')  # Список параметров
+    candlesParams = None                  # Список параметров для get_candles
+    # Форматированные исторические свечи
+    updated_candles = {'open': list([]), 'close': list([]),
+                       'low': list([]), 'high': list([]),
+                       'time': list([]), 'volume': list([])}
+
+    #mode_uid = int(param_list[-1])
+
+    try:
+        candlesParams = candles_formatter(param_list)
+    except InvestBotValueError as iverror:
+        raise InvestBotValueError(iverror.msg)
+
+
+    with SandboxClient(TOKEN) as client:             # Запускаем клиент тинькофф-песочницы
+
+        candles = list([])
+        candles_raw = None
+        try:
+            candles_raw = client.market_data.get_candles(
+                instrument_id=candlesParams[0],
+                from_=candlesParams[1],
+                to=candlesParams[2],
+                interval=candlesParams[3]
+            )
+        except Exception as irerror:
+            print('\n\n', irerror.args, '\n')
+            raise irerror
+        finally:
+            #if mode_uid == 0:
+            #    for candle in candles_raw:
+            #        candles.append(candle)
+            #else:
+            if candles_raw:
+                for candle in candles_raw.candles:
+                    open = str(cast_money(candle.open))
+                    close = str(cast_money(candle.close))
+                    low = str(cast_money(candle.low))
+                    high = str(cast_money(candle.high))
+
+                    utc_time = candle.time  # Получаем дату и время в UTC
+                    hour_msk = utc_time.hour + 3  # Переводим дату и время к Московскому часовому поясу
+                    moscow_time = datetime(year=utc_time.year, month=utc_time.month, day=utc_time.day,
+                                       hour=hour_msk, minute=utc_time.minute, second=utc_time.second)
+
+                    time = moscow_time.strftime('%Y-%m-%d_%H:%M:%S')
+                    volume = str(candle.volume)
+
+                    # Добавляем строку в сырой датафрейм
+                    updated_candles['open'].append(open)
+                    updated_candles['close'].append(close)
+                    updated_candles['low'].append(low)
+                    updated_candles['high'].append(high)
+                    updated_candles['time'].append(time)
+                    updated_candles['volume'].append(volume)
+                    candles.append(candle)
+
+    return updated_candles
 
 
 @bot.message_handler(commands=['get_candles'])

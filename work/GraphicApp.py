@@ -1,8 +1,11 @@
 # Модуль для построения статистики по торговому роботу
 from datetime import datetime
-import json
+import asyncio
+import numpy as np
+from functools import wraps
+import threading
+import os
 
-from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import (
     QMainWindow,
     QDateTimeEdit,
@@ -18,16 +21,61 @@ from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar)
 
-from GUI import Ui_MainWindow
-from work import tech_analyze
-from work.functional import *
+import pandas as pd
 
-# Раздел констант
-FIGI = "BBG00475KKY8"  # FIGI анализируемого инструемента
-MAX_CNT_TICKS = 10     # Максимальное количество подписей по оси X
-LOT = 1                # Лотность торгуемого инструмента
-STOP_ACCOUNT = 0.01    # Риск для счета
-STOP_LOSS = 0.05       # Стоп-лосс для актива
+from api import database, models, crud
+from GUI3 import Ui_MainWindow
+from work import *
+import tech_analyze, exceptions, core_bot
+
+
+resData = None
+
+def printResData():
+    global resData
+    if not resData:
+        raise ValueError("Нет котировок")
+
+    cntShares = len(resData)
+    for i in range(cntShares):
+        size = len(resData[i]['open'])
+        print(f"Info about resData[{i}] with timeframe DAY:\ntime_m\t\topen\tclose\thigh\tlow\n")
+        for j in range(size):
+            time_t = resData[i]['time'][j]
+            open_t = resData[i]['open'][j]
+            close_t = resData[i]['close'][j]
+            high_t = resData[i]['high'][j]
+            low_t = resData[i]['low'][j]
+            volume_t = resData[i]['volume'][j]
+
+            print(f"{time_t}\t\t{open_t}\t\t{close_t}\t\t{high_t}\t\t{low_t}\t\t{volume_t}")
+        filename = "../instruments_info/tool_" + str(i) + ".csv"
+        print('../instruments_info/')
+
+
+async def asyncRequestHandler(reqs, tools_uid, frame, str_time_from, str_time_to):
+    global resData
+
+    tasks = list([])            # Очередь запросов
+    for i in range(len(reqs)):
+        task = asyncio.create_task(core_bot.async_get_candles(reqs[i]))
+        tasks.append(task)
+    resData = await asyncio.gather(*tasks)
+
+    path = "../instruments_info/" + frame
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+    for i in range(len(resData)):
+        filename = path + "/" + tools_uid[i] + "" + str_time_from + "_" + str_time_to + ".csv"
+        dfTool = pd.DataFrame(resData[i])
+        dfTool.to_csv(filename)
+
+
+def syncRequestHandler(reqs, tools_uid, frame, str_time_from, str_time_to):
+    loop = asyncio.new_event_loop()
+    return loop.run_until_complete(asyncRequestHandler(reqs, tools_uid, frame, str_time_from, str_time_to))
+
 
 class GraphicApp(QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -41,17 +89,76 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         self.cnt_lots = 1000                # Количество лотов акции FIGI
         self.successTrades = 0              # Количество прибыльных сделок
         self.failTrades = 0                 # Количество убыточных сделок
+        self.dfTrades = None                # Статистика сделок
+        self.dfPortfolio = None             # Статистика доходности портфеля
+        self.tools_uid = list([])       # Список инструментов
+        self.dataTrades = None              # результаты торговли
+        self.tools_data = list([])
+
+        self.get_all_instruments()          # Загружаем uid торговых инструментов в память программы
 
         # Моделируем торговлю на исторических данных
+        '''
         self.dfTrades, self.dfPortfolio = tech_analyze.HistoryTrain(FIGI, self.cnt_lots,
                                                                     self.account_portfolio, ma_interval=5,
                                                                     lot=LOT, stopAccount=STOP_ACCOUNT,
                                                                     stopLoss=STOP_LOSS)
-        self.countTrades()                  # Подсчитываем прибыльные и убыточные сделки
+        '''
+
+        #self.countTrades()                  # Подсчитываем прибыльные и убыточные сделки
+        self.btnGetData.clicked.connect(self.getCandles)
         self.btnDraw.clicked.connect(self.checkRadio)     # Если была нажата кнопка рисования, проверяем, какой тип график выбран
         self.btnClear.clicked.connect(self.clear_graph)
-        self.btnGetActiveInfo.clicked.connect(self.get_all_instruments)
+        #self.btnGetActiveInfo.clicked.connect(self.get_all_instruments)
         # self.period.activated[str].connect(self.setCSVList)
+
+    async def ainit(self):
+        task = asyncio.create_task(self.AsyncHistoryTrain())
+        res = await asyncio.gather(task)
+        self.dfTrades, self.dfPortfolio = res[0][0], res[0][1]
+        self.countTrades()                  # Подсчитываем прибыльные и убыточные сделки
+
+
+    async def AsyncHistoryTrain(self):
+        return await tech_analyze.HistoryTrain(FIGI, self.cnt_lots,
+                                                self.account_portfolio, ma_interval=5,
+                                                lot=LOT, stopAccount=STOP_ACCOUNT,
+                                                stopLoss=STOP_LOSS)
+
+    def getCandles(self):
+        """ Функция для получения котировок по инструментам, указанным в instruments.txt """
+        str_time_from = self.edit_time_to.toPlainText()
+        str_time_to = self.edit_time_from.toPlainText()
+        reqs = list([])
+
+        frame = None
+        try:
+            frame = self.tfComboBox.currentText() # Получаем активный таймфрейм из combobox
+        except Exception as e:
+            print(e.args)
+            raise e
+
+        tasks = list([])    # Задачи по выгрузке котировок по бумагам
+        dataTrades = None   # Результат выполнения core_bot.async_get_candles
+
+        try:
+            for i in range(len(self.tools_uid)):
+                uid = self.tools_uid[i]
+                reqs.append(f"get_candles {uid} {str_time_from} {str_time_to} {frame}")
+            thread1 = threading.Thread(target=syncRequestHandler, args=(reqs, self.tools_uid, frame, str_time_from, str_time_to,))
+            thread1.start()
+            thread1.join()
+            del thread1
+            print('All data have been written\n')
+
+            if resData:
+                printResData()
+        except IndexError as e:
+            print(f"\ne.args = {e.args}\n")
+            raise e
+        except BaseException as e:
+            print(f"\nType of exception: {type(e)}\ne.args = {e.args}\n")
+            raise e
 
 
     def checkRadio(self):
@@ -96,6 +203,9 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
 
     # Построение гистограммы прибыльных и убыточных сделок
     def drawHistTrades(self):
+        if self.dfPortfolio.empty:
+            raise exceptions.GuiError('Нет данных для визуализации')
+
         x_ticks = [0, 1]
         x_ticklabels = ['Success', 'Fail']
         y_ticks = list(range(0, max(self.successTrades, self.failTrades)+1))
@@ -113,10 +223,8 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         Метод для рисования линейного графика доходности портфеля по результатам
         тестирования на исторических данных
         """
-
-        if self.dfTrades.shape[0] == 0:
-            print("Торговой активности не было, так как не было данных")
-            return
+        if self.dfPortfolio.empty:
+            raise exceptions.GuiError('Нет данных для визуализации')
 
         x_set_str = list(self.dfPortfolio['time'])                             # таймфреймы в строковом формате
         x_set_raw = [datetime.strptime(x, '%Y-%m-%d_%H:%M:%S') for x in x_set_str] # таймфреймы в python-datetime
@@ -192,21 +300,13 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
     """ Метод для получения информации о доступных активах в Тинькофф Инвестиции """
     def get_all_instruments(self):
 
-        SharesDict = dict()
-
-        with SandboxClient(TOKEN) as client:  # Запускаем клиент тинькофф-песочницы
-            # Получаем информацию обо всех акциях
-            shares = client.instruments.shares(instrument_status=InstrumentStatus.INSTRUMENT_STATUS_ALL)
-            for instrument in shares.instruments:
-                SharesDict[instrument.name] = {"figi": instrument.figi,
-                                               "currency": instrument.currency,
-                                               "ticker": instrument.ticker,
-                                               "sector": instrument.sector,
-                                               "isin": instrument.isin,
-                                               "lot": instrument.lot,
-                                               "exchange": instrument.exchange,
-                                               "nominal": cast_money(instrument.nominal)}
-
-            with open("../shares.json", "w") as write_file:
-                json.dump(SharesDict, write_file)  # Dump python-dict to json
-            print("\nInstruments info was been received")
+        with open("instruments.txt", 'r', encoding='utf-8') as file:
+            instruments = file.readlines()
+            db = database.SessionLocal()     # Соединение с базой данных
+            try:
+                for i in range(len(instruments)):
+                    self.tools_uid.append(instruments[i].rstrip("\n"))
+                    info = crud.get_instrument_uid(db, instrument_uid=self.tools_uid[i])
+                    self.tools_data.append(info)
+            except IndexError as e:
+                raise e

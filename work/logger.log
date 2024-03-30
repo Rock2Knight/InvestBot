@@ -1,41 +1,141 @@
-ERROR:tinkoff.invest.logging:af67a003cf8cae864c9d3518a19026f4 CurrencyBy NOT_FOUND 50002
-ERROR:TeleBot:Infinity polling exception: (<StatusCode.NOT_FOUND: (5, 'not found')>, '50002', Metadata(tracking_id='af67a003cf8cae864c9d3518a19026f4', ratelimit_limit='200, 200;w=60', ratelimit_remaining=199, ratelimit_reset=22, message='instrument not found'))
-ERROR:TeleBot:Exception traceback:
-Traceback (most recent call last):
-  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\tinkoff\invest\_errors.py", line 23, in wrapper
-    return func(*args, **kwargs)
-  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\tinkoff\invest\services.py", line 470, in currency_by
-    response, call = self.stub.CurrencyBy.with_call(
-  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\grpc\_channel.py", line 1043, in with_call
-    return _end_unary_response_blocking(state, call, True, None)
-  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\grpc\_channel.py", line 910, in _end_unary_response_blocking
-    raise _InactiveRpcError(state)  # pytype: disable=not-instantiable
-grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with:
-	status = StatusCode.NOT_FOUND
-	details = "50002"
-	debug_error_string = "UNKNOWN:Error received from peer  {grpc_message:"50002", grpc_status:5, created_time:"2024-03-24T15:55:38.2820411+00:00"}"
->
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\telebot\__init__.py", line 1016, in infinity_polling
-    self.polling(non_stop=True, timeout=timeout, long_polling_timeout=long_polling_timeout,
-  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\telebot\__init__.py", line 1104, in polling
-    self.__threaded_polling(non_stop=non_stop, interval=interval, timeout=timeout, long_polling_timeout=long_polling_timeout,
-  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\telebot\__init__.py", line 1179, in __threaded_polling
-    raise e
-  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\telebot\__init__.py", line 1141, in __threaded_polling
-    self.worker_pool.raise_exceptions()
-  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\telebot\util.py", line 149, in raise_exceptions
-    raise self.exception_info
-  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\telebot\util.py", line 92, in run
-    task(*args, **kwargs)
-  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\telebot\__init__.py", line 7868, in _run_middlewares_and_handler
-    result = handler['function'](message)
-  File "C:\Users\gibad\PycharmProjects\teleBotTest\work\core_bot.py", line 388, in get_currency
-    currency = client.instruments.currency_by(id_type=InstrumentIdType.INSTRUMENT_ID_TYPE_UID,
-  File "C:\Users\gibad\PycharmProjects\teleBotTest\venv\lib\site-packages\tinkoff\invest\_errors.py", line 41, in wrapper
-    raise RequestError(status_code, details, metadata) from e
-tinkoff.invest.exceptions.RequestError: (<StatusCode.NOT_FOUND: (5, 'not found')>, '50002', Metadata(tracking_id='af67a003cf8cae864c9d3518a19026f4', ratelimit_limit='200, 200;w=60', ratelimit_remaining=199, ratelimit_reset=22, message='instrument not found'))
-
+INFO:sqlalchemy.engine.Engine:select pg_catalog.version()
+INFO:sqlalchemy.engine.Engine:[raw sql] {}
+INFO:sqlalchemy.engine.Engine:select current_schema()
+INFO:sqlalchemy.engine.Engine:[raw sql] {}
+INFO:sqlalchemy.engine.Engine:show standard_conforming_strings
+INFO:sqlalchemy.engine.Engine:[raw sql] {}
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00028s] {'uid_1': '14b046ba-3fa1-424e-8a87-22437d941589', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 0.02147s ago] {'uid_1': 'e6123145-9665-43e0-8413-cd61b8aa9b13', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 0.02353s ago] {'uid_1': '2c7c296c-1f26-429f-ad8b-03fa1b6ba7fa', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 0.02535s ago] {'uid_1': 'de08affe-4fbd-454e-9fd1-46a81b23f870', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 0.02755s ago] {'uid_1': 'cf9ed7ef-784d-4c2c-aabe-362891fcd80c', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 0.02915s ago] {'uid_1': 'b993e814-9986-4434-ae88-b086066714a0', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 0.03057s ago] {'uid_1': 'b71bd174-c72c-41b0-a66f-5f9073e0d1f5', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 0.03227s ago] {'uid_1': '0da66728-6c30-44c4-9264-df8fac2467ee', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 0.03402s ago] {'uid_1': '5f1e6b0a-4413-489c-b336-40b43730eaf5', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 0.03558s ago] {'uid_1': '4c6ba3a9-3fa3-4a2c-aa07-7c094b8ba257', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT asset.id AS asset_id, asset.type_id AS asset_type_id, asset.name AS asset_name, asset.uid AS asset_uid 
+FROM asset 
+WHERE asset.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00032s] {'pk_1': 555}
+INFO:sqlalchemy.engine.Engine:SELECT candle.id AS candle_id, candle.id_instrument AS candle_id_instrument, candle.id_timeframe AS candle_id_timeframe, candle.time_m AS candle_time_m, candle.open AS candle_open, candle.low AS candle_low, candle.high AS candle_high, candle.close AS candle_close, candle.volume AS candle_volume, candle.fast_sma AS candle_fast_sma, candle.slow_sma AS candle_slow_sma, candle.rsi AS candle_rsi 
+FROM candle 
+WHERE %(param_1)s = candle.id_instrument
+INFO:sqlalchemy.engine.Engine:[generated in 0.00028s] {'param_1': 188}
+INFO:sqlalchemy.engine.Engine:SELECT candle.id AS candle_id, candle.id_instrument AS candle_id_instrument, candle.id_timeframe AS candle_id_timeframe, candle.time_m AS candle_time_m, candle.open AS candle_open, candle.low AS candle_low, candle.high AS candle_high, candle.close AS candle_close, candle.volume AS candle_volume, candle.fast_sma AS candle_fast_sma, candle.slow_sma AS candle_slow_sma, candle.rsi AS candle_rsi 
+FROM candle 
+WHERE %(param_1)s = candle.id_instrument
+INFO:sqlalchemy.engine.Engine:[generated in 0.00020s] {'param_1': 188}
+INFO:sqlalchemy.engine.Engine:SELECT currency.id AS currency_id, currency.name AS currency_name 
+FROM currency 
+WHERE currency.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00015s] {'pk_1': 2}
+INFO:sqlalchemy.engine.Engine:SELECT exchange.id AS exchange_id, exchange.name AS exchange_name 
+FROM exchange 
+WHERE exchange.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00019s] {'pk_1': 3}
+INFO:sqlalchemy.engine.Engine:SELECT instrument_type.id AS instrument_type_id, instrument_type.name AS instrument_type_name 
+FROM instrument_type 
+WHERE instrument_type.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00023s] {'pk_1': 2}
+INFO:sqlalchemy.engine.Engine:SELECT sector.id AS sector_id, sector.name AS sector_name 
+FROM sector 
+WHERE sector.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00018s] {'pk_1': 7}
+INFO:sqlalchemy.engine.Engine:SELECT asset.id AS asset_id, asset.type_id AS asset_type_id, asset.name AS asset_name, asset.uid AS asset_uid 
+FROM asset 
+WHERE asset.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 13.82s ago] {'pk_1': 690}
+INFO:sqlalchemy.engine.Engine:SELECT candle.id AS candle_id, candle.id_instrument AS candle_id_instrument, candle.id_timeframe AS candle_id_timeframe, candle.time_m AS candle_time_m, candle.open AS candle_open, candle.low AS candle_low, candle.high AS candle_high, candle.close AS candle_close, candle.volume AS candle_volume, candle.fast_sma AS candle_fast_sma, candle.slow_sma AS candle_slow_sma, candle.rsi AS candle_rsi 
+FROM candle 
+WHERE %(param_1)s = candle.id_instrument
+INFO:sqlalchemy.engine.Engine:[cached since 13.81s ago] {'param_1': 236}
+INFO:sqlalchemy.engine.Engine:SELECT candle.id AS candle_id, candle.id_instrument AS candle_id_instrument, candle.id_timeframe AS candle_id_timeframe, candle.time_m AS candle_time_m, candle.open AS candle_open, candle.low AS candle_low, candle.high AS candle_high, candle.close AS candle_close, candle.volume AS candle_volume, candle.fast_sma AS candle_fast_sma, candle.slow_sma AS candle_slow_sma, candle.rsi AS candle_rsi 
+FROM candle 
+WHERE %(param_1)s = candle.id_instrument
+INFO:sqlalchemy.engine.Engine:[cached since 13.81s ago] {'param_1': 236}
+INFO:sqlalchemy.engine.Engine:SELECT exchange.id AS exchange_id, exchange.name AS exchange_name 
+FROM exchange 
+WHERE exchange.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 13.81s ago] {'pk_1': 2}
+INFO:sqlalchemy.engine.Engine:SELECT instrument_type.id AS instrument_type_id, instrument_type.name AS instrument_type_name 
+FROM instrument_type 
+WHERE instrument_type.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 13.8s ago] {'pk_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT asset.id AS asset_id, asset.type_id AS asset_type_id, asset.name AS asset_name, asset.uid AS asset_uid 
+FROM asset 
+WHERE asset.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 34.61s ago] {'pk_1': 2000}
+INFO:sqlalchemy.engine.Engine:SELECT candle.id AS candle_id, candle.id_instrument AS candle_id_instrument, candle.id_timeframe AS candle_id_timeframe, candle.time_m AS candle_time_m, candle.open AS candle_open, candle.low AS candle_low, candle.high AS candle_high, candle.close AS candle_close, candle.volume AS candle_volume, candle.fast_sma AS candle_fast_sma, candle.slow_sma AS candle_slow_sma, candle.rsi AS candle_rsi 
+FROM candle 
+WHERE %(param_1)s = candle.id_instrument
+INFO:sqlalchemy.engine.Engine:[cached since 34.61s ago] {'param_1': 670}
+INFO:sqlalchemy.engine.Engine:SELECT candle.id AS candle_id, candle.id_instrument AS candle_id_instrument, candle.id_timeframe AS candle_id_timeframe, candle.time_m AS candle_time_m, candle.open AS candle_open, candle.low AS candle_low, candle.high AS candle_high, candle.close AS candle_close, candle.volume AS candle_volume, candle.fast_sma AS candle_fast_sma, candle.slow_sma AS candle_slow_sma, candle.rsi AS candle_rsi 
+FROM candle 
+WHERE %(param_1)s = candle.id_instrument
+INFO:sqlalchemy.engine.Engine:[cached since 34.6s ago] {'param_1': 670}
+INFO:sqlalchemy.engine.Engine:SELECT currency.id AS currency_id, currency.name AS currency_name 
+FROM currency 
+WHERE currency.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 34.6s ago] {'pk_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT sector.id AS sector_id, sector.name AS sector_name 
+FROM sector 
+WHERE sector.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 34.58s ago] {'pk_1': 3}
+INFO:sqlalchemy.engine.Engine:SELECT asset.id AS asset_id, asset.type_id AS asset_type_id, asset.name AS asset_name, asset.uid AS asset_uid 
+FROM asset 
+WHERE asset.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 55.17s ago] {'pk_1': 7831}
+INFO:sqlalchemy.engine.Engine:SELECT candle.id AS candle_id, candle.id_instrument AS candle_id_instrument, candle.id_timeframe AS candle_id_timeframe, candle.time_m AS candle_time_m, candle.open AS candle_open, candle.low AS candle_low, candle.high AS candle_high, candle.close AS candle_close, candle.volume AS candle_volume, candle.fast_sma AS candle_fast_sma, candle.slow_sma AS candle_slow_sma, candle.rsi AS candle_rsi 
+FROM candle 
+WHERE %(param_1)s = candle.id_instrument
+INFO:sqlalchemy.engine.Engine:[cached since 55.16s ago] {'param_1': 1691}
+INFO:sqlalchemy.engine.Engine:SELECT candle.id AS candle_id, candle.id_instrument AS candle_id_instrument, candle.id_timeframe AS candle_id_timeframe, candle.time_m AS candle_time_m, candle.open AS candle_open, candle.low AS candle_low, candle.high AS candle_high, candle.close AS candle_close, candle.volume AS candle_volume, candle.fast_sma AS candle_fast_sma, candle.slow_sma AS candle_slow_sma, candle.rsi AS candle_rsi 
+FROM candle 
+WHERE %(param_1)s = candle.id_instrument
+INFO:sqlalchemy.engine.Engine:[cached since 55.15s ago] {'param_1': 1691}
+INFO:sqlalchemy.engine.Engine:SELECT sector.id AS sector_id, sector.name AS sector_name 
+FROM sector 
+WHERE sector.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 55.14s ago] {'pk_1': 1}
