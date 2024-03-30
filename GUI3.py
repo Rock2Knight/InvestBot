@@ -24,13 +24,13 @@ class Ui_MainWindow(object):
         self.matlayout.setContentsMargins(0, 0, 0, 0)
         self.matlayout.setObjectName("matlayout")
         self.layoutWidget = QtWidgets.QWidget(self.centralwidget)
-        self.layoutWidget.setGeometry(QtCore.QRect(990, 30, 291, 251))
+        self.layoutWidget.setGeometry(QtCore.QRect(990, 30, 350, 301))
         self.layoutWidget.setObjectName("layoutWidget")
         self.toolsVLayout = QtWidgets.QVBoxLayout(self.layoutWidget)
         self.toolsVLayout.setContentsMargins(0, 0, 0, 0)
         self.toolsVLayout.setObjectName("toolsVLayout")
 
-        # Настройка кнопки для получения данных
+        # Настройка кнопки для получения котировок
         self.btnGetData = QtWidgets.QPushButton(self.layoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
@@ -44,6 +44,21 @@ class Ui_MainWindow(object):
         self.btnGetData.setFont(font)
         self.btnGetData.setObjectName("btnGetData")
         self.toolsVLayout.addWidget(self.btnGetData)
+
+        # Настройка кнопки для моделирования торговли
+        self.btnModel = QtWidgets.QPushButton(self.layoutWidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.btnModel.sizePolicy().hasHeightForWidth())
+        self.btnModel.setSizePolicy(sizePolicy)
+        font = QtGui.QFont()
+        font.setPointSize(13)
+        font.setBold(True)
+        font.setWeight(75)
+        self.btnModel.setFont(font)
+        self.btnModel.setObjectName("btnModel")
+        self.toolsVLayout.addWidget(self.btnModel)
 
         # Настройка кнопки для рисования
         self.btnDraw = QtWidgets.QPushButton(self.layoutWidget)
@@ -194,12 +209,13 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.btnGetData.setText(_translate("MainWindow", "Получить данные"))
+        self.btnModel.setText(_translate("MainWindow", "Промоделировать торговлю"))
         self.btnDraw.setText(_translate("MainWindow", "Нарисовать"))
         self.btnClear.setText(_translate("MainWindow", "Очистить"))
         self.cntTradesRadioBtn.setText(_translate("MainWindow", "Гистограмма сделок"))
         self.profitRadioBtn.setText(_translate("MainWindow", "График доходности"))
-        self.time_to.setText(_translate("MainWindow", "T (конца):"))
-        self.time_from.setText(_translate("MainWindow", "T (начала):"))
+        self.time_to.setText(_translate("MainWindow", "T (начала):"))
+        self.time_from.setText(_translate("MainWindow", "T (конца):"))
 
 
 if __name__ == "__main__":

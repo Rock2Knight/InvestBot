@@ -67,7 +67,10 @@ async def asyncRequestHandler(reqs, tools_uid, frame, str_time_from, str_time_to
         os.mkdir(path)
 
     for i in range(len(resData)):
-        filename = path + "/" + tools_uid[i] + "" + str_time_from + "_" + str_time_to + ".csv"
+        raw_filename = path + "/" + tools_uid[i] + "_" + str_time_from + "_" + str_time_to + ".csv"
+        filename = raw_filename.replace(":", "_")
+        if os.path.isfile(filename):
+            continue
         dfTool = pd.DataFrame(resData[i])
         dfTool.to_csv(filename)
 
@@ -86,14 +89,17 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         self.addFigure()   # Создаем область для графика в интерфейсе
 
         self.account_portfolio = 100000.00  # Размер портфеля в рублях
-        self.cnt_lots = 1000                # Количество лотов акции FIGI
+        self.cnt_lots = 1000                # Количество лотов по инструменту
         self.successTrades = 0              # Количество прибыльных сделок
         self.failTrades = 0                 # Количество убыточных сделок
         self.dfTrades = None                # Статистика сделок
         self.dfPortfolio = None             # Статистика доходности портфеля
-        self.tools_uid = list([])       # Список инструментов
+        self.tools_uid = list([])           # Список инструментов
         self.dataTrades = None              # результаты торговли
-        self.tools_data = list([])
+        self.tools_data = list([])          # Список с информацие о каждом инструменте из базы
+        self.str_time_from = ''             # Дата начала моделирования
+        self.str_time_to = ''               # Дата конца моделирования
+        self.frame = ''                     # Таймфрейм моделирования
 
         self.get_all_instruments()          # Загружаем uid торговых инструментов в память программы
 
@@ -107,33 +113,81 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
 
         #self.countTrades()                  # Подсчитываем прибыльные и убыточные сделки
         self.btnGetData.clicked.connect(self.getCandles)
+        self.btnModel.clicked.connect(self.setupModelThread)
         self.btnDraw.clicked.connect(self.checkRadio)     # Если была нажата кнопка рисования, проверяем, какой тип график выбран
         self.btnClear.clicked.connect(self.clear_graph)
         #self.btnGetActiveInfo.clicked.connect(self.get_all_instruments)
         # self.period.activated[str].connect(self.setCSVList)
 
+    '''
     async def ainit(self):
         task = asyncio.create_task(self.AsyncHistoryTrain())
         res = await asyncio.gather(task)
         self.dfTrades, self.dfPortfolio = res[0][0], res[0][1]
         self.countTrades()                  # Подсчитываем прибыльные и убыточные сделки
+    '''
 
 
-    async def AsyncHistoryTrain(self):
-        return await tech_analyze.HistoryTrain(FIGI, self.cnt_lots,
+    async def AsyncHistoryTrain(self, uid: str):
+        """
+        Моделирует торговлю по инструменту с идентификатором uid за заданный период асинхронно
+        :param uid: идентификатор торгового инструмента
+        :return:
+        """
+        return await tech_analyze.HistoryTrain(uid, self.cnt_lots,
                                                 self.account_portfolio, ma_interval=5,
                                                 lot=LOT, stopAccount=STOP_ACCOUNT,
-                                                stopLoss=STOP_LOSS)
+                                                stopLoss=STOP_LOSS, time_from=self.str_time_from,
+                                                time_to=self.str_time_to, timeframe=self.frame)
+
+    async def AsyncHistTrainMany(self):
+        """
+        Моделирует торговлю по иструментам за заданный период асинхронно
+        :return:
+        """
+
+        tasks = list([])
+        for uid in self.tools_uid:
+            task = asyncio.create_task(self.AsyncHistoryTrain(uid))
+            tasks.append(task)
+        self.dfTrades = await asyncio.gather(*tasks)
+
+
+    def setupHistTrain(self):
+        """
+        Синхронный метод, обертывающий метод асинхронного моделирования
+        :return:
+        """
+        if not self.tools_uid:
+            print("Необходимо загрузить инструменты")
+            return
+        if not self.str_time_from and self.str_time_to:
+            print("Необходимо указать период моделирования")
+            return
+        if not self.frame:
+            print("Необходимо указать таймфрейм моделирования")
+            return
+
+        loop = asyncio.new_event_loop()
+        return loop.run_until_complete(self.AsyncHistTrainMany())
+
+
+    def setupModelThread(self):
+        threadModel = threading.Thread(target=self.setupHistTrain)
+        threadModel.start()
+        threadModel.join()
+        del threadModel
+        print("\n\nМоделироавние успешно завершено")
+
 
     def getCandles(self):
         """ Функция для получения котировок по инструментам, указанным в instruments.txt """
-        str_time_from = self.edit_time_to.toPlainText()
-        str_time_to = self.edit_time_from.toPlainText()
+        self.str_time_from = self.edit_time_to.toPlainText()
+        self.str_time_to = self.edit_time_from.toPlainText()
         reqs = list([])
 
-        frame = None
         try:
-            frame = self.tfComboBox.currentText() # Получаем активный таймфрейм из combobox
+            self.frame = self.tfComboBox.currentText() # Получаем активный таймфрейм из combobox
         except Exception as e:
             print(e.args)
             raise e
@@ -144,15 +198,12 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         try:
             for i in range(len(self.tools_uid)):
                 uid = self.tools_uid[i]
-                reqs.append(f"get_candles {uid} {str_time_from} {str_time_to} {frame}")
-            thread1 = threading.Thread(target=syncRequestHandler, args=(reqs, self.tools_uid, frame, str_time_from, str_time_to,))
+                reqs.append(f"get_candles {uid} {self.str_time_from} {self.str_time_to} {self.frame}")
+            thread1 = threading.Thread(target=syncRequestHandler, args=(reqs, self.tools_uid, self.frame, self.str_time_from, self.str_time_to,))
             thread1.start()
             thread1.join()
             del thread1
             print('All data have been written\n')
-
-            if resData:
-                printResData()
         except IndexError as e:
             print(f"\ne.args = {e.args}\n")
             raise e

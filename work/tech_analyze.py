@@ -3,6 +3,7 @@ from math import floor, fabs
 from contextlib import redirect_stdout
 from datetime import datetime
 import asyncio
+import os
 
 import pandas as pd
 
@@ -80,8 +81,42 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, **kwargs):
     stopAccount = kwargs['stopAccount']  # Риск для счета в процентах
     stopLoss = kwargs['stopLoss']  # Точка аннулирования для торговой стратегии в процентах
 
+    # Создаем файлы для сохранения статистики и проверяем на наличие этих данных.
+    # Если файлы с нужными именам существуют, выходим из функции
+    pathTrades = "../history_data/trades_stats"
+    pathPrtf = "../history_data/portfolio_stats"
+    if not os.path.exists(pathTrades):
+        os.mkdir(pathTrades)
+    if not os.path.exists(pathPrtf):
+        os.mkdir(pathPrtf)
+
+    pathTrades = pathTrades + "/" + kwargs['timeframe']
+    pathPrtf = pathPrtf + "/" + kwargs['timeframe']
+    if not os.path.exists(pathTrades):
+        os.mkdir(pathTrades)
+    if not os.path.exists(pathPrtf):
+        os.mkdir(pathPrtf)
+
+    # Получаем исторические свечи
+    raw_tr_name = pathTrades + "/" + str(uid) + "_" + kwargs['time_from'] + "_" + kwargs['time_to'] + ".csv"
+    raw_prtf_name = pathPrtf + "/" + str(uid) + "_" + kwargs['time_from'] + "_" + kwargs['time_to'] + ".csv"
+    statsTradesFilename = raw_tr_name.replace(":", "_")
+    statsPortfolioFilename = raw_prtf_name.replace(":", "_")
+
+    if os.path.exists(statsTradesFilename) and os.path.exists(statsPortfolioFilename):
+        dfTrades = pd.read_csv(statsTradesFilename)
+        dfPortfolio = pd.read_csv(statsPortfolioFilename)
+        return dfTrades, dfPortfolio
+
     # 1. Получаем готовый датафрейм исторических свечей
-    CandlesDF = pd.read_csv("../share_history.csv")
+    raw_filename = "../instruments_info/" + kwargs['timeframe'] + "/" + uid + "_"
+    raw_filename = raw_filename + kwargs['time_from'] + "_" + kwargs['time_to'] + ".csv"
+    filename = raw_filename.replace(":", "_")
+    CandlesDF = pd.read_csv(filename)
+
+    if CandlesDF.empty:
+        dfTrades, dfPortfolio = None, None
+        return dfTrades, dfPortfolio
 
     rsiObject = RSI()  # Добавляем RSI индикатор с интервалом 14
     SMA_5 = SMAIndicator(ma_interval=ma_interval, CandlesDF=CandlesDF)  # Добавляем SMA с интервалом 5
@@ -325,6 +360,7 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, **kwargs):
     dfTrades = pd.DataFrame(tradeInfo)
     dfPortfolio = pd.DataFrame(portfolioInfo)
     # записываем их в CSV
-    dfTrades.to_csv("../history_data/trades_" + str(uid) + ".csv")
-    dfPortfolio.to_csv("../history_data/portfolio_train.csv")
+
+    dfTrades.to_csv(statsTradesFilename)
+    dfPortfolio.to_csv(statsPortfolioFilename)
     return dfTrades, dfPortfolio        # возвращаем в вызывающую функцию
