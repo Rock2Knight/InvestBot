@@ -26,7 +26,8 @@ from app.StopMarketQueue import StopMarketQueue
 from api import crud, models
 from api.database import *
 
-logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='w')
+logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
+                    format="%(asctime)s %(levelname)s %(message)s")
 UTC_OFFSET = "Europe/Moscow"
 
 

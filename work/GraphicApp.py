@@ -5,6 +5,7 @@ import numpy as np
 from functools import wraps
 import threading
 import os
+import logging
 
 from PyQt5.QtWidgets import (
     QMainWindow,
@@ -28,6 +29,9 @@ from GUI3 import Ui_MainWindow
 from work import *
 import tech_analyze, exceptions, core_bot
 
+
+logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
+                    format="%(asctime)s %(levelname)s %(message)s")
 
 resData = None
 
@@ -94,6 +98,7 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         self.failTrades = 0                 # Количество убыточных сделок
         self.dfTrades = None                # Статистика сделок
         self.dfPortfolio = None             # Статистика доходности портфеля
+        self._resTrading_ = None            # результаты мульти-моделирования торговли
         self.tools_uid = list([])           # Список инструментов
         self.dataTrades = None              # результаты торговли
         self.tools_data = list([])          # Список с информацие о каждом инструменте из базы
@@ -103,32 +108,15 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
 
         self.get_all_instruments()          # Загружаем uid торговых инструментов в память программы
 
-        # Моделируем торговлю на исторических данных
-        '''
-        self.dfTrades, self.dfPortfolio = tech_analyze.HistoryTrain(FIGI, self.cnt_lots,
-                                                                    self.account_portfolio, ma_interval=5,
-                                                                    lot=LOT, stopAccount=STOP_ACCOUNT,
-                                                                    stopLoss=STOP_LOSS)
-        '''
-
         #self.countTrades()                  # Подсчитываем прибыльные и убыточные сделки
         self.btnGetData.clicked.connect(self.getCandles)
         self.btnModel.clicked.connect(self.setupModelThread)
         self.btnDraw.clicked.connect(self.checkRadio)     # Если была нажата кнопка рисования, проверяем, какой тип график выбран
         self.btnClear.clicked.connect(self.clear_graph)
-        #self.btnGetActiveInfo.clicked.connect(self.get_all_instruments)
-        # self.period.activated[str].connect(self.setCSVList)
-
-    '''
-    async def ainit(self):
-        task = asyncio.create_task(self.AsyncHistoryTrain())
-        res = await asyncio.gather(task)
-        self.dfTrades, self.dfPortfolio = res[0][0], res[0][1]
-        self.countTrades()                  # Подсчитываем прибыльные и убыточные сделки
-    '''
 
 
-    async def AsyncHistoryTrain(self, uid: str):
+
+    async def AsyncHistoryTrain(self, uid: str, tool_name: str):
         """
         Моделирует торговлю по инструменту с идентификатором uid за заданный период асинхронно
         :param uid: идентификатор торгового инструмента
@@ -136,9 +124,9 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         """
         return await tech_analyze.HistoryTrain(uid, self.cnt_lots,
                                                 self.account_portfolio, ma_interval=5,
-                                                lot=LOT, stopAccount=STOP_ACCOUNT,
-                                                stopLoss=STOP_LOSS, time_from=self.str_time_from,
-                                                time_to=self.str_time_to, timeframe=self.frame)
+                                                lot=LOT, stopAccount=STOP_ACCOUNT, stopLoss=STOP_LOSS,
+                                                time_from=self.str_time_from, time_to=self.str_time_to,
+                                                timeframe=self.frame, name=tool_name)
 
     async def AsyncHistTrainMany(self):
         """
@@ -147,10 +135,10 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         """
 
         tasks = list([])
-        for uid in self.tools_uid:
-            task = asyncio.create_task(self.AsyncHistoryTrain(uid))
+        for i in range(len(self.tools_uid)):
+            task = asyncio.create_task(self.AsyncHistoryTrain(self.tools_uid[i], self.tools_data[i].name))
             tasks.append(task)
-        self.dfTrades = await asyncio.gather(*tasks)
+        self._resTrading_= await asyncio.gather(*tasks)
 
 
     def setupHistTrain(self):
@@ -161,12 +149,17 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         if not self.tools_uid:
             print("Необходимо загрузить инструменты")
             return
-        if not self.str_time_from and self.str_time_to:
-            print("Необходимо указать период моделирования")
-            return
+        if not self.str_time_from and not self.str_time_to:
+            self.str_time_from = self.edit_time_from.toPlainText()
+            self.str_time_to = self.edit_time_to.toPlainText()
+            if not self.str_time_from and self.str_time_to:
+                print("Необходимо указать период моделирования")
+                return
         if not self.frame:
-            print("Необходимо указать таймфрейм моделирования")
-            return
+            self.frame = self.tfComboBox.currentText()  # Получаем активный таймфрейм из combobox
+            if not self.frame:
+                print("Необходимо указать таймфрейм моделирования")
+                return
 
         loop = asyncio.new_event_loop()
         return loop.run_until_complete(self.AsyncHistTrainMany())
@@ -229,9 +222,11 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         self.matlayout.addWidget(self.canvas)
         self.matlayout.addWidget(self.toolbar)
 
+
     def clear_graph(self):
         self.axes.clear()
         self.canvas.draw()
+
 
     def countTrades(self):
         """ Здесь считаются успешные и провальные сделки за каждый период моделирования торговли """
@@ -268,6 +263,7 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         self.axes.set_yticks(y_ticks)
         self.axes.set_yticklabels(y_ticklabels, fontsize=16)
         self.canvas.draw()
+
 
     def drawProfitPlot(self):
         """

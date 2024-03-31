@@ -1,6 +1,7 @@
 # Модуль, содержащий реализацию индикатора скользящей средней
 from abc import ABC, abstractmethod  # Для абстрактных классов и интерфейсов
 from typing import Union, Any
+import os
 import pandas as pd
 
 from api.models import Candle
@@ -35,20 +36,48 @@ class MAIndicator(ABC):
 # Обычная MA
 class SMAIndicator(MAIndicator):
 
-    def __init__(self, ma_interval: int, CandlesDF: Any, model=True):
+    def __init__(self, ma_interval: int, model=True, **kwargs):
+        self._time_from_ = None
+        self._time_to_ = None
+        self._frame_ = None
+        self._uid_ = None
+        self._filenameSMA_ = None
+        self._filenameCandles_ = None
+        if kwargs:
+            self._time_from_ = kwargs['time_from']
+            self._time_to_ = kwargs['time_to']
+            self._frame_ = kwargs['frame']
+            self._uid_ = kwargs['uid']
+
+            path1 = "../sma_cache/" + self._frame_
+            if not os.path.exists(path1):
+                os.mkdir(path1)
+            raw_name1 = path1+'/'+self._uid_+'_'+self._time_from_+'_'+self._time_to_+'.csv'
+            self._filenameSMA_ = raw_name1.replace(':', '_')
+
+            path2 = "../instruments_info/" + self._frame_
+            raw_name2 = path2+'/'+self._uid_+'_'+self._time_from_+'_'+self._time_to_+'.csv'
+            self._filenameCandles_ = raw_name2.replace(':', '_')
+
         if model:
-            self.model_init(ma_interval, CandlesDF)
+            self.model_init(ma_interval)
         else:
-            self.sandbox_init(ma_interval, CandlesDF)
+            self.sandbox_init(ma_interval)
 
 
-    def model_init(self, ma_interval: int, CandlesDF):
+    def model_init(self, ma_interval: int):
         self.keyName = 'SMA_' + str(ma_interval)
         self.smaValues = dict()  # Словарь для значений SMA
         self.smaValues['time'] = list([])  # Список времени
         self.smaValues[self.keyName] = list([])  # Список значений SMA
         self.ma_interval = ma_interval
         self.dfSMA = None
+        CandlesDF = None
+        try:
+            CandlesDF = pd.read_csv(self._filenameCandles_)
+        except OSError as e:
+            print(e.args)
+            raise Exception("Ошибка при открытии CSV со свечами в объекте SMAIndicator")
 
         #up_candles = pd.read_csv("../share_history.csv")      # Свечи из опр. периода
 
@@ -68,10 +97,10 @@ class SMAIndicator(MAIndicator):
             self.smaValues[self.keyName].append(sma_val)
 
         self.dfSMA = pd.DataFrame(self.smaValues)
-        self.dfSMA.to_csv("../sma_history.csv")
+        self.dfSMA.to_csv(self._filenameSMA_)
 
 
-    def sandbox_init(self, ma_interval: int, CandlesDF: Any):
+    def sandbox_init(self, ma_interval: int):
         pass
 
 
@@ -87,7 +116,13 @@ class SMAIndicator(MAIndicator):
                 'Invalid value of MA interval')  # Передали в качестве периода скользящей средней некорректное значение
 
         #candles = core_bot.getCandles(param_list)  # Получаем исторические свечи через метод API
-        up_candles = pd.read_csv("../share_history.csv")
+        up_candles = None
+        try:
+            up_candles = pd.read_csv(self._filenameCandles_)
+        except OSError as e:
+            print(e.args)
+            raise Exception("Ошибка при догразке свечей в методе SMAIndicator.ma_build")
+
         size = cntOfCandles
         left = 0                 # Номер свечи, с которой строим SMA
 

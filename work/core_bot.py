@@ -21,7 +21,8 @@ from tinkoff.invest.services import MarketDataStreamService, MarketDataService
 from functional import *
 from exceptions import *
 
-logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='w')
+logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
+                    format="%(asctime)s %(levelname)s %(message)s")
 UTC_OFFSET = "Europe/Moscow"
 
 # Handle '/start' and '/help'

@@ -6,6 +6,7 @@ from tinkoff.invest.schemas import HistoricCandle
 import pandas as pd
 from MA_indicator import EMAIndicator
 from functional import cast_money
+import core_bot
 
 
 def formatCandle(size: int, candles: list[HistoricCandle]):
@@ -33,7 +34,7 @@ def formatCandle(size: int, candles: list[HistoricCandle]):
 # Индекс относительной силы (RSI)
 class RSI:
 
-    def __init__(self, RSI_interval: int = 14):
+    def __init__(self, filename: str, RSI_interval: int = 14):
         self.RSI_interval = RSI_interval
         self.RSI_df = None
 
@@ -42,7 +43,7 @@ class RSI:
                 'Invalid value of MA interval')  # Передали в качестве периода скользящей средней некорректное значение
 
         EMA_up, EMA_close = 0, 0  # EMA роста и EMA падения
-        self.CandlesDF = pd.read_csv("../share_history.csv")
+        self.CandlesDF = pd.read_csv(filename)
         rsiValues = dict()
         rsiValues['time'] = list([])
         rsiValues['RSI'] = list([])
@@ -80,14 +81,14 @@ class RSI:
         return self.RSI_df.iloc[index]['RSI']
 
 
-    def build(self, param_list: str):
+    def build(self, param_list: str, filename: str):
         if self.RSI_interval <= 0:
             raise ValueError(
                 'Invalid value of MA interval')  # Передали в качестве периода скользящей средней некорректное значение
 
         EMA_up, EMA_close = 0, 0  # EMA роста и EMA падения
         #candles = core_bot.getCandles(param_list)  # Лишняя работа, так-как вывается метод, обращающийся к API
-        CandlesDF = pd.read_csv("../share_history.csv")
+        CandlesDF = pd.read_csv(filename)
         rsiValues = dict()
         rsiValues['time'] = list([])
         rsiValues['RSI'] = list([])
