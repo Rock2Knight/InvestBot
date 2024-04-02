@@ -9,6 +9,9 @@ STOP_LOSS = 0.05       # Стоп-лосс для актива]
 __all__ = [
     "tech_analyze",
     "core_bot",
+    "functional",
+    "exceptions",
+    "oscillators",
     "MA_indicator",
     "LOT",
     "STOP_ACCOUNT",

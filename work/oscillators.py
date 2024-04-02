@@ -4,9 +4,9 @@ from datetime import datetime
 from tinkoff.invest.schemas import HistoricCandle
 
 import pandas as pd
-from MA_indicator import EMAIndicator
-from functional import cast_money
-import core_bot
+from work.MA_indicator import EMAIndicator
+from work.functional import cast_money
+import work.core_bot as core_bot
 
 
 def formatCandle(size: int, candles: list[HistoricCandle]):

@@ -8,8 +8,9 @@ from typing import Iterable
 
 import pandas as pd
 
-from MA_indicator import SMAIndicator
-from oscillators import RSI
+from work.MA_indicator import SMAIndicator
+from work.oscillators import RSI
+from work import STOP_ACCOUNT
 
 # Раздел констант
 ACCOUNT_ID = "0a475568-a650-449d-b5a8-ebab32e6b5ce"
@@ -210,6 +211,17 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, **kwargs):
         fullPortfolio = account_portfolio + totalSharePrice
         profitInRub = fullPortfolio - start_sum  # Прибыль/убыток в рублях (по отношению к общей стоимости портфеля)
         profitInPercent = (profitInRub / start_sum) * 100  # Прибыль/убыток в процентах (по отношению к общей стоимости портфеля)
+        if profitInPercent >= STOP_ACCOUNT * 100:
+            # Если размер убытка достиг риска для счета, то делаем аварийное завершение торговли
+            print(f"\n{trName}: FATAL_STOP")
+            if tradeInfo and portfolioInfo:
+                dfTrades = pd.DataFrame(tradeInfo)
+                dfPortfolio = pd.DataFrame(portfolioInfo)
+                dfTrades.to_csv(statsTradesFilename)
+                dfPortfolio.to_csv(statsPortfolioFilename)
+                return dfTrades, dfPortfolio
+            else:
+                return None, None
 
         # Цикл для проверки стоп-маркетов
         lot_cast_pr = active_cast * lot            # Текущая цена за лот

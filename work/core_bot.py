@@ -18,8 +18,8 @@ from tinkoff.invest.services import MarketDataStreamService, MarketDataService
 
 #from .functional import *
 #from .exceptions import *
-from functional import *
-from exceptions import *
+from work.functional import *
+from work.exceptions import *
 
 logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
                     format="%(asctime)s %(levelname)s %(message)s")
@@ -197,6 +197,7 @@ def candles_formatter(paramList: list[str]):
     try:
         moment1_raw = datetime.strptime(paramList[2], '%Y-%m-%d_%H:%M:%S')
     except ValueError:
+        logging.error("Invalid format of start datetime object\n")
         raise InvestBotValueError("Invalid format of start datetime object")
     finally:
         hour_value = 0
@@ -213,6 +214,7 @@ def candles_formatter(paramList: list[str]):
     try:
         moment2_raw = datetime.strptime(paramList[3], '%Y-%m-%d_%H:%M:%S').replace(tzinfo=pytz.timezone('Europe/Moscow'))
     except ValueError:
+        logging.error("Invalid format of end datetime object\n")
         raise InvestBotValueError("Invalid format of end datetime object")
     finally:
         hour_value = 0
@@ -259,6 +261,7 @@ def candles_formatter(paramList: list[str]):
         case 'MONTH':
             candle_interval = CandleInterval.CANDLE_INTERVAL_MONTH
         case _:
+            logging.error("Invalid value of CandleInterval\n")
             raise InvestBotValueError("Invalid value of CandleInterval")
 
     return paramList[1], moment1, moment2, candle_interval
@@ -274,6 +277,7 @@ def get_candles(param_list: str):
     try:
         candlesParams = candles_formatter(param_list)
     except InvestBotValueError as iverror:
+        logging.error(f"Ошибка во время выполнения метода core_bot.get_candles: {iverror.msg}\n")
         raise InvestBotValueError(iverror.msg)
 
 
@@ -316,6 +320,7 @@ async def async_get_candles(param_list: str):
     try:
         candlesParams = candles_formatter(param_list)
     except InvestBotValueError as iverror:
+        logging.error(f"Ошибка во время выполнения метода core_bot.async_get_candles: {iverror.msg}\n")
         raise InvestBotValueError(iverror.msg)
 
 
@@ -332,6 +337,7 @@ async def async_get_candles(param_list: str):
             )
         except Exception as irerror:
             print('\n\n', irerror.args, '\n')
+            logging.error("Ошибка во время запроса котировок в методе core_bot.async_get_candles")
             raise irerror
         finally:
             #if mode_uid == 0:

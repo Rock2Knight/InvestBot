@@ -19,7 +19,7 @@ from tinkoff.invest.exceptions import RequestError
 
 # Для исторических свечей
 
-from work import core_bot
+from work import *
 from work.functional import *
 from work.exceptions import *
 from app.StopMarketQueue import StopMarketQueue
@@ -63,6 +63,7 @@ class InvestBot():
     def init_db(self, fill=True):
         """ Заполнение базы данных"""
         if not self.db:
+            logging.error("Не указана база данных")
             raise Exception("Не указана база данных")
 
         instrument_list = crud.get_instrument_list(self.db)  # Достаем все записи из таблицы instrument
@@ -225,8 +226,10 @@ class InvestBot():
                                                                     class_code=instrument.class_code)
                             except Exception as e:
                                 if isinstance(e, RequestError):
+                                    logging.error("Ошбика во время запроса данных об акции на стороне сервера\n")
                                     continue
                                 else:
+                                    logging.error("Неправильно указаны параметры запроса\n")
                                     raise e
 
                             if shareResp:
@@ -248,8 +251,10 @@ class InvestBot():
                                                                   class_code=instrument.class_code)
                             except Exception as e:
                                 if isinstance(e, RequestError):
+                                    logging.error("Ошбика во время запроса данных об облигации на стороне сервера\n")
                                     continue
                                 else:
+                                    logging.error("Неправильно указаны параметры запроса\n")
                                     raise e
 
                             if bondResp:
@@ -271,8 +276,10 @@ class InvestBot():
                                                                 class_code=instrument.class_code)
                             except Exception as e:
                                 if isinstance(e, RequestError):
+                                    logging.error("Ошбика во время запроса данных об ETF на стороне сервера\n")
                                     continue
                                 else:
+                                    logging.error("Неправильно указаны параметры запроса\n")
                                     raise e
 
                             if etfResp:
@@ -288,6 +295,7 @@ class InvestBot():
                                 exchange_name = "undefined"
                         case _:
                             # Иначе ставим неопределенное значения
+                            logging.warning("Неопределенное значение типа торгового инструмента")
                             currency_name = "undefined"
                             sector_name = "undefined"
                             exchange_name = "undefined"
@@ -413,6 +421,7 @@ class InvestBot():
             if res_array[5][-1] == '\n':
                 res_array[5] = res_array[5][:-1]
         except IndexError as e:
+            logging.error('Не хватает строк в файле config.txt')
             raise IndexError('Не хватает строк в файле config.txt')
 
         return res_array
@@ -426,6 +435,7 @@ class InvestBot():
 
         db_instrument = crud.get_instrument_uid(self.db, instrument_uid=tool_info[0])
         if not db_instrument:
+            logging.error(f"Не найден инструмент с uid = {tool_info[0]}")
             raise ValueError(f"Не найден инструмент с uid = {tool_info[0]}")
 
         if not crud.check_timeframe(self.db, timeframe_name=tool_info[5]):
@@ -473,8 +483,10 @@ class InvestBot():
         try:
             candles = core_bot.get_candles(request_text)
         except InvestBotValueError as iverror:
+            logging.error(f"InvestBotValueError: {iverror.msg}")
             raise InvestBotValueError(iverror.msg)
         except RequestError as irerror:
+            logging.error("Ошибка во время запроса котировок на стороне сервера")
             raise irerror
 
         ''' Обходим массив свечей и добавляем их в базу '''
@@ -501,6 +513,7 @@ class InvestBot():
                                    open=open, close=close, low=low, high=high,
                                    id_instrument=my_instrument.id, id_timeframe=my_timeframe_id)
             except ValueError as vr:
+                logging.error(f"Ошибка во время создания записи в таблице \'Candle\'. Аргументы: {vr.args}")
                 print(vr.args)
 
         print('Data have been written')
@@ -523,8 +536,10 @@ class InvestBot():
         try:
             candles = core_bot.get_candles(request_text)
         except InvestBotValueError as iverror:
+            logging.error(f"Ошибка в методе InvestBot.load_candles во время обработки котировок: {iverror.args}")
             raise InvestBotValueError(iverror.msg)
         except RequestError as irerror:
+            logging.error("Ошибка в методе InvestBot.load_candles во время выгрузки котировок на стороне сервера")
             raise irerror
 
         ''' Обходим массив свечей и добавляем их в базу '''
@@ -546,6 +561,7 @@ class InvestBot():
                                    open=open, close=close, low=low, high=high,
                                    id_instrument=my_instrument.id, id_timeframe=my_timeframe_id)
             except ValueError as vr:
+                logging.error(f"В методе InvestBot.load_candles() в метод crud.create_candles() передан неверный аргумент передан")
                 print(vr.args)
 
         print(f"{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}: Candles have been written")

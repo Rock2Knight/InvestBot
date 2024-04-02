@@ -1,3 +1,12 @@
 /.idea
 /venv
 /shares.json
+/.env
+/work/historyTradingLog.txt
+/work/instruments.txt
+/work/logger.log
+/work/logger_main.log
+/GUI.ui
+/instruments.txt
+/app/config.txt
+/app/logger.log

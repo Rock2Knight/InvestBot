@@ -1,10 +1,14 @@
 """ CRUD-операции. Пока без схем FastAPI """
+import logging
 from typing import Optional
 from functools import cache
 
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import UnmappedInstanceError
 from . import models
+
+logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
+                    format="%(asctime)s %(levelname)s %(message)s")
 
 """ Получение списка валют """
 def get_currency_list(db: Session, skip: int = 0, limit: int = 100) -> list[Optional[models.Currency]]:
@@ -367,6 +371,7 @@ def create_asset(db: Session, **kwargs) -> models.Asset:
 
     db_asset_type = get_asset_type(db, kwargs['type_id'])
     if not db_asset_type:
+        logging.error("Тип актива не найден")
         raise ValueError("Тип актива не найден")
 
     last_asset_id = get_last_asset_id(db)
@@ -389,22 +394,27 @@ def create_instrument(db: Session, **kwargs):
 
     db_instrument_type = get_instrument_type(db, kwargs['type_id'])
     if not db_instrument_type:
+        logging.error("Ошибка в методе crud.create_instrument: тип инструмента не найден")
         raise ValueError("Тип инструмента не найден")
 
     db_asset = get_asset(db, kwargs['asset_id'])
     if not db_asset:
+        logging.error("Ошибка в методе crud.create_instrument: актив не найден")
         raise ValueError("Актив не найден")
 
     db_currency = get_currency(db, kwargs['currency_id'])
     if not db_currency:
+        logging.error("Ошибка в методе crud.create_instrument: валюта не найдена")
         raise ValueError("Валюта не найдена")
 
     db_exchange = get_exchange(db, kwargs['exchange_id'])
     if not db_exchange:
+        logging.error("Ошибка в методе crud.create_instrument: биржа не найдена")
         raise ValueError("Биржа не найдена")
 
     db_sector = get_sector(db, kwargs['sector_id'])
     if not db_sector:
+        logging.error("Ошибка в методе crud.create_instrument: сектор не найден")
         raise ValueError("Сектор не найден")
 
     last_instrument_id = get_last_instrument_id(db)
@@ -452,10 +462,12 @@ def create_candle(db: Session, **kwargs):
 
     db_instrument = get_instrument(db, instrument_id=kwargs['id_instrument'])
     if not db_instrument:
+        logging.error("Ошибка в методе crud.create_candle: инструмент не найден")
         raise ValueError("Инструмент не найден")
 
     db_timeframe = get_timeframe(db, kwargs['id_timeframe'])
     if not db_timeframe:
+        logging.error("Ошибка в методе crud.create_candle: таймфрейм не найден")
         raise ValueError("Таймфрейм не найден")
 
     last_id = get_last_candle_id(db)
@@ -472,6 +484,7 @@ def create_candle(db: Session, **kwargs):
     try:
         db.add(candle)
     except UnmappedInstanceError as UIerror:
+        logging.error("Ошибка в методе crud.create_candle: ошибка при попытке добавить свечу в базу")
         print(UIerror.with_traceback())
 
     db.commit()
@@ -486,6 +499,7 @@ def create_candle(db: Session, **kwargs):
 def delete_asset_type(db: Session, id: int):
     db_asset_type = get_asset_type(db, id)
     if not db_asset_type:
+        logging.error("Ошибка в методе crud.delete_asset_type: тип актива не найден")
         raise ValueError("Тип актива не найден")
     db.delete(db_asset_type)
     db.commit()
@@ -495,6 +509,7 @@ def delete_asset_type(db: Session, id: int):
 def delete_instrument_type(db: Session, id: int):
     db_instrument_type = get_instrument_type(db, id)
     if not db_instrument_type:
+        logging.error("Ошибка в методе crud.delete_instrument_type: тип инструмента не найден")
         raise ValueError("Тип инструмента не найден")
     db.delete(db_instrument_type)
     db.commit()
