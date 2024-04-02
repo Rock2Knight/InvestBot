@@ -1594,3 +1594,137 @@ FROM instrument
 WHERE instrument.uid = %(uid_1)s 
  LIMIT %(param_1)s
 2024-03-31 18:35:09,709 INFO [cached since 0.02305s ago] {'uid_1': '4c6ba3a9-3fa3-4a2c-aa07-7c094b8ba257', 'param_1': 1}
+2024-03-31 19:21:15,764 INFO select pg_catalog.version()
+2024-03-31 19:21:15,765 INFO [raw sql] {}
+2024-03-31 19:21:15,767 INFO select current_schema()
+2024-03-31 19:21:15,767 INFO [raw sql] {}
+2024-03-31 19:21:15,768 INFO show standard_conforming_strings
+2024-03-31 19:21:15,768 INFO [raw sql] {}
+2024-03-31 19:21:15,768 INFO BEGIN (implicit)
+2024-03-31 19:21:15,771 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-03-31 19:21:15,771 INFO [generated in 0.00019s] {'uid_1': '14b046ba-3fa1-424e-8a87-22437d941589', 'param_1': 1}
+2024-03-31 19:21:15,780 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-03-31 19:21:15,780 INFO [cached since 0.008688s ago] {'uid_1': 'e6123145-9665-43e0-8413-cd61b8aa9b13', 'param_1': 1}
+2024-03-31 19:21:15,781 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-03-31 19:21:15,781 INFO [cached since 0.01008s ago] {'uid_1': '2c7c296c-1f26-429f-ad8b-03fa1b6ba7fa', 'param_1': 1}
+2024-03-31 19:21:15,782 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-03-31 19:21:15,783 INFO [cached since 0.01151s ago] {'uid_1': 'de08affe-4fbd-454e-9fd1-46a81b23f870', 'param_1': 1}
+2024-03-31 19:21:15,784 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-03-31 19:21:15,785 INFO [cached since 0.0135s ago] {'uid_1': 'cf9ed7ef-784d-4c2c-aabe-362891fcd80c', 'param_1': 1}
+2024-03-31 19:21:15,787 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-03-31 19:21:15,787 INFO [cached since 0.01611s ago] {'uid_1': 'b993e814-9986-4434-ae88-b086066714a0', 'param_1': 1}
+2024-03-31 19:21:15,788 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-03-31 19:21:15,788 INFO [cached since 0.01724s ago] {'uid_1': 'b71bd174-c72c-41b0-a66f-5f9073e0d1f5', 'param_1': 1}
+2024-03-31 19:21:15,789 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-03-31 19:21:15,789 INFO [cached since 0.01822s ago] {'uid_1': '0da66728-6c30-44c4-9264-df8fac2467ee', 'param_1': 1}
+2024-03-31 19:21:15,790 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-03-31 19:21:15,790 INFO [cached since 0.01924s ago] {'uid_1': '5f1e6b0a-4413-489c-b336-40b43730eaf5', 'param_1': 1}
+2024-03-31 19:21:15,791 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-03-31 19:21:15,791 INFO [cached since 0.02014s ago] {'uid_1': '4c6ba3a9-3fa3-4a2c-aa07-7c094b8ba257', 'param_1': 1}
+2024-03-31 19:21:50,826 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:21:50,831 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:21:50,836 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:21:50,840 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:21:50,843 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:21:50,847 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:21:50,851 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:21:50,855 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:21:50,858 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:21:50,862 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:22:23,404 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:22:23,409 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:22:23,412 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:22:23,417 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:22:23,420 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:22:23,423 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:22:23,427 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:22:23,431 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:22:23,434 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-03-31 19:22:23,438 ERROR None GetCandles UNAVAILABLE DNS resolution failed for sandbox-invest-public-api.tinkoff.ru: UNAVAILABLE: WSA Error
+2024-04-02 11:36:00,328 INFO select pg_catalog.version()
+2024-04-02 11:36:00,328 INFO [raw sql] {}
+2024-04-02 11:36:00,329 INFO select current_schema()
+2024-04-02 11:36:00,330 INFO [raw sql] {}
+2024-04-02 11:36:00,330 INFO show standard_conforming_strings
+2024-04-02 11:36:00,331 INFO [raw sql] {}
+2024-04-02 11:36:00,331 INFO BEGIN (implicit)
+2024-04-02 11:36:00,334 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-04-02 11:36:00,334 INFO [generated in 0.00018s] {'uid_1': '14b046ba-3fa1-424e-8a87-22437d941589', 'param_1': 1}
+2024-04-02 11:36:00,338 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-04-02 11:36:00,338 INFO [cached since 0.004123s ago] {'uid_1': '34cab95f-2b93-41a4-8233-21769ff58c9a', 'param_1': 1}
+2024-04-02 11:36:00,339 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-04-02 11:36:00,339 INFO [cached since 0.004998s ago] {'uid_1': '2c7c296c-1f26-429f-ad8b-03fa1b6ba7fa', 'param_1': 1}
+2024-04-02 11:36:00,340 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-04-02 11:36:00,340 INFO [cached since 0.005762s ago] {'uid_1': '2a3ac153-f5fb-4f6d-af66-38a8d2b2eacb', 'param_1': 1}
+2024-04-02 11:36:00,341 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-04-02 11:36:00,341 INFO [cached since 0.007171s ago] {'uid_1': '9ba367af-dfbd-4d9c-8730-4b1d5a47756e', 'param_1': 1}
+2024-04-02 11:36:00,342 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-04-02 11:36:00,342 INFO [cached since 0.008206s ago] {'uid_1': 'b74afdce-e05e-4384-8445-a38646776ae9', 'param_1': 1}
+2024-04-02 11:36:00,343 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-04-02 11:36:00,343 INFO [cached since 0.008999s ago] {'uid_1': '127361c2-32ec-448c-b3ec-602166f537ea', 'param_1': 1}
+2024-04-02 11:36:00,344 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-04-02 11:36:00,344 INFO [cached since 0.009905s ago] {'uid_1': '30817fea-20e6-4fee-ab1f-d20fc1a1bb72', 'param_1': 1}
+2024-04-02 11:36:00,345 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-04-02 11:36:00,345 INFO [cached since 0.01074s ago] {'uid_1': 'fa6aae10-b8d5-48c8-bbfd-d320d925d096', 'param_1': 1}
+2024-04-02 11:36:00,346 INFO SELECT instrument.id AS instrument_id, instrument.sector_id AS instrument_sector_id, instrument.currency_id AS instrument_currency_id, instrument.exchange_id AS instrument_exchange_id, instrument.asset_id AS instrument_asset_id, instrument.type_id AS instrument_type_id, instrument.uid AS instrument_uid, instrument.position_uid AS instrument_position_uid, instrument.figi AS instrument_figi, instrument.name AS instrument_name, instrument.lot AS instrument_lot, instrument.ticker AS instrument_ticker, instrument.class_code AS instrument_class_code 
+FROM instrument 
+WHERE instrument.uid = %(uid_1)s 
+ LIMIT %(param_1)s
+2024-04-02 11:36:00,346 INFO [cached since 0.01261s ago] {'uid_1': '4c6ba3a9-3fa3-4a2c-aa07-7c094b8ba257', 'param_1': 1}

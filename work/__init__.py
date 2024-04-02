@@ -4,7 +4,12 @@ FIGI = "BBG00475KKY8"  # FIGI анализируемого инструемен�
 MAX_CNT_TICKS = 10     # Максимальное количество подписей по оси X
 LOT = 1                # Лотность торгуемого инструмента
 STOP_ACCOUNT = 0.01    # Риск для счета
-STOP_LOSS = 0.05       # Стоп-лосс для актива]
+STOP_LOSS = 0.05       # Стоп-лосс для актива
+SMA_INTERVAL = 5
+RSI_INTERVAL = 14
+START_LOT_COUNT = 1000
+START_ACCOUNT_PORTFOLIO = 1000000.00
+
 
 __all__ = [
     "tech_analyze",
@@ -16,5 +21,9 @@ __all__ = [
     "LOT",
     "STOP_ACCOUNT",
     "STOP_LOSS",
-    "MAX_CNT_TICKS"
+    "MAX_CNT_TICKS",
+    "SMA_INTERVAL",
+    "RSI_INTERVAL",
+    "START_LOT_COUNT",
+    "START_ACCOUNT_PORTFOLIO"
 ]

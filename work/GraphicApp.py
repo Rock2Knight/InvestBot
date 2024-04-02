@@ -147,6 +147,7 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         :return:
         """
         if not self.tools_uid:
+            logging.error("Необходимо загрузить инструменты")
             print("Необходимо загрузить инструменты")
             return
         if not self.str_time_from and not self.str_time_to:
@@ -198,9 +199,11 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
             del thread1
             print('All data have been written\n')
         except IndexError as e:
+            logging.error(f"\ne.args = {e.args}\n")
             print(f"\ne.args = {e.args}\n")
             raise e
         except BaseException as e:
+            logging(f"\nType of exception: {type(e)}\ne.args = {e.args}\n")
             print(f"\nType of exception: {type(e)}\ne.args = {e.args}\n")
             raise e
 
@@ -271,6 +274,7 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         тестирования на исторических данных
         """
         if self.dfPortfolio.empty:
+            logging.error('Нет данных для визуализации')
             raise exceptions.GuiError('Нет данных для визуализации')
 
         x_set_str = list(self.dfPortfolio['time'])                             # таймфреймы в строковом формате
