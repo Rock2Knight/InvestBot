@@ -9,6 +9,7 @@ SMA_INTERVAL = 5
 RSI_INTERVAL = 14
 START_LOT_COUNT = 1000
 START_ACCOUNT_PORTFOLIO = 1000000.00
+excelFile = "excel_stats.xlsx" # Файл для записи статистики
 
 
 __all__ = [
@@ -25,5 +26,7 @@ __all__ = [
     "SMA_INTERVAL",
     "RSI_INTERVAL",
     "START_LOT_COUNT",
-    "START_ACCOUNT_PORTFOLIO"
+    "START_ACCOUNT_PORTFOLIO",
+    "excelFile",
+    "excel_handler"
 ]

@@ -8,9 +8,8 @@ import os
 import logging
 
 from PyQt5.QtWidgets import (
-    QMainWindow,
-    QDateTimeEdit,
-    QMessageBox)
+    QMainWindow, QDateTimeEdit,
+    QMessageBox, QMessageBox)
 
 from tinkoff.invest.schemas import InstrumentStatus
 
@@ -26,6 +25,7 @@ import pandas as pd
 
 from api import database, models, crud
 from GUI3 import Ui_MainWindow
+import work
 from work import *
 import tech_analyze, exceptions, core_bot
 
@@ -92,8 +92,8 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
 
         self.addFigure()   # Создаем область для графика в интерфейсе
 
-        self.account_portfolio = 100000.00  # Размер портфеля в рублях
-        self.cnt_lots = 1000                # Количество лотов по инструменту
+        self.account_portfolio = START_ACCOUNT_PORTFOLIO  # Размер портфеля в рублях
+        self.cnt_lots = START_LOT_COUNT                # Количество лотов по инструменту
         self.successTrades = 0              # Количество прибыльных сделок
         self.failTrades = 0                 # Количество убыточных сделок
         self.dfTrades = None                # Статистика сделок
@@ -113,7 +113,7 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         self.btnModel.clicked.connect(self.setupModelThread)
         self.btnDraw.clicked.connect(self.checkRadio)     # Если была нажата кнопка рисования, проверяем, какой тип график выбран
         self.btnClear.clicked.connect(self.clear_graph)
-
+        self.btnGenTable.clicked.connect(self.setupGenModelThread)   # Запускает поток по созданию сводной таблице по результатам моделирования
 
 
     async def AsyncHistoryTrain(self, uid: str, tool_name: str):
@@ -123,7 +123,8 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         :return:
         """
         return await tech_analyze.HistoryTrain(uid, self.cnt_lots,
-                                                self.account_portfolio, ma_interval=5,
+                                                self.account_portfolio, ma_interval=SMA_INTERVAL,
+                                                rsi_interval=RSI_INTERVAL,
                                                 lot=LOT, stopAccount=STOP_ACCOUNT, stopLoss=STOP_LOSS,
                                                 time_from=self.str_time_from, time_to=self.str_time_to,
                                                 timeframe=self.frame, name=tool_name)
@@ -151,8 +152,8 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
             print("Необходимо загрузить инструменты")
             return
         if not self.str_time_from and not self.str_time_to:
-            self.str_time_from = self.edit_time_from.toPlainText()
-            self.str_time_to = self.edit_time_to.toPlainText()
+            self.str_time_from = self.edit_time_to.toPlainText()
+            self.str_time_to = self.edit_time_from.toPlainText()
             if not self.str_time_from and self.str_time_to:
                 print("Необходимо указать период моделирования")
                 return
@@ -166,12 +167,84 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         return loop.run_until_complete(self.AsyncHistTrainMany())
 
 
+    async def asyncGenTable(self):
+        excelHandler = None
+        # Блок проверки на наличие необходимых аттрибутов
+        try:
+            excelHandler = work.excel_handler.ExcelHandler(excelFile)
+        except Exception as e:
+            logging.error(f"Ошибка при создании обработчика таблицы\n {e.args}")
+            print(f"Ошибка при создании обработчика таблицы\n {e.args}")
+            exit()
+
+        if not self.str_time_from:
+            logging.error("Нет начальной даты и времени")
+            print("Нет начальной даты и времени")
+            exit()
+        if not self.str_time_to:
+            logging.error("Нет конечной даты и времени")
+            print("Нет конечной даты и времени")
+            exit()
+        if not self.frame:
+            logging.error("Нет таймфрейма")
+            print("Нет таймфрейма")
+            exit()
+
+        try:
+            task = asyncio.create_task(excelHandler.writeStats(self.str_time_from, self.str_time_to, self.frame))
+            await asyncio.gather(task)
+            while not task.done():
+                continue
+            excelHandler.saveWorkbook()
+        except Exception as e:
+            logging.error(f"Произошла ошибка во время составления сводной таблицы: {e.args}")
+            print(f"Произошла ошибка во время составления сводной таблицы: {e.args}")
+            QMessageBox.information(self, 'Information', 'Извините. Во время составления сводной таблицы произошла ошибка')
+            exit()
+        '''
+        task = asyncio.create_task(excelHandler.writeStats(self.str_time_from, self.str_time_to, self.frame))
+        await asyncio.gather(task)
+        while not task.done():
+            continue
+        '''
+
+
     def setupModelThread(self):
+        logging.info(threading.enumerate())
+        print(threading.enumerate(), '\n\n')
         threadModel = threading.Thread(target=self.setupHistTrain)
         threadModel.start()
         threadModel.join()
         del threadModel
         print("\n\nМоделироавние успешно завершено")
+
+
+    def setupSetLoopGenTable(self):
+        loop2 = asyncio.new_event_loop()
+        loop2.run_until_complete(self.asyncGenTable())
+
+    def setupGenModelThread(self):
+        """
+        Запускает поток, в котором генерируется сводная таблица Excel
+        :return:
+        """
+        self.str_time_from = self.edit_time_to.toPlainText()
+        self.str_time_to = self.edit_time_from.toPlainText()
+        self.frame = self.tfComboBox.currentText()
+        if not self.str_time_from or not self.str_time_to:
+            QMessageBox.information(self, 'Не указаны границы периода', 'Вы не указали границы периода моделирования')
+            logging.warning('Вы не указали границы периода моделирования')
+            return
+
+        logging.info(threading.enumerate())
+        print(threading.enumerate(), '\n\n')
+
+        thread2 = threading.Thread(target=self.setupSetLoopGenTable)
+        thread2.start()
+        thread2.join()
+        del thread2
+        # Отображаем окно с сообщением
+        QMessageBox.information(self, 'Information', 'Построение сводной таблицы успешно завершено')
 
 
     def getCandles(self):

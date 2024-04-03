@@ -1,5 +1,5 @@
 # Модуль отладки инструментов тех. анализа
-from math import floor
+from math import floor, fabs
 from contextlib import redirect_stdout
 from datetime import datetime
 import os
@@ -104,6 +104,7 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, **kwargs):
     Keyword arguments:
     :param lot - лотность инструмента
     :param ma_interval - Интервал SMA
+    :param rsi_interval - Интервал RSI
     :param stopAccount - риск для счета в процентах
     :param stopLoss - стоп-лосс (максимальный риск для одной позиции) в процентах
     :param time_from - время начала торговой стратегии в секундах
@@ -161,7 +162,7 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, **kwargs):
         dfTrades, dfPortfolio = None, None
         return dfTrades, dfPortfolio
 
-    rsiObject = RSI(filename=filename)  # Добавляем RSI индикатор с интервалом 14
+    rsiObject = RSI(filename=filename, RSI_interval=kwargs['rsi_interval'])  # Добавляем RSI индикатор с интервалом 14
     SMA_5 = SMAIndicator(ma_interval=ma_interval, uid=uid,
                          time_from=kwargs['time_from'],
                          time_to=kwargs['time_to'],
@@ -195,11 +196,11 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, **kwargs):
     # Словарь с информацией по портфелю
     portfolioInfo = {"time": list([]), "start_full_sum": list([]), "start_cnt_lots": list([]),
                      "cur_full_sum": list([]), "cur_free_sum": list([]), "cur_cnt_lots": list([]),
-                     "profit_in_rub": list([]), "profit_in_percent": list([])}
+                     "profit_in_rub": list([]), "profit_in_percent": list([]), "SM_SELL_sum": list([])}
 
     # Очередь стоп-маркет заявок
     stopMarketQueue = Queue()
-
+    realizedSM = 0.0
     # Анализируем свечи из выделенного интервала
     for i in range(CandlesDF.shape[0]):
 
@@ -211,7 +212,7 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, **kwargs):
         fullPortfolio = account_portfolio + totalSharePrice
         profitInRub = fullPortfolio - start_sum  # Прибыль/убыток в рублях (по отношению к общей стоимости портфеля)
         profitInPercent = (profitInRub / start_sum) * 100  # Прибыль/убыток в процентах (по отношению к общей стоимости портфеля)
-        if profitInPercent >= STOP_ACCOUNT * 100:
+        if fabs(profitInPercent) >= STOP_ACCOUNT * 100:
             # Если размер убытка достиг риска для счета, то делаем аварийное завершение торговли
             print(f"\n{trName}: FATAL_STOP")
             if tradeInfo and portfolioInfo:
@@ -236,6 +237,7 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, **kwargs):
                     posStopMarket = sl_lot_cast * sl_lot_cnt
                     account_portfolio += posStopMarket
                     cnt_lots -= sl_lot_cnt
+                    realizedSM += posStopMarket
                     if trName:
                         with open("historyTradingLog.txt", 'a', encoding="utf-8") as f, redirect_stdout(f):
                             print("INFO ABOUT TRANSACTION\n--------------------------\n" +
@@ -281,12 +283,11 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, **kwargs):
         portfolioInfo["cur_cnt_lots"].append(cnt_lots)
         portfolioInfo["profit_in_rub"].append(profitInRub)
         portfolioInfo["profit_in_percent"].append(profitInPercent)
+        portfolioInfo['SM_SELL_sum'].append(realizedSM)  # Общая сумма сработавших по стоп-маркету заявок
 
         # Если количество свеч для построения SMA недостаточно, продолжаем цикл
         if i < ma_interval - 1:  # Если номер свечи меньше периода SMA, то просто делаем итерацию без действий
             continue
-
-        # SMA_Values = SMA_indicator.MA_build(MA_interval=ma_interval, cntOfCandles=i+1)
 
         if i < 0:
             raise IndexError

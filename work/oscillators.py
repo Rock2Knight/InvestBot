@@ -40,7 +40,7 @@ class RSI:
 
         if self.RSI_interval <= 0:
             raise ValueError(
-                'Invalid value of MA interval')  # Передали в качестве периода скользящей средней некорректное значение
+                'Invalid value of RSI interval')  # Передали в качестве периода скользящей средней некорректное значение
 
         EMA_up, EMA_close = 0, 0  # EMA роста и EMA падения
         self.CandlesDF = pd.read_csv(filename)

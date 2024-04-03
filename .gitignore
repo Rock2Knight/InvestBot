@@ -10,3 +10,5 @@
 /instruments.txt
 /app/config.txt
 /app/logger.log
+/test_openpyxl.py
+/work/excel_stats.xlsx
