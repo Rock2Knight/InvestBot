@@ -9,7 +9,7 @@ import logging
 
 from PyQt5.QtWidgets import (
     QMainWindow, QDateTimeEdit,
-    QMessageBox, QMessageBox)
+    QMessageBox)
 
 from tinkoff.invest.schemas import InstrumentStatus
 
@@ -105,13 +105,14 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         self.str_time_from = ''             # Дата начала моделирования
         self.str_time_to = ''               # Дата конца моделирования
         self.frame = ''                     # Таймфрейм моделирования
+        self.visualData = dict()
 
         self.get_all_instruments()          # Загружаем uid торговых инструментов в память программы
 
         #self.countTrades()                  # Подсчитываем прибыльные и убыточные сделки
         self.btnGetData.clicked.connect(self.getCandles)
         self.btnModel.clicked.connect(self.setupModelThread)
-        self.btnDraw.clicked.connect(self.checkRadio)     # Если была нажата кнопка рисования, проверяем, какой тип график выбран
+        self.btnDraw.clicked.connect(self.controlDraw)     # Если была нажата кнопка рисования, проверяем, какой тип график выбран
         self.btnClear.clicked.connect(self.clear_graph)
         self.btnGenTable.clicked.connect(self.setupGenModelThread)   # Запускает поток по созданию сводной таблице по результатам моделирования
 
@@ -139,6 +140,7 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         for i in range(len(self.tools_uid)):
             task = asyncio.create_task(self.AsyncHistoryTrain(self.tools_uid[i], self.tools_data[i].name))
             tasks.append(task)
+
         self._resTrading_= await asyncio.gather(*tasks)
 
 
@@ -148,20 +150,24 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         :return:
         """
         if not self.tools_uid:
-            logging.error("Необходимо загрузить инструменты")
-            print("Необходимо загрузить инструменты")
-            return
+            logging.warning("Необходимо загрузить инструменты")
+            QMessageBox.information(self, "Информация по моделированию торговли", "Инструменты не загружены")
+            exit()
         if not self.str_time_from and not self.str_time_to:
             self.str_time_from = self.edit_time_to.toPlainText()
             self.str_time_to = self.edit_time_from.toPlainText()
             if not self.str_time_from and self.str_time_to:
-                print("Необходимо указать период моделирования")
-                return
+                logging.warning("Необходимо указать период моделирования")
+                QMessageBox.information(self, "Информация по моделированию торговли",
+                                        "Необходимо указать период моделирования")
+                exit()
         if not self.frame:
             self.frame = self.tfComboBox.currentText()  # Получаем активный таймфрейм из combobox
             if not self.frame:
-                print("Необходимо указать таймфрейм моделирования")
-                return
+                logging.warning("Необходимо указать таймфрейм моделирования")
+                QMessageBox.information(self, "Информация по моделированию торговли",
+                                        "Необходимо указать таймфрейм моделирования")
+                exit()
 
         loop = asyncio.new_event_loop()
         return loop.run_until_complete(self.AsyncHistTrainMany())
@@ -201,12 +207,6 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
             print(f"Произошла ошибка во время составления сводной таблицы: {e.args}")
             QMessageBox.information(self, 'Information', 'Извините. Во время составления сводной таблицы произошла ошибка')
             exit()
-        '''
-        task = asyncio.create_task(excelHandler.writeStats(self.str_time_from, self.str_time_to, self.frame))
-        await asyncio.gather(task)
-        while not task.done():
-            continue
-        '''
 
 
     def setupModelThread(self):
@@ -216,7 +216,9 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         threadModel.start()
         threadModel.join()
         del threadModel
+        logging.info("\n\nМоделироавние успешно завершено")
         print("\n\nМоделироавние успешно завершено")
+        QMessageBox.information(self, "Информация по моделированию", "Моделирование торговли успешно завршено")
 
 
     def setupSetLoopGenTable(self):
@@ -253,6 +255,18 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         self.str_time_to = self.edit_time_from.toPlainText()
         reqs = list([])
 
+        if not self.str_time_from or not self.str_time_to:
+            logging.error("Не указаны границы периода моделирования")
+            QMessageBox.information(self, "Информация по выгрузке котировок", "Не указаны границы периода моделирования")
+            return
+        time_from = datetime.strptime(self.str_time_from, "%Y-%m-%d_%H:%M:%S")
+        time_to = datetime.strptime(self.str_time_to, "%Y-%m-%d_%H:%M:%S")
+        if not time_from < time_to:
+            logging.error("Неправильно указан границы впериода моделирования")
+            QMessageBox.information(self, "Информация по выгрузке котировок",
+                                    "Неправильно указан границы впериода моделирования")
+            return
+
         try:
             self.frame = self.tfComboBox.currentText() # Получаем активный таймфрейм из combobox
         except Exception as e:
@@ -271,14 +285,33 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
             thread1.join()
             del thread1
             print('All data have been written\n')
+            QMessageBox.information(self, "Информация по выгрузке котировок", "Котировки по инструментам успешно выгружены!")
         except IndexError as e:
             logging.error(f"\ne.args = {e.args}\n")
             print(f"\ne.args = {e.args}\n")
-            raise e
+            QMessageBox.information(self, "Информация по выгрузке котировок",
+                                    "Неправильны указаны аттрибуты для выгрузки")
         except BaseException as e:
-            logging(f"\nType of exception: {type(e)}\ne.args = {e.args}\n")
+            logging.error(f"\nType of exception: {type(e)}\ne.args = {e.args}\n")
             print(f"\nType of exception: {type(e)}\ne.args = {e.args}\n")
-            raise e
+            QMessageBox.information(self, "Информация по выгрузке котировок",
+                                    "Ошибка во время выгрузки котировок")
+
+
+    def controlDraw(self):
+        """
+        Контролирует процесс отрисовки графиков
+        :return:
+        """
+        if not self.cntTradesRadioBtn.isChecked() and not self.profitRadioBtn.isChecked():
+            QMessageBox.information(self, "Не выбран тип графика", "Вы не выбрали тип графика!")
+            return
+
+        self.getVisualData()   # Получаем данные для отрисовки
+        if self.cntTradesRadioBtn.isChecked():
+            self.drawHistTrades()           # Рисуем гистограмму успешных и провльных сделок
+        else:
+            self.drawProfitPlot()           # Рисуем линейный график доходности по инструментам
 
 
     def checkRadio(self):
@@ -303,41 +336,157 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         self.axes.clear()
         self.canvas.draw()
 
+    async def getVisualDataInstrument(self, tradeUidFile: str, prtfUidFile: str, name: str):
+        """
+        Считает количество прибыльных и убыточных сделок по инструменту, предоставляет массив с моментами времени (X) и
+        массив с прибылью/убытком портфеля в каждый момент времени в процентах
 
-    def countTrades(self):
-        """ Здесь считаются успешные и провальные сделки за каждый период моделирования торговли """
-        if self.dfPortfolio.shape[0] == 0:
-            self.successTrades, self.failTrades = 0, 0
-            return
-        curPortfolio = self.dfPortfolio.iloc[-1]
+        :param tradeUidFile: имя файла с результатами сделок по инструменту UID
+        :param prtfUidFile: имя файла с информацией о состоянии портфеля по инструменту UID
+        :param name: название торгового инструмента
+        :return:
+        """
+        dfPortfolio = pd.read_csv(prtfUidFile)
+        dfTrades = pd.read_csv(tradeUidFile)
+        profitListTime = list(dfPortfolio['time'])
+        profitListValues = list(dfPortfolio['profit_in_percent'])
+        tradeMoments = list(dfTrades['time'])
+        cntSuccess, cntFail = 0, 0
 
-        tradeMoments = set(self.dfTrades['time'])  # Формируем множество моментов времени, когда совершались сделки
-
-        for i in range(self.dfPortfolio.shape[0]):
-            if self.dfPortfolio.iloc[i]['time'] in tradeMoments:
+        for i in range(dfPortfolio.shape[0]):
+            if dfPortfolio.iloc[i]['time'] in tradeMoments:
                 # Если в этот момент времени была совершена сделка, то рассчитываем разницу между текущим состоянием
                 # портфеля, и тем, что было на тот момент
-                diffFullSum = curPortfolio['cur_full_sum'] - self.dfPortfolio.iloc[i]['cur_full_sum']
-                if diffFullSum > 0:
-                    self.successTrades += 1
+                diffFullSum = dfPortfolio.iloc[-1]['cur_full_sum'] - dfPortfolio.iloc[i]['cur_full_sum']
+                if diffFullSum >= 0:
+                    cntSuccess += 1
                 elif diffFullSum < 0:
-                    self.failTrades += 1
+                    cntFail += 1
+
+        self.visualData[name] = (cntSuccess, cntFail, profitListTime, profitListValues)
+
+
+    async def asyncSetupGenVisualData(self, trFilenames, prtfFilenames):
+        """
+        В асинхронном режиме считываем результаты моделирования по каждому инструменту
+
+        :param trFilenames: Список файлов с информацией по сделкам
+        :param prtfFilenames: Список файлов с информацией о состоянии портфеля
+        """
+        tasks = list([])
+        for i in range(len(trFilenames)):
+            logging.info(f"Filename of trades: {trFilenames[i]}")
+            logging.info(f"Filename of portfolio: {prtfFilenames[i]}")
+            instrument = self.tools_data[i]
+            name = instrument.name
+            await self.getVisualDataInstrument(trFilenames[i], prtfFilenames[i], name)
+
+    def setupGenVisualData(self, trFilenames, prtfFilenames):
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self.asyncSetupGenVisualData(trFilenames, prtfFilenames))
+
+    def getVisualData(self):
+        """ Здесь считаются успешные и провальные сделки за каждый период моделирования торговли """
+        cntTools = 10
+        trFilenames = list([])
+        prtfFilenames = list([])
+
+        pathTrades, pathPrtf = None, None
+        try:
+            pathTrades, pathPrtf = self.checkPath()
+        except Exception:
+            QMessageBox.information(self, "Неправильный путь", "Нет пути к папке с котировками")
+
+        self.str_time_from = self.edit_time_to.toPlainText()
+        self.str_time_to = self.edit_time_from.toPlainText()
+
+        # Формируем список с файлами результатов моделирования
+        for uid in self.tools_uid:
+            tradeFile1 = pathTrades + '/' + uid + '_' + self.str_time_from + '_' + self.str_time_to + ".csv"
+            pathPrtf1 = pathPrtf + '/' + uid + '_' + self.str_time_from + '_' + self.str_time_to + ".csv"
+            tradeFile1 = tradeFile1.replace(':', '_')
+            pathPrtf1 = pathPrtf1.replace(':', '_')
+            if not os.path.exists(tradeFile1):
+                logging.info(f"Не существует файла с именем: {tradeFile1}")
+                continue
+            if not os.path.exists(pathPrtf1):
+                logging.info(f"Не существует файла с именем: {pathPrtf1}")
+                continue
+            trFilenames.append(tradeFile1)
+            prtfFilenames.append(pathPrtf1)
+
+        # Запускаем поток, получающий необходимые данные
+        threadGetData = threading.Thread(target=self.setupGenVisualData, args=(trFilenames, prtfFilenames))
+        threadGetData.start()
+        threadGetData.join()
+
+
+    def checkPath(self):
+        pathTrades = "../history_data/trades_stats"
+        pathPrtf = "../history_data/portfolio_stats"
+        if not os.path.exists(pathTrades):
+            logging.error("Не существует папки ../history_data/trades_stats")
+            raise Exception("Не существует папки ../history_data/trades_stats")
+        if not os.path.exists(pathPrtf):
+            logging.error("Не существует папки ../history_data/portfolio_stats")
+            raise Exception("Не существует папки ../history_data/portfolio_stats")
+
+        self.frame = self.tfComboBox.currentText()
+        pathTrades = pathTrades + "/" + self.frame
+        pathPrtf = pathPrtf + "/" + self.frame
+
+        if not os.path.exists(pathTrades):
+            logging.error(f"Не существует папки {pathTrades}")
+            raise Exception(f"Не существует папки {pathTrades}")
+        if not os.path.exists(pathPrtf):
+            logging.error(f"Не существует папки {pathPrtf}")
+            raise Exception(f"Не существует папки {pathPrtf}")
+
+        return pathTrades, pathPrtf
 
     # Построение гистограммы прибыльных и убыточных сделок
     def drawHistTrades(self):
-        if self.dfPortfolio.empty:
-            raise exceptions.GuiError('Нет данных для визуализации')
+        if not self.visualData:
+            logging.warning('Нет данных для визуализации')
+            QMessageBox.information(self, "Нет данных для визуализации", "Нет данных для визуализации")
 
-        x_ticks = [0, 1]
-        x_ticklabels = ['Success', 'Fail']
-        y_ticks = list(range(0, max(self.successTrades, self.failTrades)+1))
+        bw = 0.2
+        bin = 0.6
+
+        colors = ['b', 'g', 'r', 'aqua', 'magenta', 'maroon', 'orange', 'darkblue', 'plum', 'grey']
+        y_values = list([])
+        cnt_list = list([])
+        keys = list([])
+        for key in self.visualData.keys():
+            keys.append(key)
+            y_values.append(list(self.visualData[key][:2]))
+            cnt_list.append(self.visualData[key][0])
+            cnt_list.append(self.visualData[key][1])
+
+        inx = len(keys)
+        dw = bin / inx
+        bin = dw * 4
+        x_ticks = np.arange(2)
+        x_ticklabels = ['Прибыльные', 'Убыточные']
+
+        # Цикл построения
+        new_bin = 0
+        for i in range(inx):
+            name = keys[i]
+            new_bin = bin * i * bw
+            self.axes.bar(x_ticks + new_bin, y_values[i], dw, color=colors[i], label=name)
+
+        y_ticks = [t+1 for t in list(range(0, max(cnt_list)))]
         y_ticklabels = [str(y) for y in y_ticks]
-        self.axes.bar([0, 1], [self.successTrades, self.failTrades])
-        self.axes.grid(True)
-        self.axes.set_xticks(x_ticks)
+        #self.axes.bar([0, 1], [self.successTrades, self.failTrades])
+        self.axes.set_title("Гистограмма соотношения прибыльных и убыточных сделок", fontsize=16, fontweight='bold')
+        self.axes.yaxis.grid(True)
+        self.axes.set_ylabel("Количество сделок, шт.", fontsize=16)
+        self.axes.set_xticks(x_ticks+new_bin/2)
         self.axes.set_xticklabels(x_ticklabels, fontsize=16)
         self.axes.set_yticks(y_ticks)
         self.axes.set_yticklabels(y_ticklabels, fontsize=16)
+        self.axes.legend(keys)
         self.canvas.draw()
 
 
@@ -346,20 +495,38 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         Метод для рисования линейного графика доходности портфеля по результатам
         тестирования на исторических данных
         """
-        if self.dfPortfolio.empty:
-            logging.error('Нет данных для визуализации')
-            raise exceptions.GuiError('Нет данных для визуализации')
+        colors = ['b', 'g', 'r', 'aqua', 'magenta', 'maroon', 'orange', 'darkblue', 'plum', 'grey']
 
+        if not self.visualData:
+            logging.warning('Нет данных для визуализации')
+            QMessageBox.information(self, "Нет данных для визуализации", "Нет данных для визуализации")
+            return
+        # TODO: доделать метод для рисования графика доходности для нескольких торговых инструментов
+        x_list = dict()
+        keys = list([])
+        sizeX = 0
+        main_x_set_raw = list([])
+        main_x_set = None
+        for key in self.visualData.keys():
+            keys.append(key)
+            x_list[key] = list([])
+            for i in range(len(self.visualData[key][2])):
+                x = datetime.strptime(self.visualData[key][2][i], '%Y-%m-%d_%H:%M:%S') # дата и время в python-datetime
+                main_x_set_raw.append(x)
+                x_list[key].append(matdates.date2num(x)) # дата и время в matplotlib-datetime
+            if len(self.visualData[key][2]) > sizeX:
+                sizeX = len(self.visualData[key][2])
+                main_x_set = x_list[key]
+
+        '''
         x_set_str = list(self.dfPortfolio['time'])                             # таймфреймы в строковом формате
         x_set_raw = [datetime.strptime(x, '%Y-%m-%d_%H:%M:%S') for x in x_set_str] # таймфреймы в python-datetime
         x_set = [matdates.date2num(x) for x in x_set_raw]                      # таймфреймы в matplotlib-datetime
         y_set = list(self.dfPortfolio['profit_in_percent'])
+        '''
 
-        candle_interval = None
-        with open("../candle_interval.txt", 'r', encoding='utf-8') as file:
-            candle_interval = file.readline()   # Считываем из CSV длину таймфрейма
+        candle_interval = self.tfComboBox.currentText()
 
-        sizeX = len(x_set)
         cnt_ticks = 0
         tick_step = 0
         x_ticks = list([])
@@ -376,31 +543,31 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
 
             for i in range(0, cnt_ticks, tick_step):
                 index = None
-                if i == len(x_set):
+                if i == len(main_x_set):
                     index = i - 1
-                elif i > len(x_set):
+                elif i > len(main_x_set):
                     break
                 else:
                     index = i
 
-                x_ticks.append(x_set[index])
+                x_ticks.append(main_x_set[index])
 
                 match candle_interval:
                     case '1_MIN' | '2_MIN' | '3_MIN' | '5_MIN' | '10_MIN' | '15_MIN':
-                        label = x_set_raw[index].strftime("%H:%M")
+                        label = main_x_set_raw[index].strftime("%H:%M")
                         x_ticklabels.append(label)
                     case '30_MIN' | 'HOUR' | '2_HOUR' | '4_HOUR':
-                        label = x_set_raw[index].strftime("%d %b, %H:%M")
+                        label = main_x_set_raw[index].strftime("%d %b, %H:%M")
                         x_ticklabels.append(label)
                     case 'DAY' | 'WEEK':
-                        label = x_set_raw[index].strftime("%d.%m.%Y")
+                        label = main_x_set_raw[index].strftime("%d.%m.%Y")
                         x_ticklabels.append(label)
                     case 'MONTH':
-                        label = x_set_raw[index].strftime("%Y, %b")
+                        label = main_x_set_raw[index].strftime("%Y, %b")
                         x_ticklabels.append(label)
         else:
-            x_ticks = [elem for elem in x_set]
-            for raw in x_set_raw:
+            x_ticks = [elem for elem in main_x_set]
+            for raw in main_x_set_raw:
                 match candle_interval:
                     case '1_MIN' | '2_MIN' | '3_MIN' | '5_MIN' | '10_MIN' | '15_MIN':
                         label = raw.strftime("%H:%M")
@@ -415,10 +582,19 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
                         label = raw.strftime("%Y, %b")
                         x_ticklabels.append(label)
 
-        self.axes.plot(x_set, y_set)
+        ind = 0
+        for key in keys:
+            self.axes.plot(x_list[key], self.visualData[key][3], color=colors[ind], label=key)
+            ind += 1
         self.axes.set_xticks(x_ticks)
         self.axes.set_xticklabels(x_ticklabels, fontsize=14, rotation=25)
+        self.axes.set_title(f"Доходность по торговым инструментам в \nпериод моделирования, интервал = {candle_interval}", fontsize=16, fontweight='bold')
+        self.axes.set_ylabel("Доходность, %", fontsize=16)
+        self.axes.set_xlabel("Время", fontsize=16)
+        #ax.set_position([0.1, 0.3, 0.8, 0.8])
+        self.axes.set_position([0.1, 0.2, 0.8, 0.7])
         self.axes.grid(True)
+        self.axes.legend(keys)
         self.canvas.draw()
 
     """ Метод для получения информации о доступных активах в Тинькофф Инвестиции """

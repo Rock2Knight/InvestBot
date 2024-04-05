@@ -212,7 +212,7 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, **kwargs):
         fullPortfolio = account_portfolio + totalSharePrice
         profitInRub = fullPortfolio - start_sum  # Прибыль/убыток в рублях (по отношению к общей стоимости портфеля)
         profitInPercent = (profitInRub / start_sum) * 100  # Прибыль/убыток в процентах (по отношению к общей стоимости портфеля)
-        if fabs(profitInPercent) >= STOP_ACCOUNT * 100:
+        if profitInPercent < 0 and fabs(profitInPercent) >= STOP_ACCOUNT * 100:
             # Если размер убытка достиг риска для счета, то делаем аварийное завершение торговли
             print(f"\n{trName}: FATAL_STOP")
             if tradeInfo and portfolioInfo:

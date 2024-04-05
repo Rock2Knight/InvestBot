@@ -19,7 +19,6 @@ class ExcelHandler:
     """
     Класс для работы с Excel
     """
-
     def __init__(self, filename: str):
         self.filename = filename
         self.wb = pyxl.load_workbook(filename)
