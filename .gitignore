@@ -12,3 +12,8 @@
 /app/logger.log
 /test_openpyxl.py
 /work/excel_stats.xlsx
+/history_data
+/test_history_data
+/instruments_info
+/sma_cache
+/accs.txt

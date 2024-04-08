@@ -1,7 +1,6 @@
 # Сам бот
 import json
 import logging
-from typing import Union
 
 from datetime import datetime, timedelta, timezone
 from functools import cache
@@ -13,7 +12,8 @@ from tinkoff.invest.schemas import (
     AssetType,
     InstrumentType,
     InstrumentIdType,
-    CandleInterval
+    CandleInterval,
+    AssetRequest
 )
 from tinkoff.invest.exceptions import RequestError
 
@@ -190,6 +190,161 @@ class InvestBot():
                 """ Проверка на наличие актива в базе данных. Если есть, переходим к следующему активу """
                 db_asset = crud.get_asset_uid(self.db, asset_uid=asset.uid)
                 if db_asset:
+                    for instrument in asset.instruments:
+                        currency_name = None
+                        sector_name = None
+                        exchange_name = None
+                        instrument_name = None
+                        lot = 1
+
+                        # Находим подробную информацию об инструменте, по типу инструмента
+                        match instrument.instrument_kind:
+                            case InstrumentType.INSTRUMENT_TYPE_SHARE:
+                                shareResp = None
+                                try:
+                                    shareResp = client.instruments.share_by(
+                                        id_type=InstrumentIdType.INSTRUMENT_ID_TYPE_TICKER,
+                                        id=instrument.ticker,
+                                        class_code=instrument.class_code)
+                                except Exception as e:
+                                    if isinstance(e, RequestError):
+                                        logging.error("Ошбика во время запроса данных об акции на стороне сервера\n")
+                                        continue
+                                    else:
+                                        logging.error("Неправильно указаны параметры запроса\n")
+                                        raise e
+
+                                if shareResp:
+                                    currency_name = shareResp.instrument.currency
+                                    sector_name = shareResp.instrument.sector
+                                    exchange_name = shareResp.instrument.exchange
+                                    lot = shareResp.instrument.lot
+                                    instrument_name = shareResp.instrument.name
+                                else:
+                                    # Иначе ставим неопределенное значения
+                                    currency_name = "undefined"
+                                    sector_name = "undefined"
+                                    exchange_name = "undefined"
+                            case InstrumentType.INSTRUMENT_TYPE_BOND:
+                                bondResp = None
+                                try:
+                                    bondResp = client.instruments.bond_by(
+                                        id_type=InstrumentIdType.INSTRUMENT_ID_TYPE_TICKER,
+                                        id=instrument.ticker,
+                                        class_code=instrument.class_code)
+                                except Exception as e:
+                                    if isinstance(e, RequestError):
+                                        logging.error(
+                                            "Ошбика во время запроса данных об облигации на стороне сервера\n")
+                                        continue
+                                    else:
+                                        logging.error("Неправильно указаны параметры запроса\n")
+                                        raise e
+
+                                if bondResp:
+                                    currency_name = bondResp.instrument.currency
+                                    sector_name = bondResp.instrument.sector
+                                    exchange_name = bondResp.instrument.exchange
+                                    lot = bondResp.instrument.lot
+                                    instrument_name = bondResp.instrument.name
+                                else:
+                                    # Иначе ставим неопределенное значения
+                                    currency_name = "undefined"
+                                    sector_name = "undefined"
+                                    exchange_name = "undefined"
+                            case InstrumentType.INSTRUMENT_TYPE_ETF:
+                                etfResp = None
+                                try:
+                                    etfResp = client.instruments.etf_by(
+                                        id_type=InstrumentIdType.INSTRUMENT_ID_TYPE_TICKER,
+                                        id=instrument.ticker,
+                                        class_code=instrument.class_code)
+                                except Exception as e:
+                                    if isinstance(e, RequestError):
+                                        logging.error("Ошбика во время запроса данных об ETF на стороне сервера\n")
+                                        continue
+                                    else:
+                                        logging.error("Неправильно указаны параметры запроса\n")
+                                        raise e
+
+                                if etfResp:
+                                    currency_name = etfResp.instrument.currency
+                                    sector_name = etfResp.instrument.sector
+                                    exchange_name = etfResp.instrument.exchange
+                                    lot = etfResp.instrument.lot
+                                    instrument_name = etfResp.instrument.name
+                                else:
+                                    # Иначе ставим неопределенное значения
+                                    currency_name = "undefined"
+                                    sector_name = "undefined"
+                                    exchange_name = "undefined"
+                            case _:
+                                # Иначе ставим неопределенное значения
+                                logging.warning("Неопределенное значение типа торгового инструмента")
+                                currency_name = "undefined"
+                                sector_name = "undefined"
+                                exchange_name = "undefined"
+
+                        ''' Проверка на наличие инструмента в базе данных. Если есть, переходим к следующему инструменту'''
+                        db_instrument = crud.get_instrument_by_name(self.db, instrument_name=instrument_name)
+                        if db_instrument:
+                            continue
+
+                        ''' Вставка нового инструмента в таблицу '''
+
+                        '''Если в базе нет обозначения валюты инструмента, добавляем ее в базу'''
+                        id_cur = crud.get_curency_id(db=self.db, currency_name=currency_name)
+                        if not id_cur:
+                            last_id = crud.get_last_currency_id(db=self.db)
+                            last_id = last_id + 1 if last_id else 1
+                            crud.create_currency(db=self.db, id=last_id, name=currency_name)
+                            id_cur = crud.get_curency_id(db=self.db, currency_name=currency_name)
+
+                        '''Если в базе нет обозначения биржи инструмента, добавляем ее в базу'''
+                        id_exc = crud.get_exchange_id(db=self.db, exchange_name=exchange_name)
+                        if not id_exc:
+                            last_id = crud.get_last_exchange_id(db=self.db)
+                            last_id = last_id + 1 if last_id else 1
+                            crud.create_exchange(db=self.db, id=last_id, name=exchange_name)
+                            id_exc = crud.get_exchange_id(db=self.db, exchange_name=exchange_name)
+
+                        ''' Если в базе нет обозначения сектора, добавляем его в базу '''
+                        id_sec = crud.get_sector_id(db=self.db, sector_name=sector_name)
+                        if not id_sec:
+                            last_id = crud.get_last_sector_id(db=self.db)
+                            last_id = last_id + 1 if last_id else 1
+                            crud.create_sector(db=self.db, id=last_id, name=sector_name)
+                            id_sec = crud.get_sector_id(db=self.db, sector_name=sector_name)
+
+                        ''' Если в базе нет обозначения типа инструмента, добавляем его в базу '''
+                        str_instr_type = self.get_str_type(instrument.instrument_kind, False)
+                        id_instr_type = crud.get_instrument_type_name(db=self.db, instrument_type_name=str_instr_type)
+                        if not id_instr_type:
+                            last_id = crud.get_last_instrument_type_id(db=self.db)
+                            last_id = last_id + 1 if last_id else 1
+                            crud.create_instrument_type(db=self.db, id=last_id, name=str_instr_type)
+                            id_instr_type = crud.get_instrument_type_name(db=self.db,
+                                                                          instrument_type_name=str_instr_type).id
+                        elif isinstance(id_instr_type, models.InstrumentType):
+                            id_instr_type = id_instr_type.id
+
+                        """ Если в базе нет обозначения актива инструмента, добавляем его в базу """
+                        id_asset = crud.get_asset_uid(db=self.db, asset_uid=asset.uid)
+                        if not id_asset:
+                            last_id = crud.get_last_asset_id(db=self.db)
+                            last_id = last_id + 1 if last_id else 1
+                            crud.create_asset(db=self.db, id=last_id, uid=asset.uid, name=asset.name)
+                            id_asset = crud.get_asset_uid(db=self.db, asset_uid=asset.uid).id
+                        elif isinstance(id_asset, models.Asset):
+                            id_asset = id_asset.id
+
+                        # Добавляем инструмент в таблицу
+                        crud.create_instrument(db=self.db, figi=instrument.figi, name=instrument_name,
+                                               uid=instrument.uid, position_uid=instrument.position_uid,
+                                               currency_id=id_cur, exchange_id=id_exc, sector_id=id_sec,
+                                               type_id=id_instr_type, asset_id=id_asset,
+                                               ticker=instrument.ticker, lot=lot,
+                                               class_code=instrument.class_code)
                     continue
 
                 """ Проверка на наличие типа актива в БД """

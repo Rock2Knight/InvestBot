@@ -11,10 +11,7 @@ from PyQt5.QtWidgets import (
     QMainWindow, QDateTimeEdit,
     QMessageBox)
 
-from tinkoff.invest.schemas import InstrumentStatus
-
 import matplotlib.dates as matdates
-import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 from matplotlib.backends.backend_qt5agg import (
@@ -23,11 +20,12 @@ from matplotlib.backends.backend_qt5agg import (
 
 import pandas as pd
 
-from api import database, models, crud
+from api import database, crud
 from GUI3 import Ui_MainWindow
 import work
 from work import *
-import tech_analyze, exceptions, core_bot
+import tech_analyze, core_bot
+from tests import test_tech_analyze
 
 
 logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
@@ -96,10 +94,9 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         self.cnt_lots = START_LOT_COUNT                # Количество лотов по инструменту
         self.successTrades = 0              # Количество прибыльных сделок
         self.failTrades = 0                 # Количество убыточных сделок
-        self.dfTrades = None                # Статистика сделок
-        self.dfPortfolio = None             # Статистика доходности портфеля
-        self._resTrading_ = None            # результаты мульти-моделирования торговли
-        self.tools_uid = list([])           # Список инструментов
+        self.__resTrading = None            # результаты мульти-моделирования торговли
+        self.__tools_uid = list([])         # Список инструментов
+        self.__uid_links = dict()
         self.dataTrades = None              # результаты торговли
         self.tools_data = list([])          # Список с информацие о каждом инструменте из базы
         self.str_time_from = ''             # Дата начала моделирования
@@ -115,6 +112,7 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         self.btnDraw.clicked.connect(self.controlDraw)     # Если была нажата кнопка рисования, проверяем, какой тип график выбран
         self.btnClear.clicked.connect(self.clear_graph)
         self.btnGenTable.clicked.connect(self.setupGenModelThread)   # Запускает поток по созданию сводной таблице по результатам моделирования
+        self.btnTest.clicked.connect(self.setupTestModelThread)
 
 
     async def AsyncHistoryTrain(self, uid: str, tool_name: str):
@@ -137,11 +135,11 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         """
 
         tasks = list([])
-        for i in range(len(self.tools_uid)):
-            task = asyncio.create_task(self.AsyncHistoryTrain(self.tools_uid[i], self.tools_data[i].name))
+        for i in range(len(self.__tools_uid)):
+            task = asyncio.create_task(self.AsyncHistoryTrain(self.__tools_uid[i], self.tools_data[i].name))
             tasks.append(task)
 
-        self._resTrading_= await asyncio.gather(*tasks)
+        self.__resTrading = await asyncio.gather(*tasks)
 
 
     def setupHistTrain(self):
@@ -149,7 +147,7 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         Синхронный метод, обертывающий метод асинхронного моделирования
         :return:
         """
-        if not self.tools_uid:
+        if not self.__tools_uid:
             logging.warning("Необходимо загрузить инструменты")
             QMessageBox.information(self, "Информация по моделированию торговли", "Инструменты не загружены")
             exit()
@@ -220,6 +218,34 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         print("\n\nМоделироавние успешно завершено")
         QMessageBox.information(self, "Информация по моделированию", "Моделирование торговли успешно завршено")
 
+    def syncTestHistModeling(self):
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(test_tech_analyze.asyncHistTradingMany())
+
+    def setupTestModelThread(self):
+        if not self.testRadioBtn.isChecked():
+            logging.error("Неверно указана радиокнопка")
+            QMessageBox.information(self, "Неверно указана кнопка", "Вы нажали не ту радиокнопку!")
+            return
+        thread1 = threading.Thread(self.syncTestHistModeling())
+        thread1.start()
+        thread1.join()
+
+        files = os.listdir("../test_history_data/DAY/")
+        new_files = list([])
+        for file in files:
+            if file[:4] == '2023':
+                continue
+            else:
+                l = file.split('_')
+                for i in range(len(self.__tools_uid)):
+                    if l[0] == self.__tools_uid[i]:
+                        self.__uid_links[self.__tools_uid[i]] = file
+                        name = self.tools_data[i].name
+                        self.testComboBox.addItem(name)
+
+        QMessageBox.information(self, "Тестирование", "Данные тестирования успешно загружены!")
+
 
     def setupSetLoopGenTable(self):
         loop2 = asyncio.new_event_loop()
@@ -277,10 +303,10 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         dataTrades = None   # Результат выполнения core_bot.async_get_candles
 
         try:
-            for i in range(len(self.tools_uid)):
-                uid = self.tools_uid[i]
+            for i in range(len(self.__tools_uid)):
+                uid = self.__tools_uid[i]
                 reqs.append(f"get_candles {uid} {self.str_time_from} {self.str_time_to} {self.frame}")
-            thread1 = threading.Thread(target=syncRequestHandler, args=(reqs, self.tools_uid, self.frame, self.str_time_from, self.str_time_to,))
+            thread1 = threading.Thread(target=syncRequestHandler, args=(reqs, self.__tools_uid, self.frame, self.str_time_from, self.str_time_to,))
             thread1.start()
             thread1.join()
             del thread1
@@ -303,15 +329,26 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         Контролирует процесс отрисовки графиков
         :return:
         """
-        if not self.cntTradesRadioBtn.isChecked() and not self.profitRadioBtn.isChecked():
+        if not self.cntTradesRadioBtn.isChecked() and not self.profitRadioBtn.isChecked() and not self.testRadioBtn.isChecked():
             QMessageBox.information(self, "Не выбран тип графика", "Вы не выбрали тип графика!")
             return
 
-        self.getVisualData()   # Получаем данные для отрисовки
-        if self.cntTradesRadioBtn.isChecked():
-            self.drawHistTrades()           # Рисуем гистограмму успешных и провльных сделок
+        if self.testRadioBtn.isChecked():
+            df = None
+            name = self.testComboBox.currentText()
+            for i in range(len(self.tools_data)):
+                if self.tools_data[i].name == name:
+                    uid = self.tools_data[i].uid
+                    filename = "../test_history_data/" + self.tfComboBox.currentText() + "/" + self.__uid_links[uid]
+                    df = pd.read_csv(filename)
+                    break
+            self.drawTestPlot(df, name)
         else:
-            self.drawProfitPlot()           # Рисуем линейный график доходности по инструментам
+            self.getVisualData()   # Получаем данные для отрисовки
+            if self.cntTradesRadioBtn.isChecked():
+                self.drawHistTrades()           # Рисуем гистограмму успешных и провльных сделок
+            else:
+                self.drawProfitPlot()           # Рисуем линейный график доходности по инструментам
 
 
     def checkRadio(self):
@@ -401,7 +438,7 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         self.str_time_to = self.edit_time_from.toPlainText()
 
         # Формируем список с файлами результатов моделирования
-        for uid in self.tools_uid:
+        for uid in self.__tools_uid:
             tradeFile1 = pathTrades + '/' + uid + '_' + self.str_time_from + '_' + self.str_time_to + ".csv"
             pathPrtf1 = pathPrtf + '/' + uid + '_' + self.str_time_from + '_' + self.str_time_to + ".csv"
             tradeFile1 = tradeFile1.replace(':', '_')
@@ -501,7 +538,6 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
             logging.warning('Нет данных для визуализации')
             QMessageBox.information(self, "Нет данных для визуализации", "Нет данных для визуализации")
             return
-        # TODO: доделать метод для рисования графика доходности для нескольких торговых инструментов
         x_list = dict()
         keys = list([])
         sizeX = 0
@@ -591,11 +627,111 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         self.axes.set_title(f"Доходность по торговым инструментам в \nпериод моделирования, интервал = {candle_interval}", fontsize=16, fontweight='bold')
         self.axes.set_ylabel("Доходность, %", fontsize=16)
         self.axes.set_xlabel("Время", fontsize=16)
-        #ax.set_position([0.1, 0.3, 0.8, 0.8])
         self.axes.set_position([0.1, 0.2, 0.8, 0.7])
         self.axes.grid(True)
         self.axes.legend(keys)
         self.canvas.draw()
+
+
+    def drawTestPlot(self, profitDF, name):
+        if type(profitDF) == type(None):
+            logging.info(f"None profit dataframe for instrument {name}")
+            QMessageBox.information(self, "None dataframe", "Для текущего датафрейма нет данных для рисования!")
+            return
+
+        time_str = profitDF['time'].to_list()
+
+        x_list = list([])
+        keys = list([])
+        columns = profitDF.columns.to_list()
+        sizeX = 0
+        main_x_set_raw = list([])
+        main_x_set = None
+
+        for i in range(len(time_str)):
+            x = datetime.strptime(time_str[i], '%Y-%m-%d_%H:%M:%S')  # дата и время в python-datetime
+            main_x_set_raw.append(x)
+            x_list.append(matdates.date2num(x))  # дата и время в matplotlib-datetime
+
+        sizeX = len(x_list)
+        x_ticks = list([])
+        x_ticklabels = list([])
+        candle_interval = self.tfComboBox.currentText()
+
+        if sizeX > MAX_CNT_TICKS:
+            # Если количество таймфреймов больше 10, формируем массив
+            # тиков так, чтобы подписи по оси X отображались нормально
+            if sizeX % 10 != 0:
+                cnt_ticks = (sizeX // 10) * 10 + 10
+            else:
+                cnt_ticks = sizeX + 1
+            tick_step = cnt_ticks // 10
+
+            for i in range(0, cnt_ticks, tick_step):
+                index = None
+                if i == len(x_list):
+                    index = i - 1
+                elif i > len(x_list):
+                    break
+                else:
+                    index = i
+
+                x_ticks.append(x_list[index])
+
+                match candle_interval:
+                    case '1_MIN' | '2_MIN' | '3_MIN' | '5_MIN' | '10_MIN' | '15_MIN':
+                        label = main_x_set_raw[index].strftime("%H:%M")
+                        x_ticklabels.append(label)
+                    case '30_MIN' | 'HOUR' | '2_HOUR' | '4_HOUR':
+                        label = main_x_set_raw[index].strftime("%d %b, %H:%M")
+                        x_ticklabels.append(label)
+                    case 'DAY' | 'WEEK':
+                        label = main_x_set_raw[index].strftime("%d.%m.%Y")
+                        x_ticklabels.append(label)
+                    case 'MONTH':
+                        label = main_x_set_raw[index].strftime("%Y, %b")
+                        x_ticklabels.append(label)
+        else:
+            x_ticks = [elem for elem in x_list]
+            for raw in main_x_set_raw:
+                match candle_interval:
+                    case '1_MIN' | '2_MIN' | '3_MIN' | '5_MIN' | '10_MIN' | '15_MIN':
+                        label = raw.strftime("%H:%M")
+                        x_ticklabels.append(label)
+                    case '30_MIN' | 'HOUR' | '2_HOUR' | '4_HOUR':
+                        label = raw.strftime("%d %b, %H:%M")
+                        x_ticklabels.append(label)
+                    case 'DAY' | 'WEEK':
+                        label = raw.strftime("%d.%m.%Y")
+                        x_ticklabels.append(label)
+                    case 'MONTH':
+                        label = raw.strftime("%Y, %b")
+                        x_ticklabels.append(label)
+
+
+
+        #tests = list([])
+        columns = profitDF.columns.to_list()
+        columns.remove('time')
+        columns.remove('Unnamed: 0')
+        base_width = 5
+        sm = 0
+        for column in columns:
+            test = profitDF[column]
+            width = base_width + sm
+            self.axes.plot(x_list, test, label=column, linewidth=width)
+            sm -= 0.4
+        self.axes.set_xticks(x_ticks)
+        self.axes.set_xticklabels(x_ticklabels, fontsize=14, rotation=25)
+        self.axes.set_title(f"Доходность по торговым инструментам в \nпериод моделирования, интервал = {candle_interval}", fontsize=16,
+            fontweight='bold')
+        self.axes.set_ylabel("Доходность, %", fontsize=16)
+        self.axes.set_xlabel("Время", fontsize=16)
+        self.axes.set_position([0.1, 0.2, 0.8, 0.7])
+        self.axes.grid(True)
+        self.axes.legend(columns)
+        self.canvas.draw()
+
 
     """ Метод для получения информации о доступных активах в Тинькофф Инвестиции """
     def get_all_instruments(self):
@@ -605,8 +741,8 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
             db = database.SessionLocal()     # Соединение с базой данных
             try:
                 for i in range(len(instruments)):
-                    self.tools_uid.append(instruments[i].rstrip("\n"))
-                    info = crud.get_instrument_uid(db, instrument_uid=self.tools_uid[i])
+                    self.__tools_uid.append(instruments[i].rstrip("\n"))
+                    info = crud.get_instrument_uid(db, instrument_uid=self.__tools_uid[i])
                     self.tools_data.append(info)
             except IndexError as e:
                 raise e

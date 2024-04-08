@@ -24,7 +24,7 @@ class Ui_MainWindow(object):
         self.matlayout.setContentsMargins(0, 0, 0, 0)
         self.matlayout.setObjectName("matlayout")
         self.layoutWidget = QtWidgets.QWidget(self.centralwidget)
-        self.layoutWidget.setGeometry(QtCore.QRect(990, 30, 360, 351))
+        self.layoutWidget.setGeometry(QtCore.QRect(990, 30, 360, 421))
         self.layoutWidget.setObjectName("layoutWidget")
         self.toolsVLayout = QtWidgets.QVBoxLayout(self.layoutWidget)
         self.toolsVLayout.setContentsMargins(0, 0, 0, 0)
@@ -95,7 +95,7 @@ class Ui_MainWindow(object):
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.btnDraw.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(self.btnGenTable.sizePolicy().hasHeightForWidth())
         self.btnGenTable.setSizePolicy(sizePolicy)
         font = QtGui.QFont()
         font.setPointSize(13)
@@ -104,6 +104,21 @@ class Ui_MainWindow(object):
         self.btnGenTable.setFont(font)
         self.btnGenTable.setObjectName("btnDraw")
         self.toolsVLayout.addWidget(self.btnGenTable)
+
+        ''' Настройка кнопки для тестирования '''
+        self.btnTest = QtWidgets.QPushButton(self.layoutWidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.btnTest.sizePolicy().hasHeightForWidth())
+        self.btnTest.setSizePolicy(sizePolicy)
+        font = QtGui.QFont()
+        font.setPointSize(13)
+        font.setBold(True)
+        font.setWeight(75)
+        self.btnTest.setFont(font)
+        self.btnTest.setObjectName("btnTest")
+        self.toolsVLayout.addWidget(self.btnTest)
 
         self.cntTradesRadioBtn = QtWidgets.QRadioButton(self.layoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
@@ -119,6 +134,7 @@ class Ui_MainWindow(object):
         self.cntTradesRadioBtn.setFont(font)
         self.cntTradesRadioBtn.setObjectName("cntTradesRadioBtn")
         self.toolsVLayout.addWidget(self.cntTradesRadioBtn)
+
         self.profitRadioBtn = QtWidgets.QRadioButton(self.layoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
@@ -134,6 +150,22 @@ class Ui_MainWindow(object):
         self.profitRadioBtn.setObjectName("profitRadioBtn")
 
         self.toolsVLayout.addWidget(self.profitRadioBtn)
+
+        self.testRadioBtn = QtWidgets.QRadioButton(self.layoutWidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.testRadioBtn.sizePolicy().hasHeightForWidth())
+        self.testRadioBtn.setSizePolicy(sizePolicy)
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        font.setBold(False)
+        font.setItalic(False)
+        font.setWeight(50)
+        self.testRadioBtn.setFont(font)
+        self.testRadioBtn.setObjectName("profitRadioBtn")
+
+        self.toolsVLayout.addWidget(self.testRadioBtn)
 
         self.tfComboBox = QtWidgets.QComboBox()
         self.tfComboBox.addItems(["1_MIN", "2_MIN", "3_MIN", "5_MIN",
@@ -152,6 +184,21 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(self.tfComboBox.sizePolicy().hasHeightForWidth())
 
         self.toolsVLayout.addWidget(self.tfComboBox)
+
+        self.testComboBox = QtWidgets.QComboBox()
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        font.setBold(False)
+        font.setItalic(False)
+        font.setWeight(50)
+        self.testComboBox.setFont(font)
+        self.testComboBox.setObjectName("testComboBox")
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.testComboBox.sizePolicy().hasHeightForWidth())
+
+        self.toolsVLayout.addWidget(self.testComboBox)
 
 
         self.timeFromLayout = QtWidgets.QHBoxLayout()
@@ -228,8 +275,10 @@ class Ui_MainWindow(object):
         self.btnDraw.setText(_translate("MainWindow", "Нарисовать"))
         self.btnClear.setText(_translate("MainWindow", "Очистить"))
         self.btnGenTable.setText(_translate("MainWindow", "Создать сводную таблицу"))
+        self.btnTest.setText(_translate("MainWindow", "Тест F_модель"))
         self.cntTradesRadioBtn.setText(_translate("MainWindow", "Гистограмма сделок"))
         self.profitRadioBtn.setText(_translate("MainWindow", "График доходности"))
+        self.testRadioBtn.setText(_translate("MainWindow", "Тестовый график доходности"))
         self.time_to.setText(_translate("MainWindow", "T (начала):"))
         self.time_from.setText(_translate("MainWindow", "T (конца):"))
 
