@@ -88,20 +88,20 @@ async def modelResPrtfCmp(dfPortfolio, etDfPortfolio):
 
     return True
 
-async def asyncHistTradingMany():
+async def asyncHistTradingMany(str_time_from: str, str_time_to: str, frame: str):
 
     tasks = dict()
     resTrading = dict()
     resTest = dict()
     uid_list = list([])
-    str_time_from = "2023-06-01_10:00:00"
-    str_time_to = "2024-03-31_23:00:00"
+    #str_time_from = "2023-06-01_10:00:00"
+    #str_time_to = "2024-03-31_23:00:00"
     names = list([])
     profitDict = dict()
     timeInedexDict = dict()
     db = SessionLocal()
 
-    pathTest = "../test_history_data/DAY"
+    pathTest = "../test_history_data/" + frame
     if not os.path.exists(pathTest):
         os.mkdir(pathTest)
 
@@ -122,7 +122,7 @@ async def asyncHistTradingMany():
                                                 lot=instrument_lot, ma_interval=SMA_INTERVAL, rsi_interval=RSI_INTERVAL,
                                                 stopAccount=STOP_ACCOUNT, stopLoss=STOP_LOSS,
                                                 time_from=str_time_from, time_to=str_time_to,
-                                                timeframe="DAY", name=instrument_name))
+                                                timeframe=frame, name=instrument_name))
 
         # Формируем цикл, в котором много раз вызываем эту функцию
         for j in range(10):
@@ -143,6 +143,9 @@ async def asyncHistTradingMany():
             profitDict[names[i]]['time'] = resTrading[uid_list[i]][0][1]['time']
 
         # Формируем список задач на сравнение результатов моделирования с эталоном
+        if not noneFlag:
+            profitDict[names[i]][test_var+'_1'] = resTrading[uid_list[i]][0][1]['profit_in_percent']
+
         for j in range(1, size):
             dfTrades = resTrading[uid_list[i]][j][0]
             dfPortfolio = resTrading[uid_list[i]][j][1]

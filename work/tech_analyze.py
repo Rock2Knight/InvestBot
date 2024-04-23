@@ -224,8 +224,11 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, is_test=False, **kwargs
                     dfTrades.to_csv(statsTradesFilename)
                     dfPortfolio.to_csv(statsPortfolioFilename)
                 return dfTrades, dfPortfolio
-            else:
-                return None, None
+            elif not tradeInfo and portfolioInfo:
+                dfPortfolio = pd.DataFrame(portfolioInfo)
+                if not is_test:
+                    dfPortfolio.to_csv(statsPortfolioFilename)
+                return None, portfolioInfo
 
         # Цикл для проверки стоп-маркетов
         lot_cast_pr = active_cast * lot            # Текущая цена за лот

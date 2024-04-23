@@ -3,7 +3,7 @@ import logging
 from typing import Optional
 from functools import cache
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, exc
 from sqlalchemy.orm.exc import UnmappedInstanceError
 from . import models
 
@@ -31,7 +31,7 @@ def get_currency(db: Session, currency_id: int) -> Optional[models.Currency]:
     return db.query(models.Currency).filter(models.Currency.id == currency_id).first()
 
 """ Получение id валюты по названию """
-def get_curency_id(db: Session, currency_name: str) -> Optional[int]:
+def get_currency_id(db: Session, currency_name: str) -> Optional[int]:
     db_currency = db.query(models.Currency).filter(models.Currency.name == currency_name).first()
     return db_currency.id if db_currency else None
 
@@ -108,9 +108,9 @@ def get_last_instrument_type_id(db: Session) -> Optional[int]:
 def get_asset_list(db: Session, skip: int = 0, limit: int = 100) -> Optional[list[models.Asset]]:
     return db.query(models.Asset).offset(skip).limit(limit).all()
 
-''' Получение актива по id '''
-def get_asset(db: Session, asset_id: int) -> Optional[models.Asset]:
-    db_asset = db.query(models.Asset).filter(models.Asset.id == asset_id).first()
+''' Получение актива по uid '''
+def get_asset(db: Session, asset_uid: str) -> Optional[models.Asset]:
+    db_asset = db.query(models.Asset).filter(models.Asset.uid == asset_uid).first()
     return db_asset if db_asset else None
 
 ''' Получение актива по uid '''
@@ -124,9 +124,9 @@ def get_asset_name(db: Session, asset_name: str) -> Optional[models.Asset]:
     return db_asset if db_asset else None
 
 ''' Получение id последнего актива в таблице '''
-def get_last_asset_id(db: Session) -> Optional[int]:
-    db_asset = db.query(models.Asset).order_by(models.Asset.id.desc()).first()
-    return db_asset.id if db_asset else None
+def get_last_asset_uid(db: Session) -> Optional[int]:
+    db_asset = db.query(models.Asset).order_by(models.Asset.uid.desc()).first()
+    return db_asset.uid if db_asset else None
 
 
 """ GET-запросы для инструментов """
@@ -134,18 +134,18 @@ def get_last_asset_id(db: Session) -> Optional[int]:
 def get_instrument_list(db: Session, skip: int = 0, limit: int = 100) -> Optional[list[models.Instrument]]:
     return db.query(models.Instrument).offset(skip).limit(limit).all()
 
-""" Получение бумаги по id """
-def get_instrument(db: Session, instrument_id: int) -> Optional[models.Instrument]:
-    return db.query(models.Instrument).filter(models.Instrument.id == instrument_id).first()
+""" Получение бумаги по id (теперь аналогично get_instrument_uid) """
+def get_instrument(db: Session, instrument_uid: str) -> Optional[models.Instrument]:
+    return db.query(models.Instrument).filter(models.Instrument.uid == instrument_uid).first()
 
 """ Получение последнего id инструмента"""
-def get_last_instrument_id(db: Session) -> int:
-    model_instrument = db.query(models.Instrument).order_by(models.Instrument.id.desc()).first()
+def get_last_instrument_uid(db: Session) -> int:
+    model_instrument = db.query(models.Instrument).order_by(models.Instrument.uid.desc()).first()
 
     if not model_instrument:
         return 0
     else:
-        return model_instrument.id
+        return model_instrument.uid
 
 """ Получение инструмента  по FIGI """
 def get_instrument_by_figi(db: Session, figi: str, exchange_id: int = 1) -> Optional[models.Instrument]:
@@ -216,9 +216,9 @@ def get_sectors_list(db: Session, skip: int = 0, limit: int = 100) -> list[Optio
 """GET-запросы для свеч """
 """ Получение списка 10 свеч по инструменту за определенный таймфрейм"""
 @cache
-def get_candles_list(db: Session, instrument_id: int, frame_id: int) -> list[Optional[models.Candle]]:
+def get_candles_list(db: Session, instrument_uid: str, frame_id: int) -> list[Optional[models.Candle]]:
     # Выбираем 10 последних свечей по инструменту за заданный таймфрейм
-    return db.query(models.Candle).filter(models.Candle.id_instrument == instrument_id,
+    return db.query(models.Candle).filter(models.Candle.uid_instrument == instrument_uid,
                                           models.Candle.id_timeframe == frame_id).order_by(
         models.Candle.time_m.desc()).limit(10).all()
 
@@ -229,8 +229,8 @@ def get_candle(db: Session, candle_id: int) -> Optional[models.Candle]:
 
 """ Поулчаем последнюю свечу """
 @cache
-def get_last_candle(db: Session, instrument_id: int, frame_id: int) -> Optional[models.Candle]:
-    return db.query(models.Candle).filter(models.Candle.id_instrument == instrument_id,
+def get_last_candle(db: Session, instrument_uid: str, frame_id: int) -> Optional[models.Candle]:
+    return db.query(models.Candle).filter(models.Candle.uid_instrument == instrument_uid,
                                           models.Candle.id_timeframe == frame_id).order_by(
         models.Candle.time_m.desc()).limit(1)
 
@@ -251,8 +251,8 @@ def get_last_candle_id(db: Session) -> Optional[int]:
 
 """ Поулчаем две последние свечи """
 @cache
-def get_last_candles(db: Session, figi_id: int, frame_id: int) -> tuple[Optional[models.Candle]]:
-    last_candles = db.query(models.Candle).filter(models.Candle.id_instrument == figi_id,
+def get_last_candles(db: Session, uid_instrument: str, frame_id: int) -> tuple[Optional[models.Candle]]:
+    last_candles = db.query(models.Candle).filter(models.Candle.uid_instrument == uid_instrument,
                                                   models.Candle.id_timeframe == frame_id).order_by(models.Candle.time_m.desc()).limit(2)
     if len(last_candles) != 2:
         raise Exception("Недостаточно элементов в списке")
@@ -281,7 +281,7 @@ def create_currency(db: Session, id: Optional[int], name: str) -> models.Currenc
     if id:
         new_id = id
     else:
-        new_id = get_last_currency_id(db)
+        new_id =  get_last_currency_id(db)
         new_id = 1 if not new_id else new_id + 1
 
     db_currency = models.Currency(id=new_id, name=name)
@@ -296,7 +296,7 @@ def create_exchange(db: Session, id: Optional[int], name: str) -> models.Exchang
     if id:
         new_id = id
     else:
-        new_id = get_last_exchange_id(db)
+        new_id =  get_last_exchange_id(db)
         new_id = 1 if not new_id else new_id + 1
 
     db_exchange = models.Exchange(id=new_id, name=name)
@@ -311,7 +311,7 @@ def create_sector(db: Session, id: Optional[int], name: str) -> models.Sector:
     if id:
         new_id = id
     else:
-        new_id = get_last_sector_id(db)
+        new_id =  get_last_sector_id(db)
         new_id = 1 if not new_id else new_id + 1
 
     db_sector = models.Sector(id=new_id, name=name)
@@ -341,7 +341,7 @@ def create_asset_type(db: Session, id: Optional[int], name: str) -> models.Asset
     if id:
         new_id = id
     else:
-        new_id = get_last_asset_type_id()
+        new_id =  get_last_asset_type_id()
         new_id = 1 if not new_id else new_id + 1
 
     db_asset_type = models.AssetType(id=new_id, name=name)
@@ -357,7 +357,7 @@ def create_instrument_type(db: Session, id: Optional[int], name: str) -> models.
     if id:
         new_id = id
     else:
-        new_id = get_last_instrument_type_id(db)
+        new_id =  get_last_instrument_type_id(db)
         new_id = 1 if not new_id else new_id + 1
 
     db_instrument_type = models.InstrumentType(id=new_id, name=name)
@@ -369,20 +369,12 @@ def create_instrument_type(db: Session, id: Optional[int], name: str) -> models.
 """ Добаление нового актива в базу данных """
 def create_asset(db: Session, **kwargs) -> models.Asset:
 
-    db_asset_type = get_asset_type(db, kwargs['type_id'])
+    db_asset_type =  get_asset_type(db, kwargs['type_id'])
     if not db_asset_type:
         logging.error("Тип актива не найден")
         raise ValueError("Тип актива не найден")
 
-    last_asset_id = get_last_asset_id(db)
-    new_id = None
-    if not last_asset_id:
-        new_id = 1
-    else:
-        new_id = last_asset_id + 1
-
-    asset = models.Asset(id=new_id, uid=kwargs['uid'],
-                         name=kwargs['name'], type_id=kwargs['type_id'])
+    asset = models.Asset(uid=kwargs['uid'], name=kwargs['name'], type_id=kwargs['type_id'])
 
     db.add(asset)
     db.commit()
@@ -392,45 +384,37 @@ def create_asset(db: Session, **kwargs) -> models.Asset:
 """ Добавление нового инструмена в базу данных """
 def create_instrument(db: Session, **kwargs):
 
-    db_instrument_type = get_instrument_type(db, kwargs['type_id'])
+    db_instrument_type =  get_instrument_type(db, kwargs['type_id'])
     if not db_instrument_type:
         logging.error("Ошибка в методе crud.create_instrument: тип инструмента не найден")
         raise ValueError("Тип инструмента не найден")
 
-    db_asset = get_asset(db, kwargs['asset_id'])
+    db_asset =  get_asset(db, kwargs['asset_uid'])
     if not db_asset:
         logging.error("Ошибка в методе crud.create_instrument: актив не найден")
         raise ValueError("Актив не найден")
 
-    db_currency = get_currency(db, kwargs['currency_id'])
+    db_currency =  get_currency(db, kwargs['currency_id'])
     if not db_currency:
         logging.error("Ошибка в методе crud.create_instrument: валюта не найдена")
         raise ValueError("Валюта не найдена")
 
-    db_exchange = get_exchange(db, kwargs['exchange_id'])
+    db_exchange =  get_exchange(db, kwargs['exchange_id'])
     if not db_exchange:
         logging.error("Ошибка в методе crud.create_instrument: биржа не найдена")
         raise ValueError("Биржа не найдена")
 
-    db_sector = get_sector(db, kwargs['sector_id'])
+    db_sector =  get_sector(db, kwargs['sector_id'])
     if not db_sector:
         logging.error("Ошибка в методе crud.create_instrument: сектор не найден")
         raise ValueError("Сектор не найден")
 
-    last_instrument_id = get_last_instrument_id(db)
-    new_id = None
-
-    if last_instrument_id == 0:
-        new_id = 1
-    else:
-        new_id = last_instrument_id + 1
-
-    instrument = models.Instrument(id=new_id, uid=kwargs['uid'], position_uid=kwargs['position_uid'],
+    instrument = models.Instrument(uid=kwargs['uid'], position_uid=kwargs['position_uid'],
                                    figi=kwargs['figi'], name=kwargs['name'], class_code=kwargs['class_code'],
                                    ticker=kwargs['ticker'], lot=kwargs['lot'],
                                    currency_id=kwargs['currency_id'], exchange_id=kwargs['exchange_id'],
                                    sector_id=kwargs['sector_id'], type_id=kwargs['type_id'],
-                                   asset_id=kwargs['asset_id'])
+                                   asset_uid=kwargs['asset_uid'])
     db.add(instrument)
     db.commit()
     db.refresh(instrument)
@@ -460,17 +444,17 @@ def create_instrument_rezerve(db: Session, orig_instrument: models.Instrument, i
 """ Добавление новой свечи в базу данных """
 def create_candle(db: Session, **kwargs):
 
-    db_instrument = get_instrument(db, instrument_id=kwargs['id_instrument'])
+    db_instrument =  get_instrument(db, instrument_uid=kwargs['uid_instrument'])
     if not db_instrument:
         logging.error("Ошибка в методе crud.create_candle: инструмент не найден")
         raise ValueError("Инструмент не найден")
 
-    db_timeframe = get_timeframe(db, kwargs['id_timeframe'])
+    db_timeframe =  get_timeframe(db, kwargs['id_timeframe'])
     if not db_timeframe:
         logging.error("Ошибка в методе crud.create_candle: таймфрейм не найден")
         raise ValueError("Таймфрейм не найден")
 
-    last_id = get_last_candle_id(db)
+    last_id =  get_last_candle_id(db)
     if not last_id:
         last_id = 1
     else:
@@ -478,7 +462,7 @@ def create_candle(db: Session, **kwargs):
 
     candle = models.Candle(id=kwargs['id'], time_m=kwargs['time_m'], open=kwargs['open'],
                            high=kwargs['high'], low=kwargs['low'], close=kwargs['close'],
-                           volume=kwargs['volume'], id_instrument=kwargs['id_instrument'],
+                           volume=kwargs['volume'], uid_instrument=kwargs['uid_instrument'],
                            id_timeframe=kwargs['id_timeframe'])
 
     try:
@@ -497,7 +481,7 @@ def create_candle(db: Session, **kwargs):
 
 """ Удаление типа актива """
 def delete_asset_type(db: Session, id: int):
-    db_asset_type = get_asset_type(db, id)
+    db_asset_type =  get_asset_type(db, id)
     if not db_asset_type:
         logging.error("Ошибка в методе crud.delete_asset_type: тип актива не найден")
         raise ValueError("Тип актива не найден")
@@ -507,7 +491,7 @@ def delete_asset_type(db: Session, id: int):
 
 """ Удаление типа инструмента """
 def delete_instrument_type(db: Session, id: int):
-    db_instrument_type = get_instrument_type(db, id)
+    db_instrument_type =  get_instrument_type(db, id)
     if not db_instrument_type:
         logging.error("Ошибка в методе crud.delete_instrument_type: тип инструмента не найден")
         raise ValueError("Тип инструмента не найден")
@@ -518,7 +502,7 @@ def delete_instrument_type(db: Session, id: int):
 
 """ Удаление сектора """
 def delete_sector(db: Session, id: int):
-    db_sector = get_sector(db, id)
+    db_sector =  get_sector(db, id)
     if not db_sector:
         raise ValueError("Сектор не найден")
     db.delete(db_sector)
@@ -527,7 +511,7 @@ def delete_sector(db: Session, id: int):
 
 """Удаление валюты"""
 def delete_currency(db: Session, id: int):
-    db_currency = get_currency(db, id)
+    db_currency =  get_currency(db, id)
     if not db_currency:
         raise ValueError("Валюта не найдена")
     db.delete(db_currency)
@@ -536,7 +520,7 @@ def delete_currency(db: Session, id: int):
 
 """ Удаление биржи  """
 def delete_exchange(db: Session, id: int):
-    db_exchange = get_exchange(db, id)
+    db_exchange =  get_exchange(db, id)
     if not db_exchange:
         raise ValueError("Биржа не найдена")
     db.delete(db_exchange)
@@ -544,23 +528,23 @@ def delete_exchange(db: Session, id: int):
 
 """ Удаление таймфрейма """
 def delete_timeframe(db: Session, id: int):
-    db_timeframe = get_timeframe(db, id)
+    db_timeframe =  get_timeframe(db, id)
     if not db_timeframe:
         raise ValueError("Таймфрейм не найден")
     db.delete(db_timeframe)
     db.commit()
 
 """" Удаление актива """
-def delete_asset(db: Session, id: int):
-    db_asset = get_asset(db, id)
+def delete_asset(db: Session, uid: str):
+    db_asset =  get_asset(db, uid)
     if not db_asset:
         raise ValueError("Актив не найден")
     db.delete(db_asset)
     db.commit()
 
 """ Удаление иснтрумента """
-def delete_instrument(db: Session, id: int):
-    db_instrument = get_instrument(db, id)
+def delete_instrument(db: Session, uid: str):
+    db_instrument =  get_instrument(db, uid)
     if not db_instrument:
         raise ValueError("Инструмент не найден")
     db.delete(db_instrument)
@@ -568,7 +552,7 @@ def delete_instrument(db: Session, id: int):
 
 """ Удаление свечи """
 def delete_candle(db: Session, id: int):
-    db_candle = get_candle(db, id)
+    db_candle =  get_candle(db, id)
     if not db_candle:
         raise ValueError("Свеча не найдена")
     db.delete(db_candle)

@@ -33,28 +33,6 @@ logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
 
 resData = None
 
-def printResData():
-    global resData
-    if not resData:
-        raise ValueError("Нет котировок")
-
-    cntShares = len(resData)
-    for i in range(cntShares):
-        size = len(resData[i]['open'])
-        print(f"Info about resData[{i}] with timeframe DAY:\ntime_m\t\topen\tclose\thigh\tlow\n")
-        for j in range(size):
-            time_t = resData[i]['time'][j]
-            open_t = resData[i]['open'][j]
-            close_t = resData[i]['close'][j]
-            high_t = resData[i]['high'][j]
-            low_t = resData[i]['low'][j]
-            volume_t = resData[i]['volume'][j]
-
-            print(f"{time_t}\t\t{open_t}\t\t{close_t}\t\t{high_t}\t\t{low_t}\t\t{volume_t}")
-        filename = "../instruments_info/tool_" + str(i) + ".csv"
-        print('../instruments_info/')
-
-
 async def asyncRequestHandler(reqs, tools_uid, frame, str_time_from, str_time_to):
     global resData
 
@@ -131,7 +109,7 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
     async def AsyncHistTrainMany(self):
         """
         Моделирует торговлю по иструментам за заданный период асинхронно
-        :return:
+        :return
         """
 
         tasks = list([])
@@ -219,8 +197,11 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         QMessageBox.information(self, "Информация по моделированию", "Моделирование торговли успешно завршено")
 
     def syncTestHistModeling(self):
+        self.str_time_from = self.edit_time_to.toPlainText()
+        self.str_time_to = self.edit_time_from.toPlainText()
+        self.frame = self.tfComboBox.currentText()
         loop = asyncio.new_event_loop()
-        loop.run_until_complete(test_tech_analyze.asyncHistTradingMany())
+        loop.run_until_complete(test_tech_analyze.asyncHistTradingMany(self.str_time_from, self.str_time_to, self.frame))
 
     def setupTestModelThread(self):
         if not self.testRadioBtn.isChecked():
@@ -231,13 +212,14 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         thread1.start()
         thread1.join()
 
-        files = os.listdir("../test_history_data/DAY/")
-        new_files = list([])
+        self.frame = self.tfComboBox.currentText()
+
+        files = os.listdir("../test_history_data/" + self.frame + "/")
         for file in files:
-            if file[:4] == '2023':
+            l = file.split('_')
+            if len(l[0]) < len(self.__tools_uid[0]):
                 continue
             else:
-                l = file.split('_')
                 for i in range(len(self.__tools_uid)):
                     if l[0] == self.__tools_uid[i]:
                         self.__uid_links[self.__tools_uid[i]] = file
@@ -288,9 +270,9 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         time_from = datetime.strptime(self.str_time_from, "%Y-%m-%d_%H:%M:%S")
         time_to = datetime.strptime(self.str_time_to, "%Y-%m-%d_%H:%M:%S")
         if not time_from < time_to:
-            logging.error("Неправильно указан границы впериода моделирования")
+            logging.error("Неправильно указан границы периода моделирования")
             QMessageBox.information(self, "Информация по выгрузке котировок",
-                                    "Неправильно указан границы впериода моделирования")
+                                    "Неправильно указаны границы периода моделирования")
             return
 
         try:
@@ -340,6 +322,10 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
                 if self.tools_data[i].name == name:
                     uid = self.tools_data[i].uid
                     filename = "../test_history_data/" + self.tfComboBox.currentText() + "/" + self.__uid_links[uid]
+                    if not os.path.isfile(filename):
+                        logging.error(f"Не обнаружено файла с названием: {filename}")
+                        QMessageBox.information(self, "Нет пути к файлу", f"Данных моделирования по {name}\n не обнаружено")
+                        return
                     df = pd.read_csv(filename)
                     break
             self.drawTestPlot(df, name)
@@ -368,7 +354,6 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         self.matlayout.addWidget(self.canvas)
         self.matlayout.addWidget(self.toolbar)
 
-
     def clear_graph(self):
         self.axes.clear()
         self.canvas.draw()
@@ -383,12 +368,19 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         :param name: название торгового инструмента
         :return:
         """
+        cntSuccess, cntFail = 0, 0
         dfPortfolio = pd.read_csv(prtfUidFile)
-        dfTrades = pd.read_csv(tradeUidFile)
+        dfTrades = None
+        if tradeUidFile != "NOFILE":
+            dfTrades = pd.read_csv(tradeUidFile)
         profitListTime = list(dfPortfolio['time'])
         profitListValues = list(dfPortfolio['profit_in_percent'])
+
+        if tradeUidFile == "NOFILE":
+            self.visualData[name] = (cntSuccess, cntFail, profitListTime, profitListValues)
+            return
+
         tradeMoments = list(dfTrades['time'])
-        cntSuccess, cntFail = 0, 0
 
         for i in range(dfPortfolio.shape[0]):
             if dfPortfolio.iloc[i]['time'] in tradeMoments:
@@ -443,13 +435,18 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
             pathPrtf1 = pathPrtf + '/' + uid + '_' + self.str_time_from + '_' + self.str_time_to + ".csv"
             tradeFile1 = tradeFile1.replace(':', '_')
             pathPrtf1 = pathPrtf1.replace(':', '_')
+            noTrades = 0
             if not os.path.exists(tradeFile1):
                 logging.info(f"Не существует файла с именем: {tradeFile1}")
-                continue
+                notTrades = 1
             if not os.path.exists(pathPrtf1):
                 logging.info(f"Не существует файла с именем: {pathPrtf1}")
                 continue
-            trFilenames.append(tradeFile1)
+
+            if noTrades:
+                trFilenames.append("NOFILE")
+            else:
+                trFilenames.append(tradeFile1)
             prtfFilenames.append(pathPrtf1)
 
         # Запускаем поток, получающий необходимые данные
@@ -516,7 +513,7 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         y_ticks = [t+1 for t in list(range(0, max(cnt_list)))]
         y_ticklabels = [str(y) for y in y_ticks]
         #self.axes.bar([0, 1], [self.successTrades, self.failTrades])
-        self.axes.set_title("Гистограмма соотношения прибыльных и убыточных сделок", fontsize=16, fontweight='bold')
+        self.axes.set_title("Столбчатая диаграмма соотношения \nприбыльных и убыточных сделок", fontsize=16, fontweight='bold')
         self.axes.yaxis.grid(True)
         self.axes.set_ylabel("Количество сделок, шт.", fontsize=16)
         self.axes.set_xticks(x_ticks+new_bin/2)
@@ -723,7 +720,7 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
             sm -= 0.4
         self.axes.set_xticks(x_ticks)
         self.axes.set_xticklabels(x_ticklabels, fontsize=14, rotation=25)
-        self.axes.set_title(f"Доходность по торговым инструментам в \nпериод моделирования, интервал = {candle_interval}", fontsize=16,
+        self.axes.set_title(f"Тест {name} за интервал {candle_interval}", fontsize=16,
             fontweight='bold')
         self.axes.set_ylabel("Доходность, %", fontsize=16)
         self.axes.set_xlabel("Время", fontsize=16)

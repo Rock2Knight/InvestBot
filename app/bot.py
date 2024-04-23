@@ -1,6 +1,7 @@
 # Сам бот
 import json
 import logging
+import asyncio
 
 from datetime import datetime, timedelta, timezone
 from functools import cache
@@ -42,6 +43,7 @@ class InvestBot():
         self.account_id = account_id
         self.uid = None
         self.timeframe = None
+        self.event_loop = asyncio.new_event_loop()
 
         self.engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=True)
         self.db = SessionLocal()
@@ -66,9 +68,9 @@ class InvestBot():
             logging.error("Не указана база данных")
             raise Exception("Не указана база данных")
 
-        instrument_list = crud.get_instrument_list(self.db)  # Достаем все записи из таблицы instrument
+        instrument_list =  crud.get_instrument_list(self.db)  # Достаем все записи из таблицы instrument
         if not instrument_list or fill:                              # Если таблица instrument пуста, то выходим
-            self.get_all_instruments()                # Заполняем список инструментов
+             self.get_all_instruments()                # Заполняем список инструментов
 
     def check_get_all_instruments(self):
         SharesDict = dict()
@@ -188,7 +190,7 @@ class InvestBot():
             for asset in response.assets:
 
                 """ Проверка на наличие актива в базе данных. Если есть, переходим к следующему активу """
-                db_asset = crud.get_asset_uid(self.db, asset_uid=asset.uid)
+                db_asset = crud.get_asset(self.db, asset_uid=asset.uid)
                 if db_asset:
                     for instrument in asset.instruments:
                         currency_name = None
@@ -286,74 +288,90 @@ class InvestBot():
                                 exchange_name = "undefined"
 
                         ''' Проверка на наличие инструмента в базе данных. Если есть, переходим к следующему инструменту'''
-                        db_instrument = crud.get_instrument_by_name(self.db, instrument_name=instrument_name)
+                        db_instrument =  crud.get_instrument_by_name(self.db, instrument_name=instrument_name)
                         if db_instrument:
                             continue
 
                         ''' Вставка нового инструмента в таблицу '''
 
                         '''Если в базе нет обозначения валюты инструмента, добавляем ее в базу'''
-                        id_cur = crud.get_curency_id(db=self.db, currency_name=currency_name)
+                        id_cur =  crud.get_currency_id(db=self.db, currency_name=currency_name)
                         if not id_cur:
-                            last_id = crud.get_last_currency_id(db=self.db)
+                            last_id =  crud.get_last_currency_id(db=self.db)
                             last_id = last_id + 1 if last_id else 1
                             crud.create_currency(db=self.db, id=last_id, name=currency_name)
-                            id_cur = crud.get_curency_id(db=self.db, currency_name=currency_name)
+                            id_cur =  crud.get_currency_id(db=self.db, currency_name=currency_name)
 
                         '''Если в базе нет обозначения биржи инструмента, добавляем ее в базу'''
-                        id_exc = crud.get_exchange_id(db=self.db, exchange_name=exchange_name)
+                        id_exc =  crud.get_exchange_id(db=self.db, exchange_name=exchange_name)
                         if not id_exc:
-                            last_id = crud.get_last_exchange_id(db=self.db)
+                            last_id =  crud.get_last_exchange_id(db=self.db)
                             last_id = last_id + 1 if last_id else 1
                             crud.create_exchange(db=self.db, id=last_id, name=exchange_name)
-                            id_exc = crud.get_exchange_id(db=self.db, exchange_name=exchange_name)
+                            id_exc =  crud.get_exchange_id(db=self.db, exchange_name=exchange_name)
 
                         ''' Если в базе нет обозначения сектора, добавляем его в базу '''
-                        id_sec = crud.get_sector_id(db=self.db, sector_name=sector_name)
+                        id_sec =  crud.get_sector_id(db=self.db, sector_name=sector_name)
                         if not id_sec:
-                            last_id = crud.get_last_sector_id(db=self.db)
+                            last_id =  crud.get_last_sector_id(db=self.db)
                             last_id = last_id + 1 if last_id else 1
                             crud.create_sector(db=self.db, id=last_id, name=sector_name)
-                            id_sec = crud.get_sector_id(db=self.db, sector_name=sector_name)
+                            id_sec =  crud.get_sector_id(db=self.db, sector_name=sector_name)
 
                         ''' Если в базе нет обозначения типа инструмента, добавляем его в базу '''
                         str_instr_type = self.get_str_type(instrument.instrument_kind, False)
-                        id_instr_type = crud.get_instrument_type_name(db=self.db, instrument_type_name=str_instr_type)
+                        id_instr_type =  crud.get_instrument_type_name(db=self.db, instrument_type_name=str_instr_type)
                         if not id_instr_type:
-                            last_id = crud.get_last_instrument_type_id(db=self.db)
+                            last_id =  crud.get_last_instrument_type_id(db=self.db)
                             last_id = last_id + 1 if last_id else 1
                             crud.create_instrument_type(db=self.db, id=last_id, name=str_instr_type)
-                            id_instr_type = crud.get_instrument_type_name(db=self.db,
-                                                                          instrument_type_name=str_instr_type).id
+                            id_instr_type =  crud.get_instrument_type_name(db=self.db,
+                                                                          instrument_type_name=str_instr_type)
+                            id_instr_type = id_instr_type.id
                         elif isinstance(id_instr_type, models.InstrumentType):
                             id_instr_type = id_instr_type.id
 
                         """ Если в базе нет обозначения актива инструмента, добавляем его в базу """
-                        id_asset = crud.get_asset_uid(db=self.db, asset_uid=asset.uid)
-                        if not id_asset:
-                            last_id = crud.get_last_asset_id(db=self.db)
-                            last_id = last_id + 1 if last_id else 1
-                            crud.create_asset(db=self.db, id=last_id, uid=asset.uid, name=asset.name)
-                            id_asset = crud.get_asset_uid(db=self.db, asset_uid=asset.uid).id
-                        elif isinstance(id_asset, models.Asset):
-                            id_asset = id_asset.id
+                        uid_asset =  crud.get_asset_uid(db=self.db, asset_uid=asset.uid)
+                        if not uid_asset:
+                            crud.create_asset(db=self.db, uid=asset.uid, name=asset.name)
+                            uid_asset =  crud.get_asset_uid(db=self.db, asset_uid=asset.uid)
+                            uid_asset = uid_asset.uid
+                        elif isinstance(uid_asset, models.Asset):
+                            uid_asset = uid_asset.uid
+
+                        # (1) Отладочная часть для проверки наличия нужных инструментов
+                        if asset.uid == "bfc8184d-9562-4ea2-87dd-be6e76dc1279":
+                            with open("info_file.txt", 'w', encoding='utf-8') as w_file:
+                                text = "\n\nЭто активы Газпрома\n"
+                                w_file.write(text)
+                                if len(asset.instruments) == 0:
+                                    w_file.write(f"Нет инструментов, принадлежащих {asset.name}")
+                                for instrument in asset.instruments:
+                                    w_file.write("lol\n")
+                                    w_file.write(instrument.uid + '\n')
+                                db_asset = crud.get_asset(self.db, asset_uid=asset.uid)
+                                if db_asset:
+                                    w_file.write(f'\n{db_asset.uid}')
+                                    w_file.write(f'\n{db_asset.name}')
 
                         # Добавляем инструмент в таблицу
                         crud.create_instrument(db=self.db, figi=instrument.figi, name=instrument_name,
                                                uid=instrument.uid, position_uid=instrument.position_uid,
                                                currency_id=id_cur, exchange_id=id_exc, sector_id=id_sec,
-                                               type_id=id_instr_type, asset_id=id_asset,
+                                               type_id=id_instr_type, asset_uid=uid_asset,
                                                ticker=instrument.ticker, lot=lot,
                                                class_code=instrument.class_code)
                     continue
 
                 """ Проверка на наличие типа актива в БД """
                 str_asset_type = self.get_str_type(asset.type, True)
-                db_asset_type_id = crud.get_asset_type_name(self.db, asset_type_name=str_asset_type)
+                db_asset_type_id =  crud.get_asset_type_name(self.db, asset_type_name=str_asset_type)
                 if not db_asset_type_id:
-                    last_id = crud.get_last_asset_type_id(self.db)
+                    last_id =  crud.get_last_asset_type_id(self.db)
                     last_id = last_id + 1 if last_id else 1
-                    db_asset_type_id = crud.create_asset_type(self.db, id=last_id, name=str_asset_type).id
+                    db_asset_type_id =  crud.create_asset_type(self.db, id=last_id, name=str_asset_type)
+                    db_asset_type_id = db_asset_type_id
                 else:
                     db_asset_type_id = db_asset_type_id.id
 
@@ -456,7 +474,7 @@ class InvestBot():
                             exchange_name = "undefined"
 
                     ''' Проверка на наличие инструмента в базе данных. Если есть, переходим к следующему инструменту'''
-                    db_instrument = crud.get_instrument_by_name(self.db, instrument_name=instrument_name)
+                    db_instrument =  crud.get_instrument_by_name(self.db, instrument_name=instrument_name)
                     if db_instrument:
                         continue
 
@@ -464,56 +482,70 @@ class InvestBot():
 
 
                     '''Если в базе нет обозначения валюты инструмента, добавляем ее в базу'''
-                    id_cur = crud.get_curency_id(db=self.db, currency_name=currency_name)
+                    id_cur =  crud.get_currency_id(db=self.db, currency_name=currency_name)
                     if not id_cur:
-                        last_id = crud.get_last_currency_id(db=self.db)
+                        last_id =  crud.get_last_currency_id(db=self.db)
                         last_id = last_id + 1 if last_id else 1
                         crud.create_currency(db=self.db, id=last_id, name=currency_name)
-                        id_cur = crud.get_curency_id(db=self.db, currency_name=currency_name)
+                        id_cur =  crud.get_currency_id(db=self.db, currency_name=currency_name)
 
                     '''Если в базе нет обозначения биржи инструмента, добавляем ее в базу'''
-                    id_exc = crud.get_exchange_id(db=self.db, exchange_name=exchange_name)
+                    id_exc =  crud.get_exchange_id(db=self.db, exchange_name=exchange_name)
                     if not id_exc:
-                        last_id = crud.get_last_exchange_id(db=self.db)
+                        last_id =  crud.get_last_exchange_id(db=self.db)
                         last_id = last_id + 1 if last_id else 1
                         crud.create_exchange(db=self.db, id=last_id, name=exchange_name)
-                        id_exc = crud.get_exchange_id(db=self.db, exchange_name=exchange_name)
+                        id_exc =  crud.get_exchange_id(db=self.db, exchange_name=exchange_name)
 
                     ''' Если в базе нет обозначения сектора, добавляем его в базу '''
-                    id_sec = crud.get_sector_id(db=self.db, sector_name=sector_name)
+                    id_sec =  crud.get_sector_id(db=self.db, sector_name=sector_name)
                     if not id_sec:
-                        last_id = crud.get_last_sector_id(db=self.db)
+                        last_id =  crud.get_last_sector_id(db=self.db)
                         last_id = last_id + 1 if last_id else 1
                         crud.create_sector(db=self.db, id=last_id, name=sector_name)
-                        id_sec = crud.get_sector_id(db=self.db, sector_name=sector_name)
+                        id_sec =  crud.get_sector_id(db=self.db, sector_name=sector_name)
 
                     ''' Если в базе нет обозначения типа инструмента, добавляем его в базу '''
                     str_instr_type = self.get_str_type(instrument.instrument_kind, False)
-                    id_instr_type = crud.get_instrument_type_name(db=self.db, instrument_type_name=str_instr_type)
+                    id_instr_type =  crud.get_instrument_type_name(db=self.db, instrument_type_name=str_instr_type)
                     if not id_instr_type:
-                        last_id = crud.get_last_instrument_type_id(db=self.db)
+                        last_id =  crud.get_last_instrument_type_id(db=self.db)
                         last_id = last_id + 1 if last_id else 1
                         crud.create_instrument_type(db=self.db, id=last_id, name=str_instr_type)
-                        id_instr_type = crud.get_instrument_type_name(db=self.db, instrument_type_name=str_instr_type).id
+                        id_instr_type =  crud.get_instrument_type_name(db=self.db, instrument_type_name=str_instr_type)
+                        id_instr_type = id_instr_type.id
                     elif isinstance(id_instr_type, models.InstrumentType):
                         id_instr_type = id_instr_type.id
 
                     """ Если в базе нет обозначения актива инструмента, добавляем его в базу """
-                    id_asset = crud.get_asset_uid(db=self.db, asset_uid=asset.uid)
-                    if not id_asset:
-                        last_id = crud.get_last_asset_id(db=self.db)
-                        last_id = last_id + 1 if last_id else 1
-                        crud.create_asset(db=self.db, id=last_id, uid=asset.uid, name=asset.name)
-                        id_asset = crud.get_asset_uid(db=self.db, asset_uid=asset.uid).id
-                    elif isinstance(id_asset, models.Asset):
-                        id_asset = id_asset.id
+                    uid_asset =  crud.get_asset_uid(db=self.db, asset_uid=asset.uid)
+                    if not uid_asset:
+                        crud.create_asset(db=self.db, uid=asset.uid, name=asset.name)
+                        uid_asset =  crud.get_asset_uid(db=self.db, asset_uid=asset.uid)
+                        uid_asset = uid_asset.uid
+                    elif isinstance(uid_asset, models.Asset):
+                        uid_asset = uid_asset.uid
 
+                    # (1) Отладочная часть для проверки наличия нужных инструментов
+                    if asset.uid == "bfc8184d-9562-4ea2-87dd-be6e76dc1279":
+                        with open("info_file.txt", 'w', encoding='utf-8') as w_file:
+                            text = "\n\nЭто активы Газпрома\n"
+                            w_file.write(text)
+                            if len(asset.instruments) == 0:
+                                w_file.write(f"Нет инструментов, принадлежащих {asset.name}")
+                            for instrument in asset.instruments:
+                                w_file.write("lol\n")
+                                w_file.write(instrument.uid + '\n')
+                            db_asset = crud.get_asset(self.db, asset_uid=asset.uid)
+                            if db_asset:
+                                w_file.write(f'\n{db_asset.uid}')
+                                w_file.write(f'\n{db_asset.name}')
 
                     # Добавляем инструмент в таблицу
                     crud.create_instrument(db=self.db, figi=instrument.figi, name=instrument_name,
                                            uid=instrument.uid, position_uid=instrument.position_uid,
                                            currency_id=id_cur, exchange_id=id_exc, sector_id=id_sec,
-                                           type_id=id_instr_type, asset_id=id_asset,
+                                           type_id=id_instr_type, asset_uid=uid_asset,
                                            ticker=instrument.ticker, lot=lot,
                                            class_code=instrument.class_code)
 
@@ -543,7 +575,7 @@ class InvestBot():
 
     # Отладочный метод для проверки инструментов по бирже:
     def check_instruments(self, exchange_id: int):
-        active_list = crud.get_actives_by_exchange(self.db, exchange_id=exchange_id)
+        active_list =  crud.get_actives_by_exchange(self.db, exchange_id=exchange_id)
         for instrument in active_list:
             print(instrument.figi, '  |   ', instrument.name)
 
@@ -583,41 +615,38 @@ class InvestBot():
 
 
     def check_last_candles(self):
-        tool_figi = ''
-        tool_timeframe = ''
-
         tool_info = InvestBot.get_instrument_info("config.txt") # Получаем информацию об инструменте
 
-        db_instrument = crud.get_instrument_uid(self.db, instrument_uid=tool_info[0])
+        db_instrument = crud.get_instrument(self.db, instrument_uid=tool_info[0])
         if not db_instrument:
             logging.error(f"Не найден инструмент с uid = {tool_info[0]}")
             raise ValueError(f"Не найден инструмент с uid = {tool_info[0]}")
 
         if not crud.check_timeframe(self.db, timeframe_name=tool_info[5]):
-            crud.create_timeframe(self.db, name=tool_info[5])
+            crud.create_timeframe(self.db, id=None, name=tool_info[5])
 
         self.uid = tool_info[0]
         self.timeframe = tool_info[-1]
 
         # Определяем id инструмента и таймфрейма
-        id_instrument = db_instrument.id
-        id_timeframe = crud.get_timeframe_id(self.db, timeframe_name=tool_timeframe)
-        db_timeframe = crud.get_timeframe(self.db, id_timeframe)
-        interval = self.get_timeframe_by_name(db_timeframe.name)
+        uid_instrument = db_instrument.uid
+        id_timeframe = crud.get_timeframe_id(self.db, timeframe_name=self.timeframe)
+        #db_timeframe = crud.get_timeframe(self.db, id_timeframe)
+        #interval = self.get_timeframe_by_name(db_timeframe.name)
 
         # Запрашиваем 10 последних candles для инструмента
-        candles = crud.get_candles_list(self.db, id_instrument, id_timeframe)
+        candles =  crud.get_candles_list(self.db, uid_instrument, id_timeframe)
         if not candles:
             # Свеч по данному инструменту в базе вообще нет
             self.load_candles()
-            return 1
+            return 1   # Возврат 1 в случае начальной подгрузки свечей
         else:
-            last_candle = candles[-1]
+            last_candle = candles[0]
             if last_candle.time_m - datetime.now() > timedelta(hours=2):
-                return last_candle.time_m
+                return last_candle.time_m  # Возврат времени последней свечи, если она есть и при этом разница между текущим временем значительная
             ''' Если нет свечей вообще, то запрашиваем 10 последних свечей за период '''
             #self.get_candles(db_instrument.figi, tool_timeframe, fill_db=True)  # Заполняем базу с нуля
-        return 1
+        return 1   # Возврат 1 в случае, если все нормально
 
     ''' Отладочный метод (1) на загрузку некоторых свечей в базу '''
     def load_some_candles(self):
@@ -625,7 +654,7 @@ class InvestBot():
         tool_info = InvestBot.get_instrument_info("config.txt")  # Получаем информацию об инструменте
         uid = tool_info[0]
         frame = tool_info[-1]
-        db_instrument = crud.get_instrument_uid(self.db, instrument_uid=uid)
+        db_instrument =  crud.get_instrument_uid(self.db, instrument_uid=uid)
 
         # Получаем границы времнного интервала для массива свечей
         cur_date = datetime.now()
@@ -650,21 +679,21 @@ class InvestBot():
             str_time = datetime.strptime(time_obj, '%Y-%m-%d_%H:%M:%S')
             print(open, close, low, high, str_time, volume)
 
-            is_candle = crud.check_candle_by_time(self.db, str_time)
+            is_candle =  crud.check_candle_by_time(self.db, str_time)
             if is_candle:
                 continue
 
-            new_id = crud.get_last_candle_id(self.db) + 1
-            my_instrument = crud.get_instrument_uid(self.db, instrument_uid=uid)
-            my_timeframe_id = crud.get_timeframe_id(self.db, frame)
+            new_id =  crud.get_last_candle_id(self.db) + 1
+            my_instrument =  crud.get_instrument_uid(self.db, instrument_uid=uid)
+            my_timeframe_id =  crud.get_timeframe_id(self.db, frame)
 
             if not my_timeframe_id:
                 crud.create_timeframe(self.db, id=None, name=frame)
-                my_timeframe_id = crud.get_timeframe_id(self.db, frame)
+                my_timeframe_id =  crud.get_timeframe_id(self.db, frame)
                 my_timeframe_id = my_timeframe_id.id
 
             try:
-                crud.create_candle(self.db, id=new_id, time_m=time_obj, volume=volume,
+                 crud.create_candle(self.db, id=new_id, time_m=time_obj, volume=volume,
                                    open=open, close=close, low=low, high=high,
                                    id_instrument=my_instrument.id, id_timeframe=my_timeframe_id)
             except ValueError as vr:
@@ -675,13 +704,18 @@ class InvestBot():
 
 
     def load_candles(self, last_date=None):
+        """
+        Метод для загрузки свечей по инструменту
+
+        :param last_date: начальное время для запроса
+        """
         candles = None  # Сырой массив свечей
         mode = 1
 
         # Получаем границы времнного интервала для массива свечей
         cur_date = datetime.now()
         if not last_date:
-            last_date = cur_date - timedelta(hours=365*24)
+            last_date = cur_date - timedelta(hours=7*24)
 
         str_cur_date = cur_date.strftime("%Y-%m-%d_%H:%M:%S")
         str_last_date = last_date.strftime("%Y-%m-%d_%H:%M:%S")
@@ -704,22 +738,22 @@ class InvestBot():
             print(open, close, low, high, str_time, volume)
 
             new_id = crud.get_last_candle_id(self.db) + 1
-            my_instrument = crud.get_instrument_uid(self.db, instrument_uid=self.uid)
+            my_instrument = crud.get_instrument(self.db, instrument_uid=self.uid)
             my_timeframe_id = crud.get_timeframe_id(self.db, self.timeframe)
             if not my_timeframe_id:
                 crud.create_timeframe(self.db, name=self.timeframe)
-                my_timeframe_id = crud.get_timeframe_id(self.db, self.timeframe)
+                my_timeframe_id =  crud.get_timeframe_id(self.db, self.timeframe)
                 my_timeframe_id = my_timeframe_id.id
 
             try:
-                crud.create_candle(id=new_id, time_m=time_obj, volume=volume,
+                 crud.create_candle(self.db, id=new_id, time_m=time_obj, volume=volume,
                                    open=open, close=close, low=low, high=high,
-                                   id_instrument=my_instrument.id, id_timeframe=my_timeframe_id)
+                                   uid_instrument=my_instrument.uid, id_timeframe=my_timeframe_id)
             except ValueError as vr:
-                logging.error(f"В методе InvestBot.load_candles() в метод crud.create_candles() передан неверный аргумент передан")
+                logging.error(f"В методе InvestBot.load_candles() в метод await crud.create_candles() передан неверный аргумент передан")
                 print(vr.args)
 
-        print(f"{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}: Candles have been written")
+        print(f"{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}: Candles have been written\n")
 
 
     '''
@@ -765,6 +799,8 @@ class InvestBot():
         """ Главный цикл торгового робота """
         last_time = self.check_last_candles()
         if isinstance(last_time, datetime):
+            # Если check_last_candles() вернул datetime-объект, значит у нас значительный разрыв по времени, требуется
+            # еще подгрузка
             self.load_candles(last_time)
 
         while True:

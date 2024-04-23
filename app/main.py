@@ -10,9 +10,5 @@ MAX_MIN_INTERVAL = 14                                  # Интервал пои
 COMMISION = 0.003                                      # коммисия брокера
 
 if __name__ == '__main__':
-    investBot = bot.InvestBot(account_id=ACCOUNT_ID)
-    #invest_bot.check_get_all_instruments()
-    #invest_bot.check_instruments(1)
-    #investBot.load_some_candles()
-    #investBot.load
-    #investBot.run()
+    investBot = bot.InvestBot(account_id=ACCOUNT_ID, autofill=False)
+    investBot.run()

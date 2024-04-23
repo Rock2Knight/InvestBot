@@ -61,10 +61,9 @@ class InstrumentType(Base):
 class Asset(Base):
     __tablename__ = 'asset'
 
-    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    uid = Column(String(100), primary_key=True, nullable=False)
     type_id = Column(Integer, ForeignKey("asset_type.id"), nullable=False)
     name = Column(TEXT, nullable=False)
-    uid = Column(String(100), nullable=False)
 
     type_as_ref = relationship("AssetType", backref="type_as_back")
 
@@ -72,19 +71,18 @@ class Asset(Base):
 class Instrument(Base):
     __tablename__ = 'instrument'
 
-    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    uid = Column(String(100), primary_key=True, nullable=False)
     sector_id = Column(Integer, ForeignKey("sector.id"), nullable=False)
     currency_id = Column(Integer, ForeignKey("currency.id"), nullable=False)
     exchange_id = Column(Integer, ForeignKey("exchange.id"), nullable=False)
-    asset_id = Column(Integer, ForeignKey("asset.id"), nullable=False)
+    asset_uid = Column(String(100), ForeignKey("asset.uid"), nullable=False)
     type_id = Column(Integer, ForeignKey("instrument_type.id"), nullable=False)
 
-    uid = Column(String(100), nullable=False)
     position_uid = Column(String(100), nullable=False)
     figi = Column(String(15), nullable=False)
-    name = Column(String, nullable=True)
+    name = Column(String(100), nullable=True)
     lot = Column(Integer, nullable=False)
-    ticker = Column(String(50), nullable=False)
+    ticker = Column(String(100), nullable=True)
     class_code = Column(String(20), nullable=False)
 
     sector_ref = relationship("Sector", backref="sector_back")
@@ -119,7 +117,7 @@ class Candle(Base):
     __tablename__ = 'candle'
 
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    id_instrument = Column(Integer, ForeignKey("instrument.id"), nullable=False)
+    uid_instrument = Column(String(100), ForeignKey("instrument.uid"), nullable=False)
     id_timeframe = Column(Integer, ForeignKey("timeframe.id"), nullable=False)
     time_m = Column(TIMESTAMP, nullable=False)
     open = Column(Numeric(precision=6), nullable=False)
@@ -131,5 +129,5 @@ class Candle(Base):
     slow_sma = Column(Numeric(precision=3), nullable=True)
     rsi = Column(Numeric(precision=3), nullable=True)
 
-    figi_ref = relationship("Instrument", backref="cnd_intsr_back")
+    instr_ref = relationship("Instrument", backref="cnd_intsr_back")
     timeframe_ref = relationship("Timeframe", backref="fr_instr_back")
