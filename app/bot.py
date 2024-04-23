@@ -2,7 +2,10 @@
 import json
 import logging
 import asyncio
+import math
+from enum import Enum
 
+import time
 from datetime import datetime, timedelta, timezone
 from functools import cache
 import numpy as np
@@ -14,10 +17,15 @@ from tinkoff.invest.schemas import (
     InstrumentType,
     InstrumentIdType,
     CandleInterval,
-    AssetRequest
+    AssetRequest,
+    OrderDirection,
+    OrderType,
+    PriceType,
+    PostOrderResponse
 )
 from tinkoff.invest.exceptions import RequestError
 
+import app.technical_indicators
 # Для исторических свечей
 
 from work import *
@@ -26,10 +34,17 @@ from work.exceptions import *
 from app.StopMarketQueue import StopMarketQueue
 from api import crud, models
 from api.database import *
+from technical_indicators import *
 
 logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
                     format="%(asctime)s %(levelname)s %(message)s")
 UTC_OFFSET = "Europe/Moscow"
+MAXInter = 5
+
+class DirectTrade(Enum):
+    UNSPECIFIED = 0,
+    BUY = 1,
+    SELL = 2
 
 
 class InvestBot():
@@ -43,7 +58,14 @@ class InvestBot():
         self.account_id = account_id
         self.uid = None
         self.timeframe = None
-        self.event_loop = asyncio.new_event_loop()
+        self.direct_trade = DirectTrade.UNSPECIFIED    # Направление сделки (купить/продать)
+        self.lot = 0
+        self.profit = 0                                # Прибыль портфеля в процентах
+        self.delay = 0                                 # Задержка для совершения сделок
+        #self.event_loop = asyncio.new_event_loop()
+        tool_info = InvestBot.get_instrument_info("config.txt")  # Получаем информацию об инструменте
+        self.timeframe = tool_info[5]
+        self.__init_delay()
 
         self.engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=True)
         self.db = SessionLocal()
@@ -71,6 +93,37 @@ class InvestBot():
         instrument_list =  crud.get_instrument_list(self.db)  # Достаем все записи из таблицы instrument
         if not instrument_list or fill:                              # Если таблица instrument пуста, то выходим
              self.get_all_instruments()                # Заполняем список инструментов
+
+
+    def __init_delay(self):
+        """ Определяем задержку между сделками в секундах """
+        match self.timeframe:
+            case '1_MIN':
+                self.delay = 60
+            case '5_MIN':
+                self.delay = 60 * 5
+            case '15_MIN':
+                self.delay = 60 * 15
+            case 'HOUR':
+                self.delay = 60 * 60
+            case 'DAY':
+                self.delay = 60 * 60 * 24
+            case '2_MIN':
+                self.delay = 60 * 2
+            case '3_MIN':
+                self.delay = 60 * 3
+            case '10_MIN':
+                self.delay = 60 * 10
+            case '30_MIN':
+                self.delay = 60 * 30
+            case '2_HOUR':
+                self.delay = 60 * 60 * 2
+            case '4_HOUR':
+                self.delay = 60 * 60 * 4
+            case 'WEEK':
+                self.delay = 60 * 60 * 24 * 7
+            case 'MONTH':
+                self.delay = 60 * 60 * 24 * 31
 
     def check_get_all_instruments(self):
         SharesDict = dict()
@@ -715,7 +768,7 @@ class InvestBot():
         # Получаем границы времнного интервала для массива свечей
         cur_date = datetime.now()
         if not last_date:
-            last_date = cur_date - timedelta(hours=7*24)
+            last_date = cur_date - timedelta(minutes=60*24)
 
         str_cur_date = cur_date.strftime("%Y-%m-%d_%H:%M:%S")
         str_last_date = last_date.strftime("%Y-%m-%d_%H:%M:%S")
@@ -755,6 +808,140 @@ class InvestBot():
 
         print(f"{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}: Candles have been written\n")
 
+    def get_lot(self):
+        instrument = crud.get_instrument(self.db, self.uid)
+        self.lot = instrument.lot
+
+
+    def check_signal(self):
+        """
+        Метод, проверяющий наличие торговых сигналов
+        """
+        tf_id = crud.get_timeframe_id(self.db, self.timeframe)
+        last_candles = crud.get_candles_list(self.db, self.uid, tf_id)
+
+        t2 = last_candles[0].time_m
+        t1 = None
+        tf = self.get_timeframe_by_name(self.timeframe)
+        match tf:
+            case CandleInterval.CANDLE_INTERVAL_1_MIN:
+                t1 = t2 - timedelta(minutes=60)
+            case CandleInterval.CANDLE_INTERVAL_2_MIN:
+                t1 = t2 - timedelta(minutes=120)
+            case CandleInterval.CANDLE_INTERVAL_5_MIN:
+                t1 = t2 - timedelta(hours=3)
+            case CandleInterval.CANDLE_INTERVAL_10_MIN:
+                t1 = t2 - timedelta(hours=3)
+            case CandleInterval.CANDLE_INTERVAL_15_MIN:
+                t1 = t2 - timedelta(hours=5)
+            case CandleInterval.CANDLE_INTERVAL_30_MIN:
+                t1 = t2 - timedelta(hours=12)
+            case CandleInterval.CANDLE_INTERVAL_30_MIN:
+                t1 = t2 - timedelta(hours=24)
+            case CandleInterval.CANDLE_INTERVAL_HOUR:
+                t1 = t2 - timedelta(hours=36)
+            case CandleInterval.CANDLE_INTERVAL_2_HOUR:
+                t1 = t2 - timedelta(days=7)
+            case CandleInterval.CANDLE_INTERVAL_4_HOUR:
+                t1 = t2 - timedelta(days=14)
+            case CandleInterval.CANDLE_INTERVAL_DAY:
+                t1 = t2 - timedelta(days=31)
+            case CandleInterval.CANDLE_INTERVAL_WEEK:
+                t1 = t2 - timedelta(days=31*4)
+            case CandleInterval.CANDLE_INTERVAL_MONTH:
+                t1 = t2 - timedelta(days=365*2)
+
+        valuesSMA = getSMA(self.uid, t1, t2, tf, interval=SMA_INTERVAL)
+        valuesRSI = getRSI(self.uid, t1, t2, tf, interval=RSI_INTERVAL)
+
+        sma_prev, sma_cur = cast_money(valuesSMA[-2].signal), cast_money(valuesSMA[-1].signal)
+        rsiVal = cast_money(valuesRSI[-1].signal)
+
+        if last_candles[1].close < sma_prev and last_candles[0].close > sma_cur:
+            self.direct_trade = DirectTrade.BUY
+        elif last_candles[1].close > sma_prev and last_candles[0].close < sma_cur:
+            self.direct_trade = DirectTrade.SELL
+        else:
+            self.direct_trade = DirectTrade.UNSPECIFIED
+            return False
+
+        valuesSMA = valuesSMA[-11:]
+        size = len(valuesSMA)
+        last_candles.reverse()
+        if len(last_candles) > size:
+            last_candles = last_candles[-size:]
+        cntInter = 0
+        valuesSMA[0] = cast_money(valuesSMA[0])
+        for i in range(1, size):
+            valuesSMA[i] = cast_money(valuesSMA[i])
+            if last_candles[i-1].close < valuesSMA[i-1] and last_candles[i].close > valuesSMA[i]:
+                cntInter += 1
+            elif last_candles[i-1].close > valuesSMA[i-1] and last_candles[i].close < valuesSMA[i]:
+                cntInter += 1
+
+        if cntInter > MAXInter:
+            return False
+
+        if self.direct_trade == DirectTrade.BUY and rsiVal > 70:
+            return False
+        elif self.direct_trade == DirectTrade.SELL and rsiVal < 30:
+            return False
+
+        return True
+
+    def make_trade(self):
+        balance = None
+        with SandboxClient(TOKEN) as client:
+            balance = client.sandbox.get_sandbox_portfolio(account_id=self.account_id)
+            free_money = cast_money(balance.total_amount_currencies)
+            positionSize = free_money * STOP_ACCOUNT / STOP_LOSS  # Расчитываем размер позиции (сделки)
+            last_prices = client.market_data.get_last_prices(instrument_id=self.uid)
+            last_price = last_prices[-1]
+            lot_cast = cast_money(last_price.price) * self.lot
+            lot_count = int(positionSize / lot_cast)
+            direct = None
+            if self.direct_trade == DirectTrade.BUY:
+                direct = OrderDirection.ORDER_DIRECTION_BUY
+            else:
+                direct = OrderDirection.ORDER_DIRECTION_SELL
+
+            POResponse = client.sandbox.post_sandbox_order(instrument_id=self.uid, price=last_price.price, direction=direct,
+                                              account_id=self.account_id, order_type=OrderType.ORDER_TYPE_MARKET,
+                                              price_type=PriceType.PRICE_TYPE_CURRENCY, quantity=lot_count)
+
+            self.printPostOrderResponse(POResponse)
+
+    def check_loss(self):
+        if math.fabs(self.profit / 100) > STOP_ACCOUNT and self.profit < 0:
+            print("CRITCAL LOSS. EXIT")
+            return True
+        return False
+
+    def printPostOrderResponse(self, POResponse: PostOrderResponse):
+        print('\nINFO ABOUT TRADE\n-----------------------------------------------------\n')
+        print(f"Direct of trade = {POResponse.direction}")
+        print(f"Executed order price = {POResponse.executed_order_price}")
+        print(f"Executed commission = {POResponse.executed_commission}")
+        print(f"UID instrument = {POResponse.instrument_uid}")
+        print(f"Requested lots = {POResponse.lots_requested}")
+        print(f"Executed lots = {POResponse.lots_executed}")
+        print(f"Order type = {POResponse.order_type}")
+        print(f"Total order amount = {POResponse.total_order_amount}\n\n")
+
+
+    def printPortfolio(self):
+        print("MY PORTFOLIO\n-----------------------------------\n")
+        with SandboxClient(TOKEN) as client:
+            balance = client.sandbox.get_sandbox_portfolio(account_id=self.account_id)
+            total_amount_shares = cast_money(balance.total_amount_shares)
+            free_money = cast_money(balance.total_amount_currencies)
+            total_amount_portfolio = cast_money(balance.total_amount_portfolio)
+            self.profit = cast_money(balance.expected_yield)
+
+            print(f"Free money = {free_money} RUB")
+            print(f"Total amount shares = {total_amount_shares} RUB")
+            print(f"Total amount portfolio = {total_amount_portfolio} RUB")
+            print(f"Profit/Unprofit = {self.profit} %\n\n")
 
     '''
         def check_have_candles(self, timeframe: str):
@@ -804,4 +991,9 @@ class InvestBot():
             self.load_candles(last_time)
 
         while True:
-            print("Bot is working\n")
+            self.printPortfolio()
+            if self.check_loss():
+                exit(1)
+            if self.check_signal():
+                self.make_trade()
+            time.sleep(self.delay)
