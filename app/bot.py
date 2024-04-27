@@ -1,14 +1,18 @@
 # Сам бот
+import os
 import json
 import logging
 import asyncio
 import math
 from enum import Enum
+import multiprocessing as mp
+import csv
 
 import time
 from datetime import datetime, timedelta, timezone
 from functools import cache
 import numpy as np
+import psutil
 
 from tinkoff.invest.schemas import (
     InstrumentStatus,
@@ -28,13 +32,16 @@ from tinkoff.invest.exceptions import RequestError
 import app.technical_indicators
 # Для исторических свечей
 
+import stream_client
 from work import *
 from work.functional import *
 from work.exceptions import *
+from work.functional import reverse_money
 from app.StopMarketQueue import StopMarketQueue
 from api import crud, models
 from api.database import *
 from technical_indicators import *
+from app import PROCESS_SWITCH
 
 logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
                     format="%(asctime)s %(levelname)s %(message)s")
@@ -65,6 +72,7 @@ class InvestBot():
         #self.event_loop = asyncio.new_event_loop()
         tool_info = InvestBot.get_instrument_info("config.txt")  # Получаем информацию об инструменте
         self.timeframe = tool_info[5]
+        self.__stream_process = mp.Process(target=stream_client.setup_stream)  # Процесс загрузки данных через Stream
         self.__init_delay()
 
         self.engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=True)
@@ -680,6 +688,7 @@ class InvestBot():
 
         self.uid = tool_info[0]
         self.timeframe = tool_info[-1]
+        self.get_lot()
 
         # Определяем id инструмента и таймфрейма
         uid_instrument = db_instrument.uid
@@ -823,6 +832,7 @@ class InvestBot():
         t2 = last_candles[0].time_m
         t1 = None
         tf = self.get_timeframe_by_name(self.timeframe)
+        #self.make_trade()
         match tf:
             case CandleInterval.CANDLE_INTERVAL_1_MIN:
                 t1 = t2 - timedelta(minutes=60)
@@ -865,49 +875,90 @@ class InvestBot():
             self.direct_trade = DirectTrade.UNSPECIFIED
             return False
 
+        print('\nSIGNAL 1 TAKEN\n')
         valuesSMA = valuesSMA[-11:]
         size = len(valuesSMA)
         last_candles.reverse()
         if len(last_candles) > size:
             last_candles = last_candles[-size:]
         cntInter = 0
-        valuesSMA[0] = cast_money(valuesSMA[0])
+        valuesSMA[0] = cast_money(valuesSMA[0].signal)
         for i in range(1, size):
-            valuesSMA[i] = cast_money(valuesSMA[i])
-            if last_candles[i-1].close < valuesSMA[i-1] and last_candles[i].close > valuesSMA[i]:
-                cntInter += 1
-            elif last_candles[i-1].close > valuesSMA[i-1] and last_candles[i].close < valuesSMA[i]:
-                cntInter += 1
+            print(f"ITERATION = {i}")
+            try:
+                valuesSMA[i] = cast_money(valuesSMA[i].signal)
+                if last_candles[i-1].close < valuesSMA[i-1] and last_candles[i].close > valuesSMA[i]:
+                    cntInter += 1
+                elif last_candles[i-1].close > valuesSMA[i-1] and last_candles[i].close < valuesSMA[i]:
+                    cntInter += 1
+            except IndexError:
+                break
 
         if cntInter > MAXInter:
             return False
+
+        print('\nSIGNAL 2 TAKEN\n')
 
         if self.direct_trade == DirectTrade.BUY and rsiVal > 70:
             return False
         elif self.direct_trade == DirectTrade.SELL and rsiVal < 30:
             return False
 
+        print('\nSIGNAL 3 TAKEN\n')
+
         return True
 
     def make_trade(self):
         balance = None
         with SandboxClient(TOKEN) as client:
+            print("BEGIN OF TRADE\n")
             balance = client.sandbox.get_sandbox_portfolio(account_id=self.account_id)
             free_money = cast_money(balance.total_amount_currencies)
             positionSize = free_money * STOP_ACCOUNT / STOP_LOSS  # Расчитываем размер позиции (сделки)
-            last_prices = client.market_data.get_last_prices(instrument_id=self.uid)
-            last_price = last_prices[-1]
-            lot_cast = cast_money(last_price.price) * self.lot
+
+            my_timeframe_id = crud.get_timeframe_id(self.db, self.timeframe)
+            last_price = crud.get_candles_list(self.db, self.uid, my_timeframe_id)
+            last_price = last_price[0].close
+
+            if last_price != 0:
+                print(f"Last price = {last_price}")
+            else:
+                print("No last price!\n")
+                exit(1)
+            print(f"\nLAST PRICE = {last_price} rub/item\n")
+            if last_price == 0:
+                exit(1)
+            print(f"\nLOT = {self.lot}\n")
+            last_price = float(last_price)
+            trade_price = reverse_money(last_price)
+            lot_cast = last_price * self.lot
+            print(f"\nLOT CAST = {lot_cast:.3f} rub/lot\n")
             lot_count = int(positionSize / lot_cast)
             direct = None
+
+            balance = client.sandbox.get_sandbox_portfolio(account_id=self.account_id)
+            total_amount_shares = cast_money(balance.total_amount_shares)
+            total_amount_bonds = cast_money(balance.total_amount_bonds)
+            total_amount_etf = cast_money(balance.total_amount_etf)
+            free_money = cast_money(balance.total_amount_currencies)
+            total_amount_portfolio = cast_money(balance.total_amount_portfolio)
+            self.profit = cast_money(balance.expected_yield)
+
             if self.direct_trade == DirectTrade.BUY:
                 direct = OrderDirection.ORDER_DIRECTION_BUY
+                if free_money < positionSize:
+                    print('\n-----------------------------\nNOT ENOUGH MONEY FOR BUY\n\n')
+                    return
             else:
                 direct = OrderDirection.ORDER_DIRECTION_SELL
+                if lot_cast * lot_count > total_amount_shares:
+                    print('\n-----------------------------\nNOT ENOUGH MONEY FOR SELL\n\n')
+                    return
 
-            POResponse = client.sandbox.post_sandbox_order(instrument_id=self.uid, price=last_price.price, direction=direct,
+            POResponse = client.sandbox.post_sandbox_order(instrument_id=self.uid, price=trade_price, direction=direct,
                                               account_id=self.account_id, order_type=OrderType.ORDER_TYPE_MARKET,
                                               price_type=PriceType.PRICE_TYPE_CURRENCY, quantity=lot_count)
+            print("END OF TRADE\n")
 
             self.printPostOrderResponse(POResponse)
 
@@ -919,14 +970,35 @@ class InvestBot():
 
     def printPostOrderResponse(self, POResponse: PostOrderResponse):
         print('\nINFO ABOUT TRADE\n-----------------------------------------------------\n')
-        print(f"Direct of trade = {POResponse.direction}")
+        direct_str = ''
+        match POResponse.direction:
+            case OrderDirection.ORDER_DIRECTION_BUY:
+                print("Direct of trade = BUY")
+                direct_str = 'BUY'
+            case OrderDirection.ORDER_DIRECTION_SELL:
+                print("Direct of trade = SELL")
+                direct_str = 'SELL'
         print(f"Executed order price = {POResponse.executed_order_price}")
         print(f"Executed commission = {POResponse.executed_commission}")
         print(f"UID instrument = {POResponse.instrument_uid}")
         print(f"Requested lots = {POResponse.lots_requested}")
         print(f"Executed lots = {POResponse.lots_executed}")
-        print(f"Order type = {POResponse.order_type}")
+        match POResponse.order_type:
+            case OrderType.ORDER_TYPE_MARKET:
+                print(f"Order type = MARKET")
+            case OrderType.ORDER_TYPE_LIMIT:
+                print(f"Order type = LIMIT")
+            case OrderType.ORDER_TYPE_BESTPRICE:
+                print(f"Order type = BESTPRICE")
         print(f"Total order amount = {POResponse.total_order_amount}\n\n")
+        data_csv = list([str(POResponse.executed_order_price), str(POResponse.executed_commission),
+                         str(POResponse.instrument_uid), str(POResponse.lots_requested),
+                         str(POResponse.lots_executed), str(POResponse.order_type),
+                         str(POResponse.total_order_amount)])
+
+        with open("trades_stat.csv", 'a') as csv_file:
+            writer = csv.writer(csv_file, delimiter=';')
+            writer.writerow(data_csv)
 
 
     def printPortfolio(self):
@@ -934,14 +1006,23 @@ class InvestBot():
         with SandboxClient(TOKEN) as client:
             balance = client.sandbox.get_sandbox_portfolio(account_id=self.account_id)
             total_amount_shares = cast_money(balance.total_amount_shares)
+            total_amount_bonds = cast_money(balance.total_amount_bonds)
+            total_amount_etf = cast_money(balance.total_amount_etf)
             free_money = cast_money(balance.total_amount_currencies)
             total_amount_portfolio = cast_money(balance.total_amount_portfolio)
             self.profit = cast_money(balance.expected_yield)
+            data_csv = list([str(total_amount_portfolio), str(free_money),
+                             str(self.profit), str(total_amount_shares),
+                             str(total_amount_bonds), str(total_amount_etf)])
 
             print(f"Free money = {free_money} RUB")
             print(f"Total amount shares = {total_amount_shares} RUB")
             print(f"Total amount portfolio = {total_amount_portfolio} RUB")
             print(f"Profit/Unprofit = {self.profit} %\n\n")
+
+            with open("porfolio_stat.csv", 'a') as csv_file:
+                writer = csv.writer(csv_file, delimiter=';')
+                writer.writerow(data_csv)
 
     '''
         def check_have_candles(self, timeframe: str):
@@ -982,18 +1063,40 @@ class InvestBot():
     '''
 
 
+    def buy_shares(self):
+        ''' Отладочный метод для восполнения недостающих акций '''
+        my_timeframe_id = crud.get_timeframe_id(self.db, self.timeframe)
+        last_price = crud.get_candles_list(self.db, self.uid, my_timeframe_id)
+        last_price = last_price[0].close
+        last_price = float(last_price)
+        trade_price = reverse_money(last_price)
+
+        with SandboxClient(TOKEN) as client:
+            POResponse = client.sandbox.post_sandbox_order(instrument_id=self.uid, price=trade_price, direction=OrderDirection.ORDER_DIRECTION_BUY,
+                                                           account_id=self.account_id,
+                                                           order_type=OrderType.ORDER_TYPE_MARKET,
+                                                           price_type=PriceType.PRICE_TYPE_CURRENCY, quantity=5)
+            self.printPostOrderResponse(POResponse)
+
     def run(self):
+        print('lol_1')
         """ Главный цикл торгового робота """
         last_time = self.check_last_candles()
         if isinstance(last_time, datetime):
             # Если check_last_candles() вернул datetime-объект, значит у нас значительный разрыв по времени, требуется
             # еще подгрузка
             self.load_candles(last_time)
+        self.buy_shares()
+
+        self.__stream_process.start()   # Запускаем процесс загрузки данных через Stream
 
         while True:
             self.printPortfolio()
-            if self.check_loss():
-                exit(1)
+            if self.check_loss():                   # Если у нас потери превысили риск
+                self.__stream_process.terminate()     # Завершаем процесс стрима
+                print('\nStream process terminated')
+                print('Session was exited')
+                return                                # Выходим из функции
             if self.check_signal():
                 self.make_trade()
             time.sleep(self.delay)

@@ -215,7 +215,6 @@ def get_sectors_list(db: Session, skip: int = 0, limit: int = 100) -> list[Optio
 
 """GET-запросы для свеч """
 """ Получение списка 10 свеч по инструменту за определенный таймфрейм"""
-@cache
 def get_candles_list(db: Session, instrument_uid: str, frame_id: int) -> list[Optional[models.Candle]]:
     # Выбираем 10 последних свечей по инструменту за заданный таймфрейм
     return db.query(models.Candle).filter(models.Candle.uid_instrument == instrument_uid,
@@ -228,11 +227,13 @@ def get_candle(db: Session, candle_id: int) -> Optional[models.Candle]:
     return db.query(models.Candle).filter(models.Candle.id == candle_id).first()
 
 """ Поулчаем последнюю свечу """
-@cache
 def get_last_candle(db: Session, instrument_uid: str, frame_id: int) -> Optional[models.Candle]:
-    return db.query(models.Candle).filter(models.Candle.uid_instrument == instrument_uid,
+    res = db.query(models.Candle).filter(models.Candle.uid_instrument == instrument_uid,
                                           models.Candle.id_timeframe == frame_id).order_by(
         models.Candle.time_m.desc()).limit(1)
+    res = db.execute(res).all()
+    print(res)
+    return res
 
 @cache
 def check_candle_by_time(db: Session, time_obj) -> bool:
@@ -454,13 +455,19 @@ def create_candle(db: Session, **kwargs):
         logging.error("Ошибка в методе crud.create_candle: таймфрейм не найден")
         raise ValueError("Таймфрейм не найден")
 
-    last_id =  get_last_candle_id(db)
+    last_id = get_last_candle_id(db)
     if not last_id:
         last_id = 1
     else:
         last_id += 1
 
-    candle = models.Candle(id=kwargs['id'], time_m=kwargs['time_m'], open=kwargs['open'],
+    new_id = None
+    if 'id' in kwargs.keys():
+        new_id = kwargs['id']
+    else:
+        new_id = last_id
+
+    candle = models.Candle(id=new_id, time_m=kwargs['time_m'], open=kwargs['open'],
                            high=kwargs['high'], low=kwargs['low'], close=kwargs['close'],
                            volume=kwargs['volume'], uid_instrument=kwargs['uid_instrument'],
                            id_timeframe=kwargs['id_timeframe'])

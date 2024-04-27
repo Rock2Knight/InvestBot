@@ -1,6 +1,7 @@
 import json
 from typing import Union
 from functools import cache
+import math
 
 from tinkoff.invest.schemas import Quotation, MoneyValue
 from tinkoff.invest.sandbox.client import SandboxClient
@@ -39,6 +40,13 @@ figi = {'derivative': 'Фьючерсы и опционы',
 @cache
 def cast_money(sum: Union[Quotation, MoneyValue]) -> float:
     return sum.units + sum.nano / 1e9
+
+def reverse_money(sum: float) -> Quotation:
+    zsum = math.floor(sum)
+    drob = sum - zsum
+    drob = drob * 1e9
+    itog_sum = Quotation(units=zsum, nano=int(drob))
+    return itog_sum
 
 
 """ Получение всех аккаунтов в песочнице """

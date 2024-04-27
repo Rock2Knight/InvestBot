@@ -1,5 +1,8 @@
 import logging
+import multiprocessing as mp
+
 import bot
+import stream_client
 
 logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
                     format="%(asctime)s %(levelname)s %(message)s")

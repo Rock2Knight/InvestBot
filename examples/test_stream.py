@@ -1,6 +1,7 @@
 """ Пример работы со стримом """
 import os
 import time
+import multiprocessing as mp
 
 from tinkoff.invest import (
     CandleInstrument,
@@ -10,6 +11,7 @@ from tinkoff.invest import (
     SubscriptionAction,
     SubscriptionInterval,
 )
+from tinkoff.invest.sandbox.client import SandboxClient
 
 TOKEN = os.getenv("TINKOFF_TOKEN")
 
@@ -31,12 +33,19 @@ def main():
         while True:
             time.sleep(1)
 
-    with Client(TOKEN) as client:
+    with SandboxClient(TOKEN) as client:
         for marketdata in client.market_data_stream.market_data_stream(
             request_iterator()
         ):
             print(marketdata)
 
 
+def do_something():
+    print('lol')
+    time.sleep(2)
+
+
 if __name__ == "__main__":
-    main()
+    pr = mp.Process(target=main)
+    do_something()
+    pr.start()
