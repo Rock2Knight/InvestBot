@@ -10,7 +10,10 @@ from typing import Generator
 import pandas as pd               # Для датафреймов исторических свечей
 
 from tinkoff.invest import CandleInterval
-from tinkoff.invest.schemas import MoneyValue, InstrumentStatus, Quotation, InstrumentIdType, AssetType, InstrumentType
+from tinkoff.invest.schemas import (
+    MoneyValue, InstrumentStatus, Quotation,
+    InstrumentIdType, AssetType, InstrumentType
+)
 from tinkoff.invest.exceptions import RequestError
 
 # Для исторических свечей
@@ -53,7 +56,11 @@ def help_message(message):
 
 
 """ Получаем баланс счета в песочнице по id """
-def get_sandbox_portfolio(account_id: str):
+@bot.message_handler(commands=['portfolio'])
+def get_sandbox_portfolio(message):
+
+    words = message.text.split(' ')
+    account_id = words[-1]
 
     with SandboxClient(TOKEN) as client:             # Запускаем клиент тинькофф-песочницы
         accounts_info = client.users.get_accounts()  # получаем информацию о счете
@@ -70,10 +77,49 @@ def get_sandbox_portfolio(account_id: str):
             return None
 
         portfolio = client.sandbox.get_sandbox_portfolio(account_id=account_id)
+        free_money =  cast_money(portfolio.total_amount_currencies)
         total_amount_shares = cast_money(portfolio.total_amount_shares)
         total_amount_bonds = cast_money(portfolio.total_amount_bonds)
         total_amount_etf = cast_money(portfolio.total_amount_etf)
         total_amount = cast_money(portfolio.total_amount_portfolio)
+        profit = cast_money(portfolio.expected_yield)
+
+        positions = portfolio.positions
+
+        resp_message = ''
+        resp_message += f'Общая стоимость портфеля: {total_amount:.2f} RUB\n'
+        resp_message += f'Свободные деньги в портфеле: {free_money:.2f} RUB\n'
+        resp_message += f'Стоимость акций в портфеле: {total_amount_shares:.2f} RUB\n'
+        resp_message += f'Стоимость облигаций в портфеле: {total_amount_bonds:.2f} RUB\n'
+        resp_message += f'Стоимость фондов в портфеле: {total_amount_etf:.2f} RUB\n'
+        resp_message += f'Прибыль/убыток: {profit:.2f} %\n'
+
+        if positions:
+            resp_message += '\nПозиции:\n'
+            for position in positions:
+                instrument_uid = position.instrument_uid     # UID инструмента
+                position_uid = position.position_uid         # Position UID инструмента
+                figi = position.figi                         # FIGI
+                instrument_type = position.instrument_type
+                count = cast_money(position.quantity)            # Количество штук
+                cur_price = cast_money(position.current_price)   # Текущая цена
+                count_lots = cast_money(position.quantity_lots)  # Количество лотов
+                profit = cast_money(position.expected_yield)     # Прибыль в процентах
+                name = ''
+
+                with SandboxClient(TOKEN) as client:
+                    resp = client.instruments.get_instrument_by(
+                        id_type=InstrumentIdType.INSTRUMENT_ID_TYPE_UID,
+                        id=instrument_uid
+                    )
+                    name = resp.instrument.name
+
+                resp_message += f'UID: {instrument_uid}\n' + f'POSITION UID: {position_uid}\n'
+                resp_message += f'FIGI: {figi}\n' + f'Name: {name}\n' + f'Type: {instrument_type}\n' + f'Count: {count}\n'
+                resp_message += f'Current price = {cur_price:.2f} RUB\n' + f'Count of lots: {count_lots}\n'
+                resp_message += f'Profit/Unprofit: {profit:.2f} %\n\n'
+
+        bot.send_message(message.chat.id, resp_message)  # Отправляем состояние счета
 
         print("Общая стоимость портфеля: %.2f" % total_amount)
         print("Общая стоимость акций в портфеле: %.2f" % total_amount_shares)
@@ -453,4 +499,5 @@ def get_currency(message):
             bot.send_message(message.chat.id, f"Валюта инструмента не найдена")
 
 if __name__ == '__main__':
-    bot.infinity_polling()
+    #bot.infinity_polling()
+    bot.polling(non_stop=True)

@@ -35,6 +35,9 @@ def get_currency_id(db: Session, currency_name: str) -> Optional[int]:
     db_currency = db.query(models.Currency).filter(models.Currency.name == currency_name).first()
     return db_currency.id if db_currency else None
 
+def get_currency_by_uid(db: Session, currency_uid: str) -> Optional[models.Currency]:
+    return db.query(models.Currency).filter(models.Currency.uid == currency_uid).first()
+
 """ Получение id последней записи """
 def get_last_currency_id(db: Session) -> Optional[int]:
     db_currency = db.query(models.Currency).order_by(models.Currency.id.desc()).first()

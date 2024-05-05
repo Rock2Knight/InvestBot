@@ -94,15 +94,16 @@ async def get_candles_in_stream():
             if marketdata.candle:
                 print(marketdata.candle)
                 await handle_candle(db, marketdata.candle)
+            print(marketdata)
 
-def init_stream_data():
+def init_stream_data(filename="C:\\Users\\User\\PycharmProjects\\teleBotTest\\app\\config.txt"):
     global instrument_uid
     global timeframe_str
 
     res_array = np.empty((6,), dtype='<U100')
     tool_info = list([])
     # Открываем файл с информацией о бумаге, по которой торгуем
-    with open('config.txt', 'r') as config_file:
+    with open(filename, 'r') as config_file:
         tool_info = config_file.readlines()
 
     try:
@@ -163,7 +164,7 @@ def analyze_interval():
             timeframe = SubscriptionInterval.SUBSCRIPTION_INTERVAL_MONTH
 
 
-def setup_stream():
-    init_stream_data()       # Получаем uid инструмента и таймфрейм торговли
+def setup_stream(filename="C:\\Users\\User\\PycharmProjects\\teleBotTest\\app\\config.txt"):
+    init_stream_data(filename)       # Получаем uid инструмента и таймфрейм торговли
     analyze_interval()       # Конвертируем таймфрейм из строки в SubscriptionInterval
     asyncio.run(get_candles_in_stream()) # Запускаем получение данных в стриме

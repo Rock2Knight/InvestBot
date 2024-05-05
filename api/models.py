@@ -16,6 +16,11 @@ class Currency(Base):
 
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     name = Column(String, nullable=False)
+    uid = Column(String, nullable=True)
+    position_uid = Column(String, nullable=True)
+    figi = Column(String, nullable=True)
+    ticker = Column(String, nullable=True)
+    class_code = Column(String(20), nullable=True)
 
     or_cur_ref = relationship("Instrument", backref="instr1_back", cascade="all, delete-orphan")
 

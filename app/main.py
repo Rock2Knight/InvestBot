@@ -1,5 +1,7 @@
 import logging
 import multiprocessing as mp
+import sys
+sys.path.append('C:\\Users\\User\\PycharmProjects\\teleBotTest\\app')
 
 import bot
 import stream_client
@@ -13,5 +15,7 @@ MAX_MIN_INTERVAL = 14                                  # Интервал пои
 COMMISION = 0.003                                      # коммисия брокера
 
 if __name__ == '__main__':
-    investBot = bot.InvestBot(account_id=ACCOUNT_ID, autofill=False)
+    if sys.argv > 1:
+        ACCOUNT_ID = sys.argv[1]
+    investBot = bot.InvestBot(account_id=ACCOUNT_ID, correct_sum=False, autofill=False)
     investBot.run()

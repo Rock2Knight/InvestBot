@@ -1,6 +1,5 @@
 # Сам бот
 import os
-import json
 import logging
 import asyncio
 import math
@@ -25,7 +24,8 @@ from tinkoff.invest.schemas import (
     OrderDirection,
     OrderType,
     PriceType,
-    PostOrderResponse
+    PostOrderResponse,
+    TechAnalysisItem
 )
 from tinkoff.invest.exceptions import RequestError
 
@@ -36,7 +36,7 @@ import stream_client
 from work import *
 from work.functional import *
 from work.exceptions import *
-from work.functional import reverse_money
+from work.functional import reverse_money, reverse_money_mv
 from app.StopMarketQueue import StopMarketQueue
 from api import crud, models
 from api.database import *
@@ -60,7 +60,7 @@ class InvestBot():
     """
 
 
-    def __init__(self, account_id: str, autofill=True):
+    def __init__(self, account_id: str, correct_sum=False, cor_sum_value=0, filename='config.txt', autofill=True):
         self.market_queue = StopMarketQueue()
         self.account_id = account_id
         self.uid = None
@@ -69,10 +69,13 @@ class InvestBot():
         self.lot = 0
         self.profit = 0                                # Прибыль портфеля в процентах
         self.delay = 0                                 # Задержка для совершения сделок
+        self.__cor_sum = correct_sum
+        self.__cor_sum_val = cor_sum_value             # Сумма для пополнения
         #self.event_loop = asyncio.new_event_loop()
-        tool_info = InvestBot.get_instrument_info("config.txt")  # Получаем информацию об инструменте
+        self.file_path = filename
+        tool_info = InvestBot.get_instrument_info(self.file_path)  # Получаем информацию об инструменте
         self.timeframe = tool_info[5]
-        self.__stream_process = mp.Process(target=stream_client.setup_stream)  # Процесс загрузки данных через Stream
+        self.__stream_process = mp.Process(target=stream_client.setup_stream, args=[self.file_path])  # Процесс загрузки данных через Stream
         self.__init_delay()
 
         self.engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=True)
@@ -133,24 +136,6 @@ class InvestBot():
             case 'MONTH':
                 self.delay = 60 * 60 * 24 * 31
 
-    def check_get_all_instruments(self):
-        SharesDict = dict()
-
-        with SandboxClient(TOKEN) as client:  # Запускаем клиент тинькофф-песочницы
-            # Получаем информацию обо всех акциях
-            shares = client.instruments.shares(instrument_status=InstrumentStatus.INSTRUMENT_STATUS_ALL)
-            for instrument in shares.instruments:
-                SharesDict[instrument.name] = {"figi": instrument.figi,
-                                               "currency": instrument.currency,
-                                               "ticker": instrument.ticker,
-                                               "sector": instrument.sector,
-                                               "isin": instrument.isin,
-                                               "lot": instrument.lot,
-                                               "exchange": instrument.exchange,
-                                               "nominal": cast_money(instrument.nominal)}
-
-            with open("../shares.json", "w") as write_file:
-                json.dump(SharesDict, write_file)  # Dump python-dict to json
 
     @cache
     def get_str_type(self, value, is_asset=True):
@@ -646,7 +631,7 @@ class InvestBot():
         res_array = np.empty((6,), dtype='<U100')
         tool_info = list([])
         # Открываем файл с информацией о бумаге, по которой торгуем
-        with open('config.txt', 'r') as config_file:
+        with open(filename, 'r') as config_file:
             tool_info = config_file.readlines()
 
         try:
@@ -676,7 +661,7 @@ class InvestBot():
 
 
     def check_last_candles(self):
-        tool_info = InvestBot.get_instrument_info("config.txt") # Получаем информацию об инструменте
+        tool_info = InvestBot.get_instrument_info(self.file_path) # Получаем информацию об инструменте
 
         db_instrument = crud.get_instrument(self.db, instrument_uid=tool_info[0])
         if not db_instrument:
@@ -821,6 +806,42 @@ class InvestBot():
         instrument = crud.get_instrument(self.db, self.uid)
         self.lot = instrument.lot
 
+    def __correct_sum(self):
+        balance = None
+        with SandboxClient(TOKEN) as client:
+            balance = client.sandbox.get_sandbox_portfolio(account_id=self.account_id)
+            free_money = cast_money(balance.total_amount_currencies)
+            while free_money < 20000:
+                self.pay_in(5000)
+                balance = client.sandbox.get_sandbox_portfolio(account_id=self.account_id)
+                free_money = cast_money(balance.total_amount_currencies)
+
+
+    def pay_in(self, sum_rub: float):
+        """ Пополнение счета в песочнице """
+        with SandboxClient(TOKEN) as client:
+            sum_trade = reverse_money_mv(sum_rub)
+            client.sandbox.sandbox_pay_in(account_id=self.account_id, amount=sum_trade)  # Пополнение счета на сумму pay_sum
+            print(f"\nПортфель пополнен на {sum_rub:.2f} RUB\n\n")
+
+
+    def __print_candle(self, candle: models.Candle):
+        """
+         Метод для вывода свечи в консоль
+        """
+        time_m = candle.time_m.strftime('%Y-%m-%d %H:%M:%S')
+        print(f"\nOpen: {candle.open:.2f}, Close: {candle.close:.2f}, Low: {candle.low:.2f}, High: {candle.high:.2f}, Time: {time_m}\n")
+
+
+    def __print_sma(self, sma_prev: TechAnalysisItem, sma_cur: TechAnalysisItem):
+        time_prev = sma_prev.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+        time_cur = sma_cur.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+        sma_prev_value = cast_money(sma_prev.signal)
+        sma_cur_value = cast_money(sma_cur.signal)
+
+        print(f'\nSMA prev time = {time_prev},  SMA prev value = {sma_prev_value:.2f}')
+        print(f'SMA cur time = {time_cur},  SMA cur value = {sma_cur_value:.2f}\n')
+
 
     def check_signal(self):
         """
@@ -864,20 +885,27 @@ class InvestBot():
         valuesSMA = getSMA(self.uid, t1, t2, tf, interval=SMA_INTERVAL)
         valuesRSI = getRSI(self.uid, t1, t2, tf, interval=RSI_INTERVAL)
 
+        # Выводим значения последних свечей и SMA в консоль для отладки
+        self.__print_candle(last_candles[2])
+        self.__print_candle(last_candles[1])
+        self.__print_sma(valuesSMA[-2], valuesSMA[-1])
+
+        #sma_prev_time, sma_cur_time = valuesSMA[-2].timestamp, valuesSMA[-1].timestamp 
         sma_prev, sma_cur = cast_money(valuesSMA[-2].signal), cast_money(valuesSMA[-1].signal)
         rsiVal = cast_money(valuesRSI[-1].signal)
 
-        if last_candles[1].close < sma_prev and last_candles[0].close > sma_cur:
+        if last_candles[2].close < sma_prev and last_candles[1].close > sma_cur:
             self.direct_trade = DirectTrade.BUY
-        elif last_candles[1].close > sma_prev and last_candles[0].close < sma_cur:
+        elif last_candles[2].close > sma_prev and last_candles[1].close < sma_cur:
             self.direct_trade = DirectTrade.SELL
         else:
             self.direct_trade = DirectTrade.UNSPECIFIED
             return False
 
         print('\nSIGNAL 1 TAKEN\n')
-        valuesSMA = valuesSMA[-11:]
+        valuesSMA = valuesSMA[-10:]
         size = len(valuesSMA)
+        last_candles = last_candles[:-1]
         last_candles.reverse()
         if len(last_candles) > size:
             last_candles = last_candles[-size:]
@@ -947,14 +975,22 @@ class InvestBot():
             if self.direct_trade == DirectTrade.BUY:
                 direct = OrderDirection.ORDER_DIRECTION_BUY
                 if free_money < positionSize:
-                    print('\n-----------------------------\nNOT ENOUGH MONEY FOR BUY\n\n')
-                    return
+                    while lot_count != 0 or free_money < positionSize:
+                        lot_count -= 1
+                        positionSize = lot_cast * lot_count
+                    if free_money < positionSize:
+                        print('\n-----------------------------\nNOT ENOUGH MONEY FOR BUY\n\n')
+                        return
             else:
                 direct = OrderDirection.ORDER_DIRECTION_SELL
                 if lot_cast * lot_count > total_amount_shares:
                     print('\n-----------------------------\nNOT ENOUGH MONEY FOR SELL\n\n')
                     return
 
+            if lot_count < 0:
+                lot_count = -lot_count
+            if lot_count == 0:
+                lot_count = 1
             POResponse = client.sandbox.post_sandbox_order(instrument_id=self.uid, price=trade_price, direction=direct,
                                               account_id=self.account_id, order_type=OrderType.ORDER_TYPE_MARKET,
                                               price_type=PriceType.PRICE_TYPE_CURRENCY, quantity=lot_count)
@@ -971,6 +1007,7 @@ class InvestBot():
     def printPostOrderResponse(self, POResponse: PostOrderResponse):
         print('\nINFO ABOUT TRADE\n-----------------------------------------------------\n')
         direct_str = ''
+        order_type = ''
         match POResponse.direction:
             case OrderDirection.ORDER_DIRECTION_BUY:
                 print("Direct of trade = BUY")
@@ -986,19 +1023,39 @@ class InvestBot():
         match POResponse.order_type:
             case OrderType.ORDER_TYPE_MARKET:
                 print(f"Order type = MARKET")
+                order_type = 'MARKET'
             case OrderType.ORDER_TYPE_LIMIT:
                 print(f"Order type = LIMIT")
+                order_type = 'LIMIT'
             case OrderType.ORDER_TYPE_BESTPRICE:
                 print(f"Order type = BESTPRICE")
+                order_type = 'BESTPRICE'
         print(f"Total order amount = {POResponse.total_order_amount}\n\n")
-        data_csv = list([str(POResponse.executed_order_price), str(POResponse.executed_commission),
+        print(f"Tracking id = {POResponse.response_metadata.tracking_id}")
+        server_time = POResponse.response_metadata.server_time.strftime('%Y-%m-%d_%H:%M:%S')
+        print(f"Time of trade = {server_time}")
+        data_csv = list([POResponse.instrument_uid, str(cast_money(POResponse.executed_order_price)),
+                         str(cast_money(POResponse.executed_commission)),
                          str(POResponse.instrument_uid), str(POResponse.lots_requested),
-                         str(POResponse.lots_executed), str(POResponse.order_type),
-                         str(POResponse.total_order_amount)])
+                         str(POResponse.lots_executed), order_type, direct_str,
+                         str(cast_money(POResponse.total_order_amount)),
+                         POResponse.response_metadata.tracking_id, server_time])
 
-        with open("trades_stat.csv", 'a') as csv_file:
-            writer = csv.writer(csv_file, delimiter=';')
-            writer.writerow(data_csv)
+        instrument_uid = str(POResponse.instrument_uid)
+        ticker = 'lol'
+        instrument = crud.get_instrument(self.db, instrument_uid)
+        ticker = instrument.ticker
+
+        file_trades = "C:\\Users\\User\\PycharmProjects\\teleBotTest\\app\\trades_stat"
+        filename = self.get_full_filename(file_trades, ticker)
+        if os.path.exists(filename):
+            with open(filename, 'a') as csv_file:
+                writer = csv.writer(csv_file, delimiter=';')
+                writer.writerow(data_csv)
+        else:
+            with open(filename, 'w') as csv_file:
+                writer = csv.writer(csv_file, delimiter=';')
+                writer.writerow(data_csv)
 
 
     def printPortfolio(self):
@@ -1011,57 +1068,69 @@ class InvestBot():
             free_money = cast_money(balance.total_amount_currencies)
             total_amount_portfolio = cast_money(balance.total_amount_portfolio)
             self.profit = cast_money(balance.expected_yield)
+            server_time = datetime.now(timezone.utc).strftime('%Y-%m-%d_%H:%M:%S')
             data_csv = list([str(total_amount_portfolio), str(free_money),
                              str(self.profit), str(total_amount_shares),
-                             str(total_amount_bonds), str(total_amount_etf)])
+                             str(total_amount_bonds), str(total_amount_etf), server_time])
 
             print(f"Free money = {free_money} RUB")
             print(f"Total amount shares = {total_amount_shares} RUB")
             print(f"Total amount portfolio = {total_amount_portfolio} RUB")
-            print(f"Profit/Unprofit = {self.profit} %\n\n")
+            print(f"Profit/Unprofit = {self.profit} %\n")
+            print(f"Time = {server_time}")
+            print("Positions\n-----------------------------------")
+            
+            for position in balance.positions:
+                instrument_uid = position.instrument_uid
+                position_uid = position.position_uid
+                figi = position.figi
+                instrument_type = position.instrument_type
+                ticker = ''
+                count = cast_money(position.quantity)
+                cur_price = cast_money(position.current_price)
+                count_lots = cast_money(position.quantity_lots)
+                profit = cast_money(position.expected_yield)
 
-            with open("porfolio_stat.csv", 'a') as csv_file:
-                writer = csv.writer(csv_file, delimiter=';')
-                writer.writerow(data_csv)
+                instrument = crud.get_instrument(self.db, instrument_uid)
+                name = None
+                if instrument:
+                    name = instrument.name
+                    ticker = instrument.ticker
+                else:
+                    currency = crud.get_currency_by_uid(self.db, instrument_uid)
+                    if currency:
+                        name = currency.name
+                        ticker = currency.ticker
 
-    '''
-        def check_have_candles(self, timeframe: str):
-        """ Отладочный метод для проверки наличи данных по инструментам, которые есть в базе """
-        if crud.get_last_active_id(self.db) == 0:
-            print("В базе нет данных об инструментах")
-            return None
+                print(f"Instrument UID = {instrument_uid}")
+                print(f"Position UID = {position_uid}")
+                print(f"FIGI = {figi}")
+                if ticker:
+                    print(f"TICKER = {ticker}")
+                if name:
+                    print(f"Name = {name}")
+                print(f"Instrument type = {instrument_type}")
+                print(f"Quantity = {count}")
+                print(f"Current price = {cur_price:.2f}")
+                print(f"Count of lots = {count_lots}")
+                print(f"Profit/Unprofit = {profit} %\n")
+            print('\n---------------------------------------------------\n---------------------------------------------\n')
 
-        # Получаем границы времнного интервала для массива свечей
-        cur_date = datetime.now()
-        last_date = cur_date - timedelta(days=365*3)
-        str_cur_date = cur_date.strftime("%Y-%m-%d_%H:%M:%S")
-        str_last_date = last_date.strftime("%Y-%m-%d_%H:%M:%S")
+            filename = "C:\\Users\\User\\PycharmProjects\\teleBotTest\\app\\porfolio_stat"
+            filename = self.get_full_filename(filename, ticker)
+            if os.path.exists(filename):
+                with open(filename, 'a') as csv_file:
+                    writer = csv.writer(csv_file, delimiter=';')
+                    writer.writerow(data_csv)
+            else:
+                with open(filename, 'w') as csv_file:
+                    writer = csv.writer(csv_file, delimiter=';')
+                    writer.writerow(data_csv)
 
-        instruments = crud.get_filter_by_exchange_actives(self.db, exchange_id=list([1]))
-        if not instruments:
-            raise AttributeError("В базе нет данных об инструментах с переданным списком exchange_id")
 
-        for instrument in instruments:
-            db_model = crud.get_rezerve_active_by_figi(self.db, figi=instrument.figi)
-            if db_model:
-                continue
-
-            print(instrument)
-            request_text = f"/get_candles {instrument.figi} {str_last_date} {str_cur_date} {timeframe}"  # Строка запроса на получение свечей
-
-            try:
-                candles_figi = core_bot.get_candles(request_text)
-            except Exception as irerror:
-                print(irerror.args[0])
-                continue
-
-            have_data = False
-            if len(candles_figi) > 10:
-                have_data = True
-
-            #crud.create_instrument_rezerve(self.db, orig_instrument=instrument, is_data=have_data)
-    '''
-
+    def get_full_filename(self, filename: str, ticker: str):
+        filename = filename + '_' + ticker + '_' + self.timeframe + '.csv'
+        return filename
 
     def buy_shares(self):
         ''' Отладочный метод для восполнения недостающих акций '''
@@ -1086,7 +1155,12 @@ class InvestBot():
             # Если check_last_candles() вернул datetime-объект, значит у нас значительный разрыв по времени, требуется
             # еще подгрузка
             self.load_candles(last_time)
-        self.buy_shares()
+
+        if not self.__cor_sum:      # Если не стоит флаг коррекции суммы
+            self.__correct_sum()
+        else:
+            self.pay_in(self.__cor_sum_val)
+        #self.buy_shares()
 
         self.__stream_process.start()   # Запускаем процесс загрузки данных через Stream
 

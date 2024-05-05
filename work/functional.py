@@ -48,6 +48,13 @@ def reverse_money(sum: float) -> Quotation:
     itog_sum = Quotation(units=zsum, nano=int(drob))
     return itog_sum
 
+def reverse_money_mv(sum: float) -> MoneyValue:
+    zsum = math.floor(sum)
+    drob = sum - zsum
+    drob = drob * 1e9
+    itog_sum = MoneyValue(units=zsum, nano=int(drob), currency='RUB')
+    return itog_sum
+
 
 """ Получение всех аккаунтов в песочнице """
 @bot.message_handler(commands=['accounts'])
@@ -71,12 +78,6 @@ def get_accounts(message):
 """ Открытие счета в песочнице """
 @bot.message_handler(commands=['open'])
 def open_account(message):
-    global sandbox_account_flag         #  Состояние аккаунта в песочнице
-
-    if sandbox_account_flag:                                      # если счет в песочнице уже есть,
-        message_text = "У вас уже есть аккаунт в песочнице!"      # то выводим соответствующее оповщение
-        bot.send_message(message.chat.id, message_text)
-        return
 
     with SandboxClient(TOKEN) as client:                               # Запускаем клиент тинькофф-песочницы
         sbAccountRescponse = client.sandbox.open_sandbox_account()     # создаем счет в песочнице
