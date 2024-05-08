@@ -69,8 +69,11 @@ class InvestBot():
         self.lot = 0
         self.profit = 0                                # Прибыль портфеля в процентах
         self.delay = 0                                 # Задержка для совершения сделок
+        self.trades_list = dict()                      # Журнал сделок
+        self.buy_cast_list = list([])                  # Список пар "цена покупки"-"количество лотов"
         self.__cor_sum = correct_sum
         self.__cor_sum_val = cor_sum_value             # Сумма для пополнения
+        self.__last_prices = list([])                  # Список последних цен покупки
         #self.event_loop = asyncio.new_event_loop()
         self.file_path = filename
         tool_info = InvestBot.get_instrument_info(self.file_path)  # Получаем информацию об инструменте
@@ -882,16 +885,16 @@ class InvestBot():
             case CandleInterval.CANDLE_INTERVAL_MONTH:
                 t1 = t2 - timedelta(days=365*2)
 
-        valuesSMA = getSMA(self.uid, t1, t2, tf, interval=SMA_INTERVAL)
+        valuesEMA = getEMA(self.uid, t1, t2, tf, interval=SMA_INTERVAL)
         valuesRSI = getRSI(self.uid, t1, t2, tf, interval=RSI_INTERVAL)
 
         # Выводим значения последних свечей и SMA в консоль для отладки
         self.__print_candle(last_candles[2])
         self.__print_candle(last_candles[1])
-        self.__print_sma(valuesSMA[-2], valuesSMA[-1])
+        self.__print_sma(valuesEMA[-2], valuesEMA[-1])
 
         #sma_prev_time, sma_cur_time = valuesSMA[-2].timestamp, valuesSMA[-1].timestamp 
-        sma_prev, sma_cur = cast_money(valuesSMA[-2].signal), cast_money(valuesSMA[-1].signal)
+        sma_prev, sma_cur = cast_money(valuesEMA[-2].signal), cast_money(valuesEMA[-1].signal)
         rsiVal = cast_money(valuesRSI[-1].signal)
 
         if last_candles[2].close < sma_prev and last_candles[1].close > sma_cur:
@@ -903,7 +906,7 @@ class InvestBot():
             return False
 
         print('\nSIGNAL 1 TAKEN\n')
-        valuesSMA = valuesSMA[-10:]
+        valuesSMA = valuesEMA[-10:]
         size = len(valuesSMA)
         last_candles = last_candles[:-1]
         last_candles.reverse()
@@ -986,6 +989,9 @@ class InvestBot():
                 if lot_cast * lot_count > total_amount_shares:
                     print('\n-----------------------------\nNOT ENOUGH MONEY FOR SELL\n\n')
                     return
+                #lot_count = self.__check_buy(self.uid, lot_count, last_price) # Корректируем количество лотов на продажу, чтобы была прибыль, а не убыток
+                #if lot_count <= 0: # Если по итогам корректировки количество лотов на продажу = 0, отменяем сделку
+                #    return
 
             if lot_count < 0:
                 lot_count = -lot_count
@@ -997,12 +1003,95 @@ class InvestBot():
             print("END OF TRADE\n")
 
             self.printPostOrderResponse(POResponse)
+            self.__save_trade(POResponse)
 
     def check_loss(self):
         if math.fabs(self.profit / 100) > STOP_ACCOUNT and self.profit < 0:
             print("CRITCAL LOSS. EXIT")
             return True
         return False
+
+
+    def __save_trade(self, POResponse):
+        """
+        Сохранаяем данные о сделке в журнал сделок
+        :param POResponse:  PostOrderResponse - ответ о статусе сделки и информацией о ней
+        :return:
+        """
+        if POResponse.instrument_uid not in self.trades_list.keys():
+            self.trades_list[POResponse.instrument_uid] = list([])
+
+        self.trades_list[POResponse.instrument_uid].append(dict())
+        self.trades_list[POResponse.instrument_uid][-1]['time'] = POResponse.response_metadata.server_time
+        self.trades_list[POResponse.instrument_uid][-1]['direct'] = POResponse.direction
+        self.trades_list[POResponse.instrument_uid][-1]['cast_order'] = cast_money(POResponse.executed_order_price)
+        self.trades_list[POResponse.instrument_uid][-1]['count'] = POResponse.lots_executed
+        self.trades_list[POResponse.instrument_uid][-1]['commision'] = cast_money(POResponse.executed_commission)
+
+
+    def __check_buy(self, uid, lot_count, last_price):
+        """
+        Метод, проверяющий потенциальную прибыль/риск от сделки
+        :param uid: UID инструмента
+        :param lot_count: Запрашиваемое количество лотов на продажу
+        :param last_price: Цена по рынку
+        """
+
+        portfolio = None
+        pos = None
+        with SandboxClient(TOKEN) as client:
+            portfolio = client.sandbox.get_sandbox_portfolio(account_id=self.account_id)
+        for position in portfolio.positions:
+            if position.instrument_uid == uid:
+                pos = position
+        lot_pos = int(cast_money(pos.quantity) / self.lot)   # Количество лотов актива X
+        if lot_pos < lot_count:
+            lot_count = lot_pos
+        if lot_count == 0:
+            return lot_count
+
+        # 5. Проверяем сделки от текущей k до 0 по этой акции. Заводим счетчик cntShares = K
+        cntShares = lot_count             # Количество лотов на момент проверки сделки
+        cur_trade = len(self.trades_list[uid]) - 1 # Стартуем с N-1 сделки
+        while cntShares > 0 and cur_trade >= 0:
+            if self.trades_list[uid][cur_trade]['direct'] == OrderDirection.ORDER_DIRECTION_BUY:
+                cntShares -= self.trades_list[uid][cur_trade]['count']
+                buy_pair = list([self.trades_list[uid][cur_trade]['cast_order'], self.trades_list[uid][cur_trade]['count']])
+                buy_pair.append(self.trades_list[uid][cur_trade]['commision'])
+                self.buy_cast_list.append(buy_pair)
+            elif self.trades_list[uid][cur_trade]['direct'] == OrderDirection.ORDER_DIRECTION_SELL:
+                cntShares += self.trades_list[uid][cur_trade]['count']
+
+
+        request_lots, request_sum = 0, 0
+        buy_com = 0
+        if not self.buy_cast_list or not self.buy_cast_list[-1][2]:
+            buy_com = 0
+        else:
+            buy_com = self.buy_cast_list[-1][2]
+        size = len(self.buy_cast_list)
+        for i in range(size-1, -1, -1):
+            if i < 0:
+                break
+            lots = self.buy_cast_list[i][1]
+            while lots != 0 and request_lots != lot_count:
+                lots -= 1
+                request_lots += 1
+                request_sum += self.buy_cast_list[i][0] * self.lot
+                self.__last_prices.append(self.buy_cast_list[i][0])
+        
+        # Рассчитываем потенциальную прибыль с учетом комиссии
+        k = lot_count
+        if lot_count > request_lots and request_lots != 0:
+            k = request_lots
+        profit = (k * last_price - request_sum) - (buy_com + 0.0005 * k * last_price)
+        while profit <= 0 and k > 0:
+            # Пока со сделки наблюдается убыток, уменьшаем возможное количество лотов
+            k -= 1
+            profit = (k * last_price - request_sum) - (buy_com + 0.0005 * k * last_price)
+
+        return k    # Возвращаем итоговое количество лотов на продажу 
+        
 
     def printPostOrderResponse(self, POResponse: PostOrderResponse):
         print('\nINFO ABOUT TRADE\n-----------------------------------------------------\n')

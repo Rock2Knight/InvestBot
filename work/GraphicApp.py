@@ -733,6 +733,7 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
     """ Метод для получения информации о доступных активах в Тинькофф Инвестиции """
     def get_all_instruments(self):
 
+        instruments = ''
         with open("instruments.txt", 'r', encoding='utf-8') as file:
             instruments = file.readlines()
             db = database.SessionLocal()     # Соединение с базой данных

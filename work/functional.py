@@ -3,18 +3,19 @@ from typing import Union
 from functools import cache
 import math
 
-from tinkoff.invest.schemas import Quotation, MoneyValue
+from tinkoff.invest.schemas import Quotation, MoneyValue, OrderDirection
 from tinkoff.invest.sandbox.client import SandboxClient
 
 from telebot.types import Message, User, Chat
 
-from work.bot import bot, TOKEN
+from work.bot import bot, TOKEN, API_TOKEN
 
 sandbox_account_flag = False             # Состояние аккаунта в песочнице
 
 # Список имен, импортируемых из данного модуля при конструкцией "from functional import *"
 __all__ = [
     'bot',
+    'API_TOKEN',
     'TOKEN',
     'Message',
     'User',
@@ -120,21 +121,27 @@ def get_info_accountant(message):
 """ Пополнение счета в песочнице """
 @bot.message_handler(commands=['PayIn'])
 def pay_in(message):
-    account_sb_id = ""
     words = message.text.split(' ')        # Разделяем текст строки на слова
-    amount = int(words[-1])
+    amount = float(words[2])
+    account_sb_id = words[1]
 
     """ Пополнение счета в песочнице """
     with SandboxClient(TOKEN) as client:
-        accounts_info = client.users.get_accounts()          # получаем информацию о всех счетах
-        account_sb_id = str(accounts_info.accounts[0].id)    # Получаем первый счет из списка
-
         # Получаем целую и дробную часть суммы
-        unit_sum = int(amount)
-        nano_sum = 0
-        if amount % 1 != 0:
-            nano_sum = int((str(amount % 1))[2:11])
+        unit_sum = int(math.floor(amount))
+        nano_sum = int(amount - unit_sum)
 
         pay_sum = MoneyValue(currency="RUB", units=unit_sum, nano=nano_sum)                          # Преобразование суммы к нужному типу
         client.sandbox.sandbox_pay_in(account_id=account_sb_id, amount=pay_sum)                      # Пополнение счета на сумму pay_sum
         bot.send_message(message.chat.id, f"Account {account_sb_id} was refilled by {amount} RUB")   # Высылаем в чат подтверждение пополнения
+
+
+""" Закрытие счета в песочнице """
+@bot.message_handler(commands=['close'])
+def close_accountant(message):
+    words = message.text.split(' ')        # Разделяем текст строки на слова
+    account_sb_id = words[1]
+
+    with SandboxClient(TOKEN) as client:
+        client.sandbox.close_sandbox_account(account_id=account_sb_id)
+        bot.send_message(message.chat.id, f"Account {account_sb_id} has been closed")

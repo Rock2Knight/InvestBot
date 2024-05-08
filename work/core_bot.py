@@ -12,7 +12,8 @@ import pandas as pd               # Для датафреймов историч
 from tinkoff.invest import CandleInterval
 from tinkoff.invest.schemas import (
     MoneyValue, InstrumentStatus, Quotation,
-    InstrumentIdType, AssetType, InstrumentType
+    InstrumentIdType, AssetType, InstrumentType,
+    CandleSource
 )
 from tinkoff.invest.exceptions import RequestError
 
@@ -46,7 +47,7 @@ def help_message(message):
     message_text += "\"/accounts\" - Получение всех аккаунтов в песочнице\n"
     message_text += "\"/open\" - Открытие счета в песочнице\n"
     message_text += "\"/info\" - Получение информации об активном счете в Тинькофф-песочнице\n"
-    message_text += "\"/PayIn amount\" - Внесение на активный счет Тинькофф-песочницы суммы amount руб\n"
+    message_text += "\"/PayIn accountant amount\" - Внесение на счет с id=accountant Тинькофф-песочницы суммы amount руб\n"
     message_text += "\"/get_instruments\" - Получение всех доступных для торговли инструментов и\n" \
                     "запись их в json-файл\n"
     message_text += "\"/get_candles\" - Получение часового свечного графика по указанному\n" \
@@ -379,7 +380,8 @@ async def async_get_candles(param_list: str):
                 instrument_id=candlesParams[0],
                 from_=candlesParams[1],
                 to=candlesParams[2],
-                interval=candlesParams[3]
+                interval=candlesParams[3],
+                candle_source_type=CandleSource.CANDLE_SOURCE_EXCHANGE
             )
         except Exception as irerror:
             print('\n\n', irerror.args, '\n')
