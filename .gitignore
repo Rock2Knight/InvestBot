@@ -17,3 +17,9 @@
 /instruments_info
 /sma_cache
 /accs.txt
+/chat_bot/admin.py
+/chat_bot/db.py
+/chat_bot/instruments.csv
+/chat_bot/middlewares.py
+/chat_bot/states.py
+/chat_bot/utils.py

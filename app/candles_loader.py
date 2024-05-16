@@ -65,6 +65,7 @@ class CandlesLoader:
     def get_instrument_info(filename: str):
         res_array = np.empty((6,), dtype='<U100')
         tool_info = list([])
+
         # Открываем файл с информацией о бумаге, по которой торгуем
         with open(filename, 'r') as config_file:
             tool_info = config_file.readlines()
