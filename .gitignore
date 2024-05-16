@@ -22,4 +22,4 @@
 /chat_bot/instruments.csv
 /chat_bot/middlewares.py
 /chat_bot/states.py
-/chat_bot/utils.py
+/chat_bot/chat_utils.py

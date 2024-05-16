@@ -7,6 +7,7 @@ from aiogram.filters import Command
 import kb
 import text
 import config
+import chat_utils
 
 prtfStates = {'1': False, '2': False, '3': False}
 configInfo = dict()   # Словарь для конфигурационного файла
@@ -166,6 +167,9 @@ async def userTextHandler(msg: Message):
             await bot2.download_file(file_path, 'target_file.txt')
             with open('target_file.txt', 'r') as target_file:
                 us_token = target_file.readline().rstrip('\n')
-            await msg.answer("Отлично! Данные для торговли введены.")
+
+            # Создаем файл с конфигурацией для торгового робота
+            if chat_utils.create_config_file(configInfo, us_token):
+                await msg.answer("Отлично! Данные для торговли введены.")
         else:
             await msg.answer("Вам необходимо прикрепить файл к сообщению! Попробуйте еще раз")
