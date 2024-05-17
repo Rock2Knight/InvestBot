@@ -34,7 +34,21 @@ itemsAnswer = [
 helpAnswerMenu = InlineKeyboardMarkup(inline_keyboard=itemsAnswer)
 
 accountsButtons = [
-    InlineKeyboardMarkup(text="Выбрать из предложенных счетов", callback_data="4_click"),
-    InlineKeyboardMarkup(text="Создать новый", callback_data="5_click")
+    [
+        InlineKeyboardButton(text="Выбрать из предложенных счетов", callback_data="4_click"),
+        InlineKeyboardButton(text="Создать новый", callback_data="5_click"),
+        InlineKeyboardButton(text="Узнать информацию по счету", callback_data="6_click"),
+    ]
 ]
 accountsMenu = InlineKeyboardMarkup(inline_keyboard=accountsButtons)
+
+startTrade = [
+    [
+        InlineKeyboardButton(text="Приступить", callback_data="start_trade"),
+        InlineKeyboardButton(text="Отложить", callback_data="return_to_menu"),
+    ]
+]
+startTradeMenu = InlineKeyboardMarkup(inline_keyboard=startTrade)
+
+returnToMenuBtn = [[InlineKeyboardButton(text="◀️ Выйти в меню", callback_data="return_to_menu")]]
+returnToMenu = InlineKeyboardMarkup(inline_keyboard=returnToMenuBtn)

@@ -1,8 +1,12 @@
+import multiprocessing as mp
+
 from aiogram import types, F, Router, Bot
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
+
+from app import bot
 
 import kb
 import text
@@ -10,12 +14,16 @@ import config
 import chat_utils
 
 prtfStates = {'1': False, '2': False, '3': False}
-accountState = {'1': False, '2': False}
+accountState = {'1': False, '2': False, '3': False}
 configInfo = dict()   # Словарь для конфигурационного файла
 setPrftCnt = 0
 us_token = ''
+account_id_active = ''
+config_fname = ''
+tradeProcess = None
 
 router = Router() # создаём роутер для дальнешей привязки к нему обработчиков
+investBot = None  # Экземпляр торгового робота
 
 # Декоратор @router.message означает, что функция является обработчиком входящих сообщений.
 @router.message(Command("start"))
@@ -35,6 +43,9 @@ async def menu(msg: Message):
 async def on_callback_query(callback_query: CallbackQuery):
     global prtfStates
     global accountState
+    global account_id_active
+    global config_fname
+    global tradeProcess
     # Получаем callback_data из запроса
     callback_data = callback_query.data
     match callback_data:
@@ -57,6 +68,16 @@ async def on_callback_query(callback_query: CallbackQuery):
             text_message = "Напишите ID счета, на котором желаете торговать"
             accountState['1'] = True
             await callback_query.message.answer(text_message)
+        case "6_click":
+            text_message = "Напишите ID счета, состояние которого хотите узнать"
+            accountState['3'] = True
+            await callback_query.message.answer(text_message)
+        case "main_menu":
+            await callback_query.message.answer(text.menu, reply_markup=kb.menu)
+        case "start_trade":
+            investBot = bot.InvestBot(account_id=account_id_active, autofill=False) # Инициализируем экземпляр торгового робота
+            tradeProcess = mp.Process(target=investBot.run) # Создаем процесс торговли торгового робота
+            tradeProcess.start()  # Запускаем процесс торговли
 
 
 @router.message()
@@ -64,6 +85,9 @@ async def userTextHandler(msg: Message):
     global prtfStates
     global setPrftCnt
     global us_token
+    global account_id_active
+    global investBot
+    global config_fname
     userText = msg.text     # Текст сообщения
     userDoc = msg.document  # Прикрепленный файл
     userReturn = 0
@@ -175,15 +199,22 @@ async def userTextHandler(msg: Message):
                 us_token = target_file.readline().rstrip('\n')
 
             # Создаем файл с конфигурацией для торгового робота
-            if chat_utils.create_config_file(configInfo, us_token):
+            config_fname = chat_utils.create_config_file(configInfo, us_token)
+            if config_fname:
                 res_msg = "По данному аккаунту были найдены следующие счета:\n"
                 res_msg += chat_utils.account_print(us_token)
-                res_msg += "Желаете ли вы торговать на одном из этих счетов или создадите новый?\n"
+                res_msg += "\nЖелаете ли вы торговать на одном из этих счетов или создадите новый?\n"
                 setPrftCnt += 1
-                await msg.answer("Отлично! Данные для торговли введены.", reply_markup=kb.accountsMenu)
-        elif setPrftCnt == 8:
-            if accountState['1']:
-                accountState['1'] = False
-
-        else:
-            await msg.answer("Вам необходимо прикрепить файл к сообщению! Попробуйте еще раз")
+                await msg.answer(res_msg, reply_markup=kb.accountsMenu)
+    elif setPrftCnt == 8:
+        if accountState['1']:
+            accountState['1'] = False
+            account_id_active = userText
+            await msg.answer("Приступить к торговле или отложить?", reply_markup=kb.startTradeMenu)
+        elif accountState['3']:
+            accountState['3'] = False
+            msg_text = chat_utils.printPortfolio(us_token, userText)
+            setPrftCnt += 1
+            await msg.answer(msg_text, reply_markup=kb.accountsMenu)
+    else:
+        await msg.answer("Вам необходимо прикрепить файл к сообщению! Попробуйте еще раз")

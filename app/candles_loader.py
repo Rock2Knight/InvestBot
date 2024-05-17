@@ -117,8 +117,8 @@ class CandlesLoader:
             logging.error(f"Не найден инструмент с uid = {tool_info[0]}")
             raise ValueError(f"Не найден инструмент с uid = {tool_info[0]}")
 
-        if not crud.check_timeframe(db, timeframe_name=tool_info[2]):
-            crud.create_timeframe(db, id=None, name=tool_info[2])
+        if not crud.check_timeframe(db, timeframe_name=tool_info[1]):
+            crud.create_timeframe(db, id=None, name=tool_info[1])
 
         self.uid = tool_info[0]
         self.timeframe = tool_info[1]

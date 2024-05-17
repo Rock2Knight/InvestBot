@@ -20,11 +20,11 @@ from tinkoff.invest.schemas import (
 )
 from tinkoff.invest.exceptions import RequestError
 
-import app.technical_indicators
+#import app.technical_indicators
 # Для исторических свечей
 
-import stream_client
-import app_utils
+from . import stream_client
+from . import app_utils
 from work import *
 from work.functional import *
 from work.exceptions import *
@@ -32,11 +32,11 @@ from work.functional import reverse_money, reverse_money_mv
 from app.StopMarketQueue import StopMarketQueue
 from api import crud, models
 from api.database import *
-from technical_indicators import *
+from app.technical_indicators import *
 from app import PROCESS_SWITCH
 
-from instruments_loader import InstrumentsLoader
-from candles_loader import CandlesLoader
+from .instruments_loader import InstrumentsLoader
+from .candles_loader import CandlesLoader
 
 logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
                     format="%(asctime)s %(levelname)s %(message)s")
@@ -79,7 +79,7 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         #self.event_loop = asyncio.new_event_loop()
         self.file_path = filename
         tool_info = InvestBot.get_instrument_info(self._file_path)  # Получаем информацию об инструменте
-        self.timeframe = tool_info[2]
+        self.timeframe = tool_info[1]
         self.__stream_process = mp.Process(target=stream_client.setup_stream, args=[self.file_path])  # Процесс загрузки данных через Stream
         self._init_delay()
 
@@ -167,10 +167,10 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         # Выводим значения последних свечей и SMA в консоль для отладки
         self.__print_candle(last_candles[2])
         self.__print_candle(last_candles[1])
-        self.__print_sma(valuesEMA[-2], valuesEMA[-1])
+        self.__print_sma(valuesEMA[0], valuesEMA[1])
  
-        sma_prev, sma_cur = cast_money(valuesEMA[-2].signal), cast_money(valuesEMA[-1].signal)
-        rsiVal = cast_money(valuesRSI[-1].signal)
+        sma_prev, sma_cur = cast_money(valuesEMA[0].signal), cast_money(valuesEMA[1].signal)
+        rsiVal = cast_money(valuesRSI[1].signal)
 
         if last_candles[2].close < sma_prev and last_candles[1].close > sma_cur:
             self.direct_trade = DirectTrade.BUY
@@ -275,14 +275,18 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
                 if lot_cast * lot_count > total_amount_shares:
                     print('\n-----------------------------\nNOT ENOUGH MONEY FOR SELL\n\n')
                     return
+                '''
                 lot_count = self.__check_buy(self.uid, lot_count, last_price) # Корректируем количество лотов на продажу, чтобы была прибыль, а не убыток
                 if lot_count <= 0: # Если по итогам корректировки количество лотов на продажу = 0, отменяем сделку
                     return
+                '''
 
+            '''
             if lot_count < 0:
                 lot_count = -lot_count
             if lot_count == 0:
                 lot_count = 1
+            '''
 
             # Совершаем сделку
             POResponse = client.sandbox.post_sandbox_order(instrument_id=self.uid, price=trade_price, direction=direct,
@@ -297,7 +301,7 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         """
         Критическое завершение программы при значительном убытке
         """
-        if math.fabs(self.profit / 100) > STOP_ACCOUNT and self.profit < 0:
+        if math.fabs(self.profit / 100) > self._user_risk and self.profit < 0:
             print("CRITCAL LOSS. EXIT")
             return True
         return False

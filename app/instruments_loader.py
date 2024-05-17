@@ -13,7 +13,7 @@ from work.functional import *
 from api import crud, models
 from api.database import *
 
-import app_utils
+from . import app_utils
 
 logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
                     format="%(asctime)s %(levelname)s %(message)s")
