@@ -24,6 +24,7 @@ class CandlesLoader:
         self._file_path = filename  # Имя файла с конфигурацией
         self.uid = None              # Идентификатор инструмента
         self.timeframe = None        # Таймфрейм проверяемого инструмента
+        self.weight = None           # Доля инструмента в портфеле
         self._lot = None             # Лотность инструмента
         self._delay = 0              # Задержка между сделками
 
@@ -63,7 +64,7 @@ class CandlesLoader:
 
     @staticmethod
     def get_instrument_info(filename: str):
-        res_array = np.empty((6,), dtype='<U100')
+        res_array = np.empty((3,), dtype='<U100')
         tool_info = list([])
 
         # Открываем файл с информацией о бумаге, по которой торгуем
@@ -71,24 +72,9 @@ class CandlesLoader:
             tool_info = config_file.readlines()
 
         try:
-            res_array[0] = tool_info[0].split(' ')[-1]  # uid
-            if res_array[0][-1] == '\n':
-                res_array[0] = res_array[0][:-1]
-            res_array[1] = tool_info[1].split(' ')[-1]  # position_uid
-            if res_array[1][-1] == '\n':
-                res_array[1] = res_array[1][:-1]
-            res_array[2] = tool_info[2].split(' ')[-1]  # figi
-            if res_array[2][-1] == '\n':
-                res_array[2] = res_array[2][:-1]
-            res_array[3] = tool_info[3].split(' ')[-1]  # class_code
-            if res_array[3][-1] == '\n':
-                res_array[3] = res_array[3][:-1]
-            res_array[4] = tool_info[4].split(' ')[-1]  # ticker
-            if res_array[4][-1] == '\n':
-                res_array[4] = res_array[4][:-1]
-            res_array[5] = tool_info[5].split(' ')[-1]  # timeframe
-            if res_array[5][-1] == '\n':
-                res_array[5] = res_array[5][:-1]
+            res_array[0] = tool_info[2].rstrip('\n').split(' ')[-1]  # uid
+            res_array[1] = tool_info[5].rstrip('\n').split(' ')[-1]  # timeframe
+            res_array[2] = tool_info[6].rstrip('\n').split(' ')[-1]  # weight
         except IndexError as e:
             logging.error('Не хватает строк в файле config.txt')
             raise IndexError('Не хватает строк в файле config.txt')
@@ -131,11 +117,12 @@ class CandlesLoader:
             logging.error(f"Не найден инструмент с uid = {tool_info[0]}")
             raise ValueError(f"Не найден инструмент с uid = {tool_info[0]}")
 
-        if not crud.check_timeframe(db, timeframe_name=tool_info[5]):
-            crud.create_timeframe(db, id=None, name=tool_info[5])
+        if not crud.check_timeframe(db, timeframe_name=tool_info[2]):
+            crud.create_timeframe(db, id=None, name=tool_info[2])
 
         self.uid = tool_info[0]
-        self.timeframe = tool_info[-1]
+        self.timeframe = tool_info[1]
+        self.weight = tool_info[2]
         self._get_lot(db)       # Получаем лотность инструмента (сделать метод приватным)
 
         # Определяем id инструмента и таймфрейма
@@ -150,7 +137,7 @@ class CandlesLoader:
             return 1   # Возврат 1 в случае начальной подгрузки свечей
         else:
             last_candle = candles[0]
-            if last_candle.time_m - datetime.now() > timedelta(hours=2):   # Исправить
+            if abs(last_candle.time_m - datetime.now()) > timedelta(hours=2):   # Исправить
                 return last_candle.time_m  # Возврат времени последней свечи, если она есть и при этом разница между текущим временем значительная
         return 1   # Возврат 1 в случае, если все нормально
 

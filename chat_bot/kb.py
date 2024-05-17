@@ -32,3 +32,9 @@ itemsAnswer = [
     ]
 ]
 helpAnswerMenu = InlineKeyboardMarkup(inline_keyboard=itemsAnswer)
+
+accountsButtons = [
+    InlineKeyboardMarkup(text="Выбрать из предложенных счетов", callback_data="4_click"),
+    InlineKeyboardMarkup(text="Создать новый", callback_data="5_click")
+]
+accountsMenu = InlineKeyboardMarkup(inline_keyboard=accountsButtons)

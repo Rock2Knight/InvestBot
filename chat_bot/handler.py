@@ -10,6 +10,7 @@ import config
 import chat_utils
 
 prtfStates = {'1': False, '2': False, '3': False}
+accountState = {'1': False, '2': False}
 configInfo = dict()   # Словарь для конфигурационного файла
 setPrftCnt = 0
 us_token = ''
@@ -33,6 +34,7 @@ async def menu(msg: Message):
 @router.callback_query()
 async def on_callback_query(callback_query: CallbackQuery):
     global prtfStates
+    global accountState
     # Получаем callback_data из запроса
     callback_data = callback_query.data
     match callback_data:
@@ -50,6 +52,10 @@ async def on_callback_query(callback_query: CallbackQuery):
         case "1_click":
             text_message = "Напишите ожидаемый уровень ежемесячной доходности в процентах"
             prtfStates['1'] = True
+            await callback_query.message.answer(text_message)
+        case "4_click":
+            text_message = "Напишите ID счета, на котором желаете торговать"
+            accountState['1'] = True
             await callback_query.message.answer(text_message)
 
 
@@ -154,7 +160,7 @@ async def userTextHandler(msg: Message):
         setPrftCnt += 1
         ans_text = """
             Отлично! Осталось еще чуть-чуть настроек перед началом работы. Теперь получите токен доступа типа Full-Acess
-            в вашем личном кабинете на сайте Тинькофф-инвестиций. Введите его в файл формата .txt и отправьте его в чат 
+            в вашем личном кабинете на сайте Тинькофф-инвестиций. Введите его в файл ".env" и отправьте файл в чат 
         """
         await msg.answer(ans_text)
     elif setPrftCnt == 7:
@@ -170,6 +176,14 @@ async def userTextHandler(msg: Message):
 
             # Создаем файл с конфигурацией для торгового робота
             if chat_utils.create_config_file(configInfo, us_token):
-                await msg.answer("Отлично! Данные для торговли введены.")
+                res_msg = "По данному аккаунту были найдены следующие счета:\n"
+                res_msg += chat_utils.account_print(us_token)
+                res_msg += "Желаете ли вы торговать на одном из этих счетов или создадите новый?\n"
+                setPrftCnt += 1
+                await msg.answer("Отлично! Данные для торговли введены.", reply_markup=kb.accountsMenu)
+        elif setPrftCnt == 8:
+            if accountState['1']:
+                accountState['1'] = False
+
         else:
             await msg.answer("Вам необходимо прикрепить файл к сообщению! Попробуйте еще раз")

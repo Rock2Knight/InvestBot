@@ -107,30 +107,11 @@ def init_stream_data(filename="C:\\Users\\User\\PycharmProjects\\teleBotTest\\ap
         tool_info = config_file.readlines()
 
     try:
-        res_array[0] = tool_info[0].split(' ')[-1]  # uid
-        if res_array[0][-1] == '\n':
-            res_array[0] = res_array[0][:-1]
-        res_array[1] = tool_info[1].split(' ')[-1]  # position_uid
-        if res_array[1][-1] == '\n':
-            res_array[1] = res_array[1][:-1]
-        res_array[2] = tool_info[2].split(' ')[-1]  # figi
-        if res_array[2][-1] == '\n':
-            res_array[2] = res_array[2][:-1]
-        res_array[3] = tool_info[3].split(' ')[-1]  # class_code
-        if res_array[3][-1] == '\n':
-            res_array[3] = res_array[3][:-1]
-        res_array[4] = tool_info[4].split(' ')[-1]  # ticker
-        if res_array[4][-1] == '\n':
-            res_array[4] = res_array[4][:-1]
-        res_array[5] = tool_info[5].split(' ')[-1]  # timeframe
-        if res_array[5][-1] == '\n':
-            res_array[5] = res_array[5][:-1]
+        instrument_uid = tool_info[2].rstrip('\n').split(' ')[-1]
+        timeframe_str = tool_info[5].rstrip('\n').split(' ')[-1]
     except IndexError as e:
         logging.error('Не хватает строк в файле config.txt')
         raise IndexError('Не хватает строк в файле config.txt')
-
-    instrument_uid = res_array[0]
-    timeframe_str = res_array[5]
 
 
 def analyze_interval():

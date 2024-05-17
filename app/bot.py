@@ -55,6 +55,14 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
     """
 
     def __init__(self, account_id: str, correct_sum=False, cor_sum_value=0, filename='config.txt', autofill=True):
+        # Ожидаемая доходность, риск, СТОП-ЛОСС, ТЕЙК-ПРОФИТ
+        with open(filename, 'r', encoding='utf-8') as config_file:
+            lines = config_file.readlines()
+            self._user_return = float(lines[0].rstrip('\n').split(' ')[1])
+            self._user_risk = float(lines[1].rstrip('\n').split(' ')[1])
+            self._stop_loss = float(lines[3].rstrip('\n').split(' ')[1])
+            self._take_profit = float(lines[4].rstrip('\n').split(' ')[1])
+
         InstrumentsLoader.__init__(self, autofill)     # Инициализируем базу и загружаем инструменты
         CandlesLoader.__init__(self, filename)
 
@@ -71,7 +79,7 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         #self.event_loop = asyncio.new_event_loop()
         self.file_path = filename
         tool_info = InvestBot.get_instrument_info(self._file_path)  # Получаем информацию об инструменте
-        self.timeframe = tool_info[5]
+        self.timeframe = tool_info[2]
         self.__stream_process = mp.Process(target=stream_client.setup_stream, args=[self.file_path])  # Процесс загрузки данных через Stream
         self._init_delay()
 
@@ -236,7 +244,7 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
             print(f"\nLOT = {self._lot}\n")
             last_price = float(last_price)
             trade_price = reverse_money(last_price)  # Перевод цены из float в MoneyValue
-            lot_cast = last_price * self.lot         # Цена за лот = цена * лотность
+            lot_cast = last_price * self._lot         # Цена за лот = цена * лотность
             print(f"\nLOT CAST = {lot_cast:.3f} rub/lot\n")
             lot_count = int(positionSize / lot_cast)  # Количество лотов за ордер
             direct = None                             # Направление сделки (купля/продажа)
@@ -327,7 +335,7 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         for position in portfolio.positions:
             if position.instrument_uid == uid:
                 pos = position
-        lot_pos = int(cast_money(pos.quantity) / self.lot)   # Количество лотов актива X
+        lot_pos = int(cast_money(pos.quantity) / self._lot)   # Количество лотов актива X
         if lot_pos < lot_count:
             lot_count = lot_pos
         if lot_count == 0:
@@ -360,7 +368,7 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
             while lots != 0 and request_lots != lot_count:
                 lots -= 1
                 request_lots += 1
-                request_sum += self.buy_cast_list[i][0] * self.lot
+                request_sum += self.buy_cast_list[i][0] * self._lot
                 self.__last_prices.append(self.buy_cast_list[i][0])
         
         # Рассчитываем потенциальную прибыль с учетом комиссии
