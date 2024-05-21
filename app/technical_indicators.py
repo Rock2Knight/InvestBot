@@ -1,5 +1,8 @@
 # Модуль, содержащий реализацию индикатора скользящей средней
+import sys
+import os
 from datetime import datetime, timedelta, timezone
+from dotenv import load_dotenv
 
 from tinkoff.invest.sandbox.client import SandboxClient
 from tinkoff.invest.schemas import (
@@ -11,7 +14,11 @@ from tinkoff.invest.schemas import (
     Smoothing
 )
 
-from work.core_bot import *
+load_dotenv()
+TOKEN = os.getenv('TINKOFF_TOKEN')
+main_path = os.getenv('MAIN_PATH')
+sys.path.append(main_path)
+from utils_funcs import utils_funcs
 
 def analyze_interval(timeframe: CandleInterval):
     """ Сопоставление IndicatorInterval с CandleInterval """
@@ -44,7 +51,7 @@ def analyze_interval(timeframe: CandleInterval):
 
 def getSMA(uid_instrument, time_from, time_to, timeframe, interval=10):
     """ Получение покзателя SMA с длиной interval за указнный период """
-    timeframe = analyze_interval(timeframe)
+    timeframe = (timeframe)
     #t1 = datetime.strptime(time_from, '%Y-%m-%d_%H:%M:%S')
     #t2 = datetime.strptime(time_to, '%Y-%m-%d_%H:%M:%S')
     request = GetTechAnalysisRequest(
@@ -67,7 +74,7 @@ def getSMA(uid_instrument, time_from, time_to, timeframe, interval=10):
 
 def getEMA(uid_instrument: str, time_from, time_to, timeframe, interval=10):
     """ Получение покзателя EMA с длиной interval за указнный период """
-    timeframe = analyze_interval(timeframe)
+    timeframe = utils_funcs.candle_to_indicator(timeframe)
     #t1 = datetime.strptime(time_from, '%Y-%m-%d_%H:%M:%S')
     #t2 = datetime.strptime(time_to, '%Y-%m-%d_%H:%M:%S')
     request = GetTechAnalysisRequest(
@@ -89,7 +96,7 @@ def getEMA(uid_instrument: str, time_from, time_to, timeframe, interval=10):
 
 def getRSI(uid_instrument: str, time_from, time_to, timeframe, interval=14):
     """ Получение покзателя RSI с длиной interval за указнный период """
-    timeframe = analyze_interval(timeframe)
+    timeframe = utils_funcs.candle_to_indicator(timeframe)
     #t1 = datetime.strptime(time_from, '%Y-%m-%d_%H:%M:%S')
     #t2 = datetime.strptime(time_to, '%Y-%m-%d_%H:%M:%S')
     request = GetTechAnalysisRequest(
@@ -112,9 +119,7 @@ def getRSI(uid_instrument: str, time_from, time_to, timeframe, interval=14):
 
 def getMACD(uid_instrument: str, time_from, time_to, timeframe, interval=10):
     """ Получение покзателя MACD с длиной interval за указнный период """
-    timeframe = analyze_interval(timeframe)
-    #t1 = datetime.strptime(time_from, '%Y-%m-%d_%H:%M:%S')
-    #t2 = datetime.strptime(time_to, '%Y-%m-%d_%H:%M:%S')
+    timeframe = utils_funcs.candle_to_indicator(timeframe)
     request = GetTechAnalysisRequest(
         indicator_type=IndicatorType.INDICATOR_TYPE_MACD,
         instrument_uid=uid_instrument,

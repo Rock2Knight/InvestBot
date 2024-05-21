@@ -1,7 +1,9 @@
 """ Модели таблиц SQLAlchemy """
-from sqlalchemy import Integer, String, Column, ForeignKey, Numeric, TIMESTAMP, Boolean, TEXT
+from sqlalchemy import MetaData, Table, Integer, String, Column, ForeignKey, Numeric, TIMESTAMP, Boolean, TEXT
 from sqlalchemy.orm import relationship
 from .database import Base
+
+metadata = MetaData()
 
 """ Таблица Sector """
 class Sector(Base):
@@ -136,3 +138,18 @@ class Candle(Base):
 
     instr_ref = relationship("Instrument", backref="cnd_intsr_back")
     timeframe_ref = relationship("Timeframe", backref="fr_instr_back")
+
+candleTable = Table('candle', metadata,
+    Column('id', Integer(), primary_key=True, nullable=False, autoincrement=True),
+    Column('uid_instrument', String(100), ForeignKey("instrument.uid"), nullable=False),
+    Column('id_timeframe', Integer, ForeignKey("timeframe.id"), nullable=False),
+    Column('time_m', TIMESTAMP, nullable=False),
+    Column('open', Numeric(precision=6), nullable=False),
+    Column('close', Numeric(precision=6), nullable=False),
+    Column('low', Numeric(precision=6), nullable=False),
+    Column('high', Numeric(precision=6), nullable=False),
+    Column('volume', Integer, nullable=False),
+    Column('fast_sma', Numeric(precision=3), nullable=True),
+    Column('slow_sma', Numeric(precision=3), nullable=True),
+    Column('rsi', Numeric(precision=3), nullable=True)
+)

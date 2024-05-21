@@ -1,3 +1,4 @@
+import asyncio
 import multiprocessing as mp
 
 from aiogram import types, F, Router, Bot
@@ -7,6 +8,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 
 from app import bot
+from app.bot import InvestBot
 
 import kb
 import text
@@ -25,6 +27,11 @@ tradeProcess = None
 router = Router() # создаём роутер для дальнешей привязки к нему обработчиков
 investBot = None  # Экземпляр торгового робота
 
+def runInvestBot(bot: InvestBot):
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(bot.run())
+
+
 # Декоратор @router.message означает, что функция является обработчиком входящих сообщений.
 @router.message(Command("start"))
 async def start_handler(msg: Message):
@@ -36,7 +43,6 @@ async def start_handler(msg: Message):
 @router.message(F.text == "◀️ Выйти в меню")
 async def menu(msg: Message):
     await msg.answer(text.menu, reply_markup=kb.menu)
-
 
 # Функция, которая будет вызвана при нажатии на кнопку
 @router.callback_query()
@@ -75,8 +81,8 @@ async def on_callback_query(callback_query: CallbackQuery):
         case "main_menu":
             await callback_query.message.answer(text.menu, reply_markup=kb.menu)
         case "start_trade":
-            investBot = bot.InvestBot(account_id=account_id_active, autofill=False) # Инициализируем экземпляр торгового робота
-            tradeProcess = mp.Process(target=investBot.run) # Создаем процесс торговли торгового робота
+            investBot = bot.InvestBot(account_id=account_id_active, filename='../settings.ini', autofill=False) # Инициализируем экземпляр торгового робота
+            tradeProcess = mp.Process(target=runInvestBot, args=[investBot]) # Создаем процесс торговли торгового робота
             tradeProcess.start()  # Запускаем процесс торговли
 
 

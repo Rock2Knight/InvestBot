@@ -183,6 +183,10 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, is_test=False, **kwargs
     active_cast = CandlesDF.iloc[0]['close']  # Рыночная цена актива (типа)
     lot_cast = active_cast * lot  # Рыночная цена одного лота (типа)
     positionSize = 0.0  # Размер позиции
+
+    print(f"\n\ntype of lot_cast = {type(lot_cast)}")
+    print(f"\n\ntype of cnt_lots = {type(cnt_lots)}")
+
     totalSharePrice = lot_cast * cnt_lots  # Общая стоимость акций Новатэк в портфеле
     start_sum = account_portfolio + totalSharePrice
     start_cnt_lots = cnt_lots
@@ -215,7 +219,7 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, is_test=False, **kwargs
         fullPortfolio = account_portfolio + totalSharePrice
         profitInRub = fullPortfolio - start_sum  # Прибыль/убыток в рублях (по отношению к общей стоимости портфеля)
         profitInPercent = (profitInRub / start_sum) * 100  # Прибыль/убыток в процентах (по отношению к общей стоимости портфеля)
-        if profitInPercent < 0 and fabs(profitInPercent) >= STOP_ACCOUNT * 100:
+        if profitInPercent < 0 and fabs(profitInPercent) >= stopAccount * 100:
             # Если размер убытка достиг риска для счета, то делаем аварийное завершение торговли
             print(f"\n{trName}: FATAL_STOP")
             if tradeInfo and portfolioInfo:

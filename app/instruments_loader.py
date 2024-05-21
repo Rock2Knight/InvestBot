@@ -1,6 +1,9 @@
 # Загрузчик информации об инструментах
+import os
+import sys
 import logging
 from typing import Any
+from dotenv import load_dotenv
 
 from tinkoff.invest.schemas import (
     InstrumentIdType, Asset,
@@ -9,11 +12,16 @@ from tinkoff.invest.schemas import (
 from tinkoff.invest.sandbox.client import SandboxClient
 from tinkoff.invest.exceptions import RequestError
 
+load_dotenv()
+main_path = os.getenv('MAIN_PATH')
+sys.path.append(main_path)
+
 from work.functional import *
 from api import crud, models
 from api.database import *
 
-from . import app_utils
+import app_utils
+from utils_funcs import utils_funcs
 
 logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
                     format="%(asctime)s %(levelname)s %(message)s")
@@ -24,6 +32,7 @@ class InstrumentsLoader:
 
     def __init__(self, autofill: bool = True):
         self._db = SessionLocal()
+        self.__token = os.getenv('TINKOFF_TOKEN')
         if autofill:
             self._init_db()
 
@@ -40,6 +49,9 @@ class InstrumentsLoader:
         if not instrument_list:                              # Если таблица instrument пуста, то выходим
             self._load_instruments()
 
+    @property
+    def db(self):
+        return self._db
 
     def __check_instrument_kind(self, sb_client: SandboxClient, instr: AssetInstrument) -> tuple[str | Any] | bool:
         """
@@ -189,7 +201,7 @@ class InstrumentsLoader:
             id_sec =  crud.get_sector_id(db=self._db, sector_name=sector_name)
 
         # Если в базе нет обозначения типа инструмента, добавляем его в базу 
-        str_instr_type = app_utils.get_str_type(instrument.instrument_kind, False)
+        str_instr_type = utils_funcs.get_str_type(instrument.instrument_kind, False)
         id_instr_type =  crud.get_instrument_type_name(db=self._db, instrument_type_name=str_instr_type)
         if not id_instr_type:
             last_id =  crud.get_last_instrument_type_id(db=self._db)
@@ -227,7 +239,7 @@ class InstrumentsLoader:
         :return
         """
 
-        str_asset_type = app_utils.get_str_type(asset.type, True)
+        str_asset_type = utils_funcs.get_str_type(asset.type, True)
         db_asset_type_id = crud.get_asset_type_name(self._db, asset_type_name=str_asset_type)
         if not db_asset_type_id:
             last_id =  crud.get_last_asset_type_id(self._db)
@@ -250,7 +262,7 @@ class InstrumentsLoader:
         resp = None
         my_sb_client = None
         
-        with SandboxClient(TOKEN) as sb_client:
+        with SandboxClient(self.__token) as sb_client:
             my_sb_client = sb_client
             resp = sb_client.instruments.get_assets()  # Получаем список всех активов
 

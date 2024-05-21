@@ -5,6 +5,7 @@ from tinkoff.invest.schemas import (
     InstrumentType,
     CandleInterval
 )
+from tinkoff.invest import RequestError
 
 @cache
 def get_str_type(value, is_asset=True):
@@ -105,3 +106,26 @@ def get_name_by_timeframe(frame: CandleInterval) -> str:
             return 'WEEK'
         case CandleInterval.CANDLE_INTERVAL_MONTH:
             return 'MONTH'
+
+# Decorator retries api requests for some kind of exceptions
+def invest_api_retry(retry_count: int = 5, exceptions: tuple = ( RequestError, ValueError )):
+    def errors_retry(func):
+
+        def errors_wrapper(*args, **kwargs):
+            attempts = 0
+
+            while attempts < retry_count - 1:
+                attempts += 1
+
+                try:
+                    return func(*args, **kwargs)
+                except exceptions:
+                    if isinstance(exceptions, ValueError):
+                        print(f"\n\nNo candles by instrument with uid = {args[0]}")
+                    print(f"\nRetry exception attempt: {attempts}\n\n")
+
+            return func(*args, **kwargs)
+
+        return errors_wrapper
+
+    return errors_retry

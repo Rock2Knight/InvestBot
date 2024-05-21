@@ -3,9 +3,11 @@ import logging
 from typing import Optional
 from functools import cache
 
+import sqlalchemy.exc
 from sqlalchemy.orm import Session, exc
 from sqlalchemy.orm.exc import UnmappedInstanceError
 from . import models
+from .database import *
 
 logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
                     format="%(asctime)s %(levelname)s %(message)s")
@@ -475,14 +477,27 @@ def create_candle(db: Session, **kwargs):
                            volume=kwargs['volume'], uid_instrument=kwargs['uid_instrument'],
                            id_timeframe=kwargs['id_timeframe'])
 
+    models.metadata.create_all(engine)
+    ins = models.candleTable.insert().values(
+        id=new_id, time_m=kwargs['time_m'], open=kwargs['open'],
+        high=kwargs['high'], low=kwargs['low'], close=kwargs['close'],
+        volume=kwargs['volume'], uid_instrument=kwargs['uid_instrument'],
+        id_timeframe=kwargs['id_timeframe']
+    )
+
     try:
-        db.add(candle)
+        #db.add(candle)
+        conn = engine.connect()
+        r = conn.execute(ins)
+        conn.commit()
     except UnmappedInstanceError as UIerror:
         logging.error("Ошибка в методе crud.create_candle: ошибка при попытке добавить свечу в базу")
         print(UIerror.with_traceback())
+    except sqlalchemy.exc.InternalError as e:
+        logging.error(e.args, e.detail)
+    except sqlalchemy.exc.ProgrammingError as e:
+        logging.error(e.args, e.detail)
 
-    db.commit()
-    db.refresh(candle)
     return candle
 
 

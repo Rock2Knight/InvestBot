@@ -1,17 +1,26 @@
 # Загрузчик информации об свечах
+import sys
+import os
+from dotenv import load_dotenv
 import logging
 from datetime import datetime, timedelta
 from functools import cache
 import numpy as np
+import asyncio
 
 from tinkoff.invest.schemas import HistoricCandle
 from tinkoff.invest.exceptions import RequestError
 
-from work import *
-from work.functional import *
+load_dotenv()
+main_path = os.getenv('MAIN_PATH')
+sys.path.append(main_path)
+sys.path.append('.')
+
 from work.exceptions import *
 from api import crud, models
 from api.database import *
+from config import *
+from utils_funcs import utils_funcs
 
 logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
                     format="%(asctime)s %(levelname)s %(message)s")
@@ -20,12 +29,13 @@ UTC_OFFSET = "Europe/Moscow"
 
 class CandlesLoader:
 
-    def __init__(self, filename='config.txt'):
+    def __init__(self, filename='../settings.ini'):
         self._file_path = filename  # Имя файла с конфигурацией
+        config = program_config.ProgramConfiguration(filename)
+        self.strategies = config.strategies
         self.uid = None              # Идентификатор инструмента
-        self.timeframe = None        # Таймфрейм проверяемого инструмента
+        self.timeframe = config.timeframe        # Таймфрейм проверяемого инструмента
         self.weight = None           # Доля инструмента в портфеле
-        self._lot = None             # Лотность инструмента
         self._delay = 0              # Задержка между сделками
 
 
@@ -62,33 +72,13 @@ class CandlesLoader:
                 self._delay = 60 * 60 * 24 * 31
 
 
-    @staticmethod
-    def get_instrument_info(filename: str):
-        res_array = np.empty((3,), dtype='<U100')
-        tool_info = list([])
-
-        # Открываем файл с информацией о бумаге, по которой торгуем
-        with open(filename, 'r') as config_file:
-            tool_info = config_file.readlines()
-
-        try:
-            res_array[0] = tool_info[2].rstrip('\n').split(' ')[-1]  # uid
-            res_array[1] = tool_info[5].rstrip('\n').split(' ')[-1]  # timeframe
-            res_array[2] = tool_info[6].rstrip('\n').split(' ')[-1]  # weight
-        except IndexError as e:
-            logging.error('Не хватает строк в файле config.txt')
-            raise IndexError('Не хватает строк в файле config.txt')
-
-        return res_array
-
-
     @cache
     def __get_params_candle(self, candle: HistoricCandle):
         ''' Разбираем HistoricCandle на поля '''
-        open = cast_money(candle.open)
-        close = cast_money(candle.close)
-        low = cast_money(candle.low)
-        high = cast_money(candle.high)
+        open = utils_funcs.cast_money(candle.open)
+        close = utils_funcs.cast_money(candle.close)
+        low = utils_funcs.cast_money(candle.low)
+        high = utils_funcs.cast_money(candle.high)
 
         utc_time = candle.time  # Получаем дату и время в UTC
         hour_msk = utc_time.hour + 3  # Переводим дату и время к Московскому часовому поясу
@@ -101,48 +91,47 @@ class CandlesLoader:
         return (open, close, low, high, time, volume)
 
 
-    def _get_lot(self, db):
+    @cache
+    def get_lot(self, db, uid: str) -> int:
         # Метод для получения лотности инструмента (возможно стоит вынести в отдельный класс)
-        instrument = crud.get_instrument(db, self.uid)
-        self._lot = instrument.lot
+        instrument = crud.get_instrument(db, uid)
+        return instrument.lot
 
-    def _check_last_candles(self, db) -> int | datetime:
+    def _check_last_candles(self, db) -> dict:
         """
         Проверяет время загрузки последней свечи в базу
         """
-        tool_info = CandlesLoader.get_instrument_info(self._file_path) # Получаем информацию об инструменте
+        loaded_candles = dict()
 
-        db_instrument = crud.get_instrument(db, instrument_uid=tool_info[0])
-        if not db_instrument:
-            logging.error(f"Не найден инструмент с uid = {tool_info[0]}")
-            raise ValueError(f"Не найден инструмент с uid = {tool_info[0]}")
+        for ticker in self.strategies.keys():
+            db_instrument = crud.get_instrument(db, instrument_uid=self.strategies[ticker]['uid'])
+            if not db_instrument:
+                logging.error(f"Не найден инструмент с uid = {self.strategies[ticker]['uid']}")
+                raise ValueError(f"Не найден инструмент с uid = {self.strategies[ticker]['uid']}")
 
-        if not crud.check_timeframe(db, timeframe_name=tool_info[1]):
-            crud.create_timeframe(db, id=None, name=tool_info[1])
+            if not crud.check_timeframe(db, timeframe_name=self.timeframe):
+                crud.create_timeframe(db, id=None, name=self.timeframe)
 
-        self.uid = tool_info[0]
-        self.timeframe = tool_info[1]
-        self.weight = tool_info[2]
-        self._get_lot(db)       # Получаем лотность инструмента (сделать метод приватным)
+            self.get_lot(db, self.strategies[ticker]['uid'])       # Получаем лотность инструмента (сделать метод приватным)
 
-        # Определяем id инструмента и таймфрейма
-        uid_instrument = db_instrument.uid
-        id_timeframe = crud.get_timeframe_id(db, timeframe_name=self.timeframe)
+            # Определяем id инструмента и таймфрейма
+            uid_instrument = db_instrument.uid
+            id_timeframe = crud.get_timeframe_id(db, timeframe_name=self.timeframe)
 
-        # Запрашиваем 10 последних candles для инструмента
-        candles =  crud.get_candles_list(db, uid_instrument, id_timeframe)
-        if not candles:
-            # Свеч по данному инструменту в базе вообще нет
-            self._load_candles(db)
-            return 1   # Возврат 1 в случае начальной подгрузки свечей
-        else:
-            last_candle = candles[0]
-            if abs(last_candle.time_m - datetime.now()) > timedelta(hours=2):   # Исправить
-                return last_candle.time_m  # Возврат времени последней свечи, если она есть и при этом разница между текущим временем значительная
-        return 1   # Возврат 1 в случае, если все нормально
+            # Запрашиваем 10 последних candles для инструмента
+            candles =  crud.get_candles_list(db, uid_instrument, id_timeframe)
+            if not candles:
+                # Свеч по данному инструменту в базе вообще нет
+                #self._load_candles(db, uid_instrument)
+                loaded_candles[uid_instrument] = None
+            else:
+                last_candle = candles[0]
+                if abs(last_candle.time_m - datetime.now()) > timedelta(hours=2):   # Исправить
+                    loaded_candles[uid_instrument] = last_candle.time_m # Возврат времени последней свечи, если она есть и при этом разница между текущим временем значительная
+        return loaded_candles   # Возврат словаря с идентификаторами инструментов, для которых надо подгрузить данные
 
 
-    def _load_candles(self, db, last_date=None):
+    async def _load_candles(self, db, uid, last_date=None):
         """
         Метод для загрузки свечей по инструменту
 
@@ -159,10 +148,10 @@ class CandlesLoader:
         str_cur_date = cur_date.strftime("%Y-%m-%d_%H:%M:%S")
         str_last_date = last_date.strftime("%Y-%m-%d_%H:%M:%S")
 
-        request_text = f"/get_candles {self.uid} {str_last_date} {str_cur_date} {self.timeframe}"  # Строка запроса на получение свечей
+        request_text = f"/get_candles {uid} {str_last_date} {str_cur_date} {self.timeframe}"  # Строка запроса на получение свечей
 
         try:
-            candles = core_bot.get_candles(request_text)
+            candles = utils_funcs.get_candles(request_text)
         except InvestBotValueError as iverror:
             logging.error(f"Ошибка в методе CandlesLoader.load_candles во время обработки котировок: {iverror.args}")
             raise InvestBotValueError(iverror.msg)
@@ -176,7 +165,7 @@ class CandlesLoader:
             str_time = datetime.strptime(time_obj, '%Y-%m-%d_%H:%M:%S')
 
             new_id = crud.get_last_candle_id(db) + 1
-            my_instrument = crud.get_instrument(db, instrument_uid=self.uid)
+            my_instrument = crud.get_instrument(db, instrument_uid=uid)
             my_timeframe_id = crud.get_timeframe_id(db, self.timeframe)
             if not my_timeframe_id:
                 crud.create_timeframe(db, name=self.timeframe)

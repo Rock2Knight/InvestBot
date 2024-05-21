@@ -1,5 +1,7 @@
 # Сам бот
+import sys
 import os
+from dotenv import load_dotenv
 import logging
 import asyncio
 import math
@@ -18,30 +20,33 @@ from tinkoff.invest.schemas import (
     PostOrderResponse,
     TechAnalysisItem
 )
-from tinkoff.invest.exceptions import RequestError
+
+load_dotenv()
+main_path = os.getenv('MAIN_PATH')
+sys.path.append(main_path)
+sys.path.append(main_path+'app/')
 
 #import app.technical_indicators
 # Для исторических свечей
+import stream_client
 
-from . import stream_client
-from . import app_utils
-from work import *
-from work.functional import *
-from work.exceptions import *
-from work.functional import reverse_money, reverse_money_mv
 from app.StopMarketQueue import StopMarketQueue
 from api import crud, models
 from api.database import *
-from app.technical_indicators import *
-from app import PROCESS_SWITCH
+from technical_indicators import *
 
-from .instruments_loader import InstrumentsLoader
-from .candles_loader import CandlesLoader
+from config import program_config
+from utils_funcs import utils_funcs
+
+from instruments_loader import InstrumentsLoader
+from candles_loader import CandlesLoader
 
 logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
                     format="%(asctime)s %(levelname)s %(message)s")
 UTC_OFFSET = "Europe/Moscow"
 MAXInter = 5
+
+__all__ = ['DirectTrade', 'InvestBot']
 
 class DirectTrade(Enum):
     UNSPECIFIED = 0,
@@ -54,14 +59,13 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
     Класс, реализующий логику торгового робота в песочнице
     """
 
-    def __init__(self, account_id: str, correct_sum=False, cor_sum_value=0, filename='config.txt', autofill=True):
+    def __init__(self, account_id: str, correct_sum=False, cor_sum_value=0, filename='../settings.ini', autofill=True):
         # Ожидаемая доходность, риск, СТОП-ЛОСС, ТЕЙК-ПРОФИТ
-        with open(filename, 'r', encoding='utf-8') as config_file:
-            lines = config_file.readlines()
-            self._user_return = float(lines[0].rstrip('\n').split(' ')[1])
-            self._user_risk = float(lines[1].rstrip('\n').split(' ')[1])
-            self._stop_loss = float(lines[3].rstrip('\n').split(' ')[1])
-            self._take_profit = float(lines[4].rstrip('\n').split(' ')[1])
+        config = program_config.ProgramConfiguration(filename)
+        self.__token = os.getenv('TINKOFF_TOKEN')
+
+        self._user_return = config.user_return
+        self._user_risk = config.user_risk
 
         InstrumentsLoader.__init__(self, autofill)     # Инициализируем базу и загружаем инструменты
         CandlesLoader.__init__(self, filename)
@@ -76,29 +80,27 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         self.__cor_sum = correct_sum
         self.__cor_sum_val = cor_sum_value             # Сумма для пополнения
         self.__last_prices = list([])                  # Список последних цен покупки
-        #self.event_loop = asyncio.new_event_loop()
         self.file_path = filename
-        tool_info = InvestBot.get_instrument_info(self._file_path)  # Получаем информацию об инструменте
-        self.timeframe = tool_info[1]
-        self.__stream_process = mp.Process(target=stream_client.setup_stream, args=[self.file_path])  # Процесс загрузки данных через Stream
+        self.timeframe = config.timeframe
+        self.__stream_process = mp.Process(target=stream_client.setup_stream, args=[config])  # Процесс загрузки данных через Stream
         self._init_delay()
 
     
     def __correct_sum(self):
         balance = None
-        with SandboxClient(TOKEN) as client:
+        with SandboxClient(self.__token) as client:
             balance = client.sandbox.get_sandbox_portfolio(account_id=self.account_id)
-            free_money = cast_money(balance.total_amount_currencies)
+            free_money = utils_funcs.cast_money(balance.total_amount_currencies)
             while free_money < 20000:
                 self.pay_in(5000)
                 balance = client.sandbox.get_sandbox_portfolio(account_id=self.account_id)
-                free_money = cast_money(balance.total_amount_currencies)
+                free_money = utils_funcs.cast_money(balance.total_amount_currencies)
 
 
     def pay_in(self, sum_rub: float):
         """ Пополнение счета в песочнице """
-        with SandboxClient(TOKEN) as client:
-            sum_trade = reverse_money_mv(sum_rub)
+        with SandboxClient(self.__token) as client:
+            sum_trade = utils_funcs.reverse_money_mv(sum_rub)
             client.sandbox.sandbox_pay_in(account_id=self.account_id, amount=sum_trade)  # Пополнение счета на сумму pay_sum
             print(f"\nПортфель пополнен на {sum_rub:.2f} RUB\n\n")
 
@@ -115,23 +117,26 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         """ Вывод данных о SMA в консоль """
         time_prev = sma_prev.timestamp.strftime('%Y-%m-%d %H:%M:%S')
         time_cur = sma_cur.timestamp.strftime('%Y-%m-%d %H:%M:%S')
-        sma_prev_value = cast_money(sma_prev.signal)
-        sma_cur_value = cast_money(sma_cur.signal)
+        sma_prev_value = utils_funcs.cast_money(sma_prev.signal)
+        sma_cur_value = utils_funcs.cast_money(sma_cur.signal)
 
         print(f'\nSMA prev time = {time_prev},  SMA prev value = {sma_prev_value:.2f}')
         print(f'SMA cur time = {time_cur},  SMA cur value = {sma_cur_value:.2f}\n')
 
 
-    def check_signal(self):
+    @utils_funcs.invest_api_retry()
+    def check_signal(self, uid: str, ma_interval: int, rsi_interval: int, max_inter: int):
         """
         Метод, проверяющий наличие торговых сигналов
         """
         tf_id = crud.get_timeframe_id(self._db, self.timeframe)
-        last_candles = crud.get_candles_list(self._db, self.uid, tf_id)
+        last_candles = crud.get_candles_list(self._db, uid, tf_id)
 
+        if not last_candles:
+            raise ValueError
         t2 = last_candles[0].time_m
         t1 = None
-        tf = app_utils.get_timeframe_by_name(self.timeframe)
+        tf = utils_funcs.get_timeframe_by_name(self.timeframe)
         #self.make_trade()
         match tf:
             case CandleInterval.CANDLE_INTERVAL_1_MIN:
@@ -161,16 +166,16 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
             case CandleInterval.CANDLE_INTERVAL_MONTH:
                 t1 = t2 - timedelta(days=365*2)
 
-        valuesEMA = getEMA(self.uid, t1, t2, tf, interval=SMA_INTERVAL)  # Получаем значения MA
-        valuesRSI = getRSI(self.uid, t1, t2, tf, interval=RSI_INTERVAL)  # Получаем значения RSI
+        valuesEMA = getEMA(uid, t1, t2, tf, interval=ma_interval)  # Получаем значения MA
+        valuesRSI = getRSI(uid, t1, t2, tf, interval=rsi_interval)  # Получаем значения RSI
 
         # Выводим значения последних свечей и SMA в консоль для отладки
         self.__print_candle(last_candles[2])
         self.__print_candle(last_candles[1])
         self.__print_sma(valuesEMA[0], valuesEMA[1])
  
-        sma_prev, sma_cur = cast_money(valuesEMA[0].signal), cast_money(valuesEMA[1].signal)
-        rsiVal = cast_money(valuesRSI[1].signal)
+        sma_prev, sma_cur = utils_funcs.cast_money(valuesEMA[0].signal), utils_funcs.cast_money(valuesEMA[1].signal)
+        rsiVal = utils_funcs.cast_money(valuesRSI[1].signal)
 
         if last_candles[2].close < sma_prev and last_candles[1].close > sma_cur:
             self.direct_trade = DirectTrade.BUY
@@ -188,11 +193,11 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         if len(last_candles) > size:
             last_candles = last_candles[-size:]
         cntInter = 0
-        valuesSMA[0] = cast_money(valuesSMA[0].signal)
+        valuesSMA[0] = utils_funcs.cast_money(valuesSMA[0].signal)
         for i in range(1, size):
             print(f"ITERATION = {i}")
             try:
-                valuesSMA[i] = cast_money(valuesSMA[i].signal)
+                valuesSMA[i] = utils_funcs.cast_money(valuesSMA[i].signal)
                 if last_candles[i-1].close < valuesSMA[i-1] and last_candles[i].close > valuesSMA[i]:
                     cntInter += 1
                 elif last_candles[i-1].close > valuesSMA[i-1] and last_candles[i].close < valuesSMA[i]:
@@ -200,7 +205,7 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
             except IndexError:
                 break
 
-        if cntInter > MAXInter:
+        if cntInter > max_inter:
             return False
 
         print('\nSIGNAL 2 TAKEN\n')
@@ -215,53 +220,55 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         return True
 
 
-    def make_trade(self):
+    async def make_trade(self, ticker: str, info: dict):
         """
         Совершение сделки
         """
         balance = None
-        with SandboxClient(TOKEN) as client:
+        with SandboxClient(self.__token) as client:
             print("BEGIN OF TRADE\n")
             balance = client.sandbox.get_sandbox_portfolio(account_id=self.account_id) # Инфа о портфеле
-            free_money = cast_money(balance.total_amount_currencies)  # Сумма свободных денег в портфеле
-            positionSize = free_money * STOP_ACCOUNT / STOP_LOSS  # Расчитываем размер позиции (сделки)
+            free_money = utils_funcs.cast_money(balance.total_amount_currencies)  # Сумма свободных денег в портфеле
+            positionSize = free_money * self._user_risk / info['stop_loss']  # Расчитываем размер позиции (сделки)
 
             # Определяем рыночную цену (полагая, что последняя котировка в базе является рыночным значением)
             my_timeframe_id = crud.get_timeframe_id(self._db, self.timeframe)
-            last_price = crud.get_candles_list(self._db, self.uid, my_timeframe_id)
+            last_price = crud.get_candles_list(self._db, info['uid'], my_timeframe_id)
             last_price = last_price[0].close
 
             if last_price != 0:
-                print(f"Last price = {last_price}")
+                print(f"{ticker} Last price = {last_price}")
             else:
-                print("No last price!\n")
+                print(f"{ticker} No last price!\n")
                 exit(1)
-            print(f"\nLAST PRICE = {last_price} rub/item\n")
+            print(f"\n{ticker} LAST PRICE = {last_price} rub/item\n")
 
             if last_price == 0:
                 exit(1)
 
-            print(f"\nLOT = {self._lot}\n")
+            lot = self.get_lot(self.db, info['uid'])
+            print(f"\n{ticker} LOT = {lot}\n")
             last_price = float(last_price)
-            trade_price = reverse_money(last_price)  # Перевод цены из float в MoneyValue
-            lot_cast = last_price * self._lot         # Цена за лот = цена * лотность
-            print(f"\nLOT CAST = {lot_cast:.3f} rub/lot\n")
+            trade_price = utils_funcs.reverse_money(last_price)  # Перевод цены из float в MoneyValue
+            lot_cast = last_price * lot         # Цена за лот = цена * лотность
+            print(f"\n{ticker} LOT CAST = {lot_cast:.3f} rub/lot\n")
             lot_count = int(positionSize / lot_cast)  # Количество лотов за ордер
             direct = None                             # Направление сделки (купля/продажа)
 
             # Полчаем сведения о портфеле
             balance = client.sandbox.get_sandbox_portfolio(account_id=self.account_id)
-            total_amount_shares = cast_money(balance.total_amount_shares)
-            total_amount_bonds = cast_money(balance.total_amount_bonds)
-            total_amount_etf = cast_money(balance.total_amount_etf)
-            free_money = cast_money(balance.total_amount_currencies)
-            total_amount_portfolio = cast_money(balance.total_amount_portfolio)
-            self.profit = cast_money(balance.expected_yield)
+            total_amount_shares = utils_funcs.cast_money(balance.total_amount_shares)
+            total_amount_bonds = utils_funcs.cast_money(balance.total_amount_bonds)
+            total_amount_etf = utils_funcs.cast_money(balance.total_amount_etf)
+            free_money = utils_funcs.cast_money(balance.total_amount_currencies)
+            total_amount_portfolio = utils_funcs.cast_money(balance.total_amount_portfolio)
+            self.profit = utils_funcs.cast_money(balance.expected_yield)
+            weight_sum = info['weight'] * free_money # Максимальная доля актива в портфеле в рублях
 
             if self.direct_trade == DirectTrade.BUY:
                 direct = OrderDirection.ORDER_DIRECTION_BUY
                 if free_money < positionSize:  # Если свободных денег меньше размера сделки
-                    while lot_count != 0 or free_money < positionSize:
+                    while lot_count != 0 or free_money < positionSize or weight_sum - positionSize <= 0:
                         # Уменьшаем количество лотов либо пока размер позиции не станет посильным, 
                         # либо пока количество лотов не будет равным 0
                         lot_count -= 1
@@ -270,9 +277,16 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
                         # Информируем о недостатке средств (возможно вынести в отдельный метод для телеграм-бота)
                         print('\n-----------------------------\nNOT ENOUGH MONEY FOR BUY\n\n')
                         return
+                    if lot_count <= 0:
+                        lot_count = 1
             else:
                 direct = OrderDirection.ORDER_DIRECTION_SELL
                 if lot_cast * lot_count > total_amount_shares:
+                    while lot_cast * lot_count > total_amount_shares:
+                        lot_count -= 1
+                while free_money + (lot_count * lot_cast) * 0.97 > weight_sum:
+                    lot_count -= 1
+                if lot_count <= 0:
                     print('\n-----------------------------\nNOT ENOUGH MONEY FOR SELL\n\n')
                     return
                 '''
@@ -289,13 +303,19 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
             '''
 
             # Совершаем сделку
-            POResponse = client.sandbox.post_sandbox_order(instrument_id=self.uid, price=trade_price, direction=direct,
+            POResponse = client.sandbox.post_sandbox_order(instrument_id=info['uid'], price=trade_price, direction=direct,
                                               account_id=self.account_id, order_type=OrderType.ORDER_TYPE_MARKET,
                                               price_type=PriceType.PRICE_TYPE_CURRENCY, quantity=lot_count)
             print("END OF TRADE\n")
 
-            self.printPostOrderResponse(POResponse)  # Выводим информацию о сделке
+            await self.printPostOrderResponse(POResponse)  # Выводим информацию о сделке
             self.__save_trade(POResponse)            # Сохраняем информацию о сделке в журнал сделок
+
+
+    async def async_trade(self, ticker: str, info: dict):
+        if self.check_signal(info['uid'], info['ma_interval'], info['rsi_interval'], info['max_inter']):
+            await self.make_trade(ticker, info)
+
 
     def check_loss(self):
         """
@@ -319,9 +339,9 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         self.trades_list[POResponse.instrument_uid].append(dict())
         self.trades_list[POResponse.instrument_uid][-1]['time'] = POResponse.response_metadata.server_time
         self.trades_list[POResponse.instrument_uid][-1]['direct'] = POResponse.direction
-        self.trades_list[POResponse.instrument_uid][-1]['cast_order'] = cast_money(POResponse.executed_order_price)
+        self.trades_list[POResponse.instrument_uid][-1]['cast_order'] = utils_funcs.cast_money(POResponse.executed_order_price)
         self.trades_list[POResponse.instrument_uid][-1]['count'] = POResponse.lots_executed
-        self.trades_list[POResponse.instrument_uid][-1]['commision'] = cast_money(POResponse.executed_commission)
+        self.trades_list[POResponse.instrument_uid][-1]['commision'] = utils_funcs.cast_money(POResponse.executed_commission)
 
 
     def __check_buy(self, uid, lot_count, last_price):
@@ -334,12 +354,12 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
 
         portfolio = None
         pos = None
-        with SandboxClient(TOKEN) as client:
+        with SandboxClient(self.__token) as client:
             portfolio = client.sandbox.get_sandbox_portfolio(account_id=self.account_id)
         for position in portfolio.positions:
             if position.instrument_uid == uid:
                 pos = position
-        lot_pos = int(cast_money(pos.quantity) / self._lot)   # Количество лотов актива X
+        lot_pos = int(utils_funcs.cast_money(pos.quantity) / self._lot)   # Количество лотов актива X
         if lot_pos < lot_count:
             lot_count = lot_pos
         if lot_count == 0:
@@ -388,7 +408,7 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         return k    # Возвращаем итоговое количество лотов на продажу 
         
 
-    def printPostOrderResponse(self, POResponse: PostOrderResponse):
+    async def printPostOrderResponse(self, POResponse: PostOrderResponse):
         print('\nINFO ABOUT TRADE\n-----------------------------------------------------\n')
         direct_str = ''
         order_type = ''
@@ -418,11 +438,11 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         print(f"Tracking id = {POResponse.response_metadata.tracking_id}")
         server_time = POResponse.response_metadata.server_time.strftime('%Y-%m-%d_%H:%M:%S')
         print(f"Time of trade = {server_time}")
-        data_csv = list([POResponse.instrument_uid, str(cast_money(POResponse.executed_order_price)),
-                         str(cast_money(POResponse.executed_commission)),
+        data_csv = list([POResponse.instrument_uid, str(utils_funcs.cast_money(POResponse.executed_order_price)),
+                         str(utils_funcs.cast_money(POResponse.executed_commission)),
                          str(POResponse.instrument_uid), str(POResponse.lots_requested),
                          str(POResponse.lots_executed), order_type, direct_str,
-                         str(cast_money(POResponse.total_order_amount)),
+                         str(utils_funcs.cast_money(POResponse.total_order_amount)),
                          POResponse.response_metadata.tracking_id, server_time])
 
         instrument_uid = str(POResponse.instrument_uid)
@@ -442,16 +462,16 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
                 writer.writerow(data_csv)
 
 
-    def printPortfolio(self):
+    async def printPortfolio(self):
         print("MY PORTFOLIO\n-----------------------------------\n")
-        with SandboxClient(TOKEN) as client:
+        with SandboxClient(self.__token) as client:
             balance = client.sandbox.get_sandbox_portfolio(account_id=self.account_id)
-            total_amount_shares = cast_money(balance.total_amount_shares)
-            total_amount_bonds = cast_money(balance.total_amount_bonds)
-            total_amount_etf = cast_money(balance.total_amount_etf)
-            free_money = cast_money(balance.total_amount_currencies)
-            total_amount_portfolio = cast_money(balance.total_amount_portfolio)
-            self.profit = cast_money(balance.expected_yield)
+            total_amount_shares = utils_funcs.cast_money(balance.total_amount_shares)
+            total_amount_bonds = utils_funcs.cast_money(balance.total_amount_bonds)
+            total_amount_etf = utils_funcs.cast_money(balance.total_amount_etf)
+            free_money = utils_funcs.cast_money(balance.total_amount_currencies)
+            total_amount_portfolio = utils_funcs.cast_money(balance.total_amount_portfolio)
+            self.profit = utils_funcs.cast_money(balance.expected_yield)
             server_time = datetime.now(timezone.utc).strftime('%Y-%m-%d_%H:%M:%S')
             data_csv = list([str(total_amount_portfolio), str(free_money),
                              str(self.profit), str(total_amount_shares),
@@ -470,10 +490,10 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
                 figi = position.figi
                 instrument_type = position.instrument_type
                 ticker = ''
-                count = cast_money(position.quantity)
-                cur_price = cast_money(position.current_price)
-                count_lots = cast_money(position.quantity_lots)
-                profit = cast_money(position.expected_yield)
+                count = utils_funcs.cast_money(position.quantity)
+                cur_price = utils_funcs.cast_money(position.current_price)
+                count_lots = utils_funcs.cast_money(position.quantity_lots)
+                profit = utils_funcs.cast_money(position.expected_yield)
 
                 instrument = crud.get_instrument(self._db, instrument_uid)
                 name = None
@@ -516,29 +536,40 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         filename = filename + '_' + ticker + '_' + self.timeframe + '.csv'
         return filename
 
-    def run(self):
-        """ Главный цикл торгового робота """
-        last_time = self._check_last_candles(self._db)
-        if isinstance(last_time, datetime):
-            # Если check_last_candles() вернул datetime-объект, значит у нас значительный разрыв по времени, требуется
-            # еще подгрузка
-            self._load_candles(self._db, last_time)
-
-        if not self.__cor_sum:      # Если не стоит флаг коррекции суммы
-            self.__correct_sum()
+    async def pre_run(self) -> bool:
+        event_loop = asyncio.new_event_loop()
+        last_time_dict = self._check_last_candles(self._db)
+        tasks = list([])
+        for uid, param in last_time_dict.items():
+            task = asyncio.create_task(self._load_candles(self._db, uid, param))
+            tasks.append(task)
+        done, pending = await asyncio.wait(tasks)
+        if not pending:
+            return True
         else:
-            self.pay_in(self.__cor_sum_val)
-        #self.buy_shares()
+            raise ValueError
+
+    @utils_funcs.invest_api_retry(retry_count=10)
+    async def run(self):
+        """ Главный цикл торгового робота """
+        is_loaded = await self.pre_run()
+        while not is_loaded:
+            continue
+
+        if self.__cor_sum:      # Если не стоит флаг коррекции суммы
+            self.__correct_sum()
+        #else:
+        #    self.pay_in(self.__cor_sum_val)
 
         self.__stream_process.start()   # (**) Запускаем процесс загрузки данных через Stream
 
         while True:
-            self.printPortfolio()
+            await self.printPortfolio()
             if self.check_loss():                     # Если у нас потери превысили риск
                 self.__stream_process.terminate()     # Завершаем процесс стрима
                 print('\nStream process terminated')
                 print('Session was exited')
                 return                                # Выходим из функции
-            if self.check_signal():
-                self.make_trade()
+            for ticker, info in self.strategies.items():
+                await self.async_trade(ticker, info)
             time.sleep(self._delay)

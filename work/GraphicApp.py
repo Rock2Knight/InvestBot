@@ -20,11 +20,12 @@ from matplotlib.backends.backend_qt5agg import (
 
 import pandas as pd
 
+import work
 from api import database, crud
 from GUI3 import Ui_MainWindow
-import work
-from work import *
+#import work
 import tech_analyze, core_bot
+from config import program_config
 from tests import test_tech_analyze
 
 
@@ -64,12 +65,14 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super(GraphicApp, self).__init__()
         self.setupUi(self)
+        self.__config = program_config.ProgramConfiguration('../settings.ini')
         self.RadioNumber = 1
 
         self.addFigure()   # Создаем область для графика в интерфейсе
 
-        self.account_portfolio = START_ACCOUNT_PORTFOLIO  # Размер портфеля в рублях
-        self.cnt_lots = START_LOT_COUNT                # Количество лотов по инструменту
+        self.account_portfolio = self.__config.start_portfolio  # Размер портфеля в рублях
+        self.cnt_lots = self.__config.start_lot_count           # Количество лотов по инструменту
+        self.__excel_filename = self.__config.excel_filename    # имя файла для сводной таблицы
         self.successTrades = 0              # Количество прибыльных сделок
         self.failTrades = 0                 # Количество убыточных сделок
         self.__resTrading = None            # результаты мульти-моделирования торговли
@@ -93,16 +96,22 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         self.btnTest.clicked.connect(self.setupTestModelThread)
 
 
-    async def AsyncHistoryTrain(self, uid: str, tool_name: str):
+    async def AsyncHistoryTrain(self, uid: str, tool_name: str, tool_lot: int):
         """
         Моделирует торговлю по инструменту с идентификатором uid за заданный период асинхронно
         :param uid: идентификатор торгового инструмента
         :return:
         """
+        instruments = self.__config.strategies
+        target_instrument = None
+        for instrument, info in instruments.items():
+            if info['uid'] == uid:
+                target_instrument = instrument
+                break
         return await tech_analyze.HistoryTrain(uid, self.cnt_lots,
-                                                self.account_portfolio, ma_interval=SMA_INTERVAL,
-                                                rsi_interval=RSI_INTERVAL,
-                                                lot=LOT, stopAccount=STOP_ACCOUNT, stopLoss=STOP_LOSS,
+                                                self.account_portfolio, ma_interval=self.__config.strategies[target_instrument]['ma_interval'],
+                                                rsi_interval=self.__config.strategies[target_instrument]['rsi_interval'],
+                                                lot=tool_lot, stopAccount=self.__config.stop_account, stopLoss=self.__config.strategies[target_instrument]['stop_loss'],
                                                 time_from=self.str_time_from, time_to=self.str_time_to,
                                                 timeframe=self.frame, name=tool_name)
 
@@ -114,7 +123,7 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
 
         tasks = list([])
         for i in range(len(self.__tools_uid)):
-            task = asyncio.create_task(self.AsyncHistoryTrain(self.__tools_uid[i], self.tools_data[i].name))
+            task = asyncio.create_task(self.AsyncHistoryTrain(self.__tools_uid[i], self.tools_data[i].name, self.tools_data[i].lot))
             tasks.append(task)
 
         self.__resTrading = await asyncio.gather(*tasks)
@@ -153,7 +162,7 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         excelHandler = None
         # Блок проверки на наличие необходимых аттрибутов
         try:
-            excelHandler = work.excel_handler.ExcelHandler(excelFile)
+            excelHandler = work.excel_handler.ExcelHandler(self.__excel_filename)
         except Exception as e:
             logging.error(f"Ошибка при создании обработчика таблицы\n {e.args}")
             print(f"Ошибка при создании обработчика таблицы\n {e.args}")
@@ -565,7 +574,7 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         x_ticks = list([])
         x_ticklabels = list([])
 
-        if sizeX > MAX_CNT_TICKS:
+        if sizeX > self.__config.max_cnt_ticks:
             # Если количество таймфреймов больше 10, формируем массив
             # тиков так, чтобы подписи по оси X отображались нормально
             if sizeX % 10 != 0:
@@ -655,7 +664,7 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         x_ticklabels = list([])
         candle_interval = self.tfComboBox.currentText()
 
-        if sizeX > MAX_CNT_TICKS:
+        if sizeX > self.__config.max_cnt_ticks:
             # Если количество таймфреймов больше 10, формируем массив
             # тиков так, чтобы подписи по оси X отображались нормально
             if sizeX % 10 != 0:
@@ -730,17 +739,16 @@ class GraphicApp(QMainWindow, Ui_MainWindow):
         self.canvas.draw()
 
 
-    """ Метод для получения информации о доступных активах в Тинькофф Инвестиции """
     def get_all_instruments(self):
-
-        instruments = ''
-        with open("instruments.txt", 'r', encoding='utf-8') as file:
-            instruments = file.readlines()
-            db = database.SessionLocal()     # Соединение с базой данных
-            try:
-                for i in range(len(instruments)):
-                    self.__tools_uid.append(instruments[i].rstrip("\n"))
-                    info = crud.get_instrument_uid(db, instrument_uid=self.__tools_uid[i])
-                    self.tools_data.append(info)
-            except IndexError as e:
-                raise e
+        """ Метод для получения информации о доступных активах в Тинькофф Инвестиции """
+        instruments = self.__config.strategies
+        db = database.SessionLocal()     # Соединение с базой данных
+        try:
+            i = 0
+            for instrument in instruments.values():
+                self.__tools_uid.append(instrument['uid'].rstrip("\n"))
+                info = crud.get_instrument_uid(db, instrument_uid=self.__tools_uid[i])
+                self.tools_data.append(info)
+                i += 1
+        except IndexError as e:
+            raise e
