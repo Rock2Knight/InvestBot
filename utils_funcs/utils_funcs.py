@@ -86,6 +86,7 @@ def get_timeframe_by_name(value: str) -> CandleInterval:
         case 'MONTH':
             return CandleInterval.CANDLE_INTERVAL_MONTH
 
+@cache
 def get_sub_timeframe_by_name(timeframe_str: str) -> SubscriptionInterval:
     match timeframe_str:
         case '1_MIN':
@@ -150,6 +151,29 @@ def get_name_by_timeframe(frame: CandleInterval) -> str:
         case CandleInterval.CANDLE_INTERVAL_MONTH:
             return 'MONTH'
 
+def invest_api_retry(retry_count: int = 5, exceptions: tuple = ( RequestError, ValueError )):
+    def errors_retry(func):
+
+        def errors_wrapper(*args, **kwargs):
+            attempts = 0
+
+            while attempts < retry_count - 1:
+                attempts += 1
+
+                try:
+                    return func(*args, **kwargs)
+                except exceptions:
+                    if isinstance(exceptions, ValueError):
+                        print(f"\n\nNo candles by instrument with uid = {args[0]}")
+                    print(f"\nRetry exception attempt: {attempts}\n\n")
+
+            return func(*args, **kwargs)
+
+        return errors_wrapper
+
+    return errors_retry
+
+# Decorator retries api requests for some kind of exceptions
 def candle_to_indicator(timeframe: CandleInterval):
     """ Сопоставление IndicatorInterval с CandleInterval """
     match timeframe:
@@ -177,29 +201,6 @@ def candle_to_indicator(timeframe: CandleInterval):
             return IndicatorInterval.INDICATOR_INTERVAL_WEEK
         case CandleInterval.CANDLE_INTERVAL_MONTH:
             return IndicatorInterval.INDICATOR_INTERVAL_MONTH
-
-# Decorator retries api requests for some kind of exceptions
-def invest_api_retry(retry_count: int = 5, exceptions: tuple = ( RequestError, ValueError )):
-    def errors_retry(func):
-
-        def errors_wrapper(*args, **kwargs):
-            attempts = 0
-
-            while attempts < retry_count - 1:
-                attempts += 1
-
-                try:
-                    return func(*args, **kwargs)
-                except exceptions:
-                    if isinstance(exceptions, ValueError):
-                        print(f"\n\nNo candles by instrument with uid = {args[0]}")
-                    print(f"\nRetry exception attempt: {attempts}\n\n")
-
-            return func(*args, **kwargs)
-
-        return errors_wrapper
-
-    return errors_retry
 
 @cache
 def cast_money(sum: Quotation | MoneyValue) -> float:
