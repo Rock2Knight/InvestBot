@@ -3,7 +3,7 @@ import math
 import logging
 import os
 from dotenv import load_dotenv
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import pytz
 
 from tinkoff.invest import RequestError
@@ -267,8 +267,10 @@ def candles_formatter(paramList: list[str]):
 
 def get_candles(param_list: str):
 
+    print(param_list)
     param_list = param_list.split(' ')    # Список параметров
     candlesParams = None                  # Список параметров для get_candles
+    res_flag = True
 
     try:
         candlesParams = candles_formatter(param_list)
@@ -288,10 +290,25 @@ def get_candles(param_list: str):
                 interval=candlesParams[3]
             )
         except Exception as irerror:
-            print('\n\n', irerror.args, '\n')
-            raise irerror
+            res_flag = False
+            attemps = 10
+            from_param = candlesParams[1]
+            while not res_flag and attemps > 0:
+                from_param += timedelta(hours=1)
+                candles_raw = client.market_data.get_candles(
+                    instrument_id=candlesParams[0],
+                    from_= from_param,
+                    to=candlesParams[2],
+                    interval=candlesParams[3]
+                )
+                if candles_raw:
+                    res_flag = True
+                attemps -= 1
+            if attemps == 0 and not res_flag:
+                print('\n\n', irerror.args, '\n')
+                raise irerror
         finally:
-            for candle in candles_raw.candles:
-                candles.append(candle)
-
-    return candles
+            if res_flag:
+                for candle in candles_raw.candles:
+                    candles.append(candle)
+                return candles

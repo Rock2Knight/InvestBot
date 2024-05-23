@@ -1,8 +1,11 @@
 # Телеграм-бот для управления торговым роботом
 # с  использованием библиотки pyTelegramBotAPI
+import sys
+import os
 import logging
 import json
 from datetime import datetime, timezone, timedelta
+from dotenv import load_dotenv 
 import pytz
 from pathlib import Path
 from typing import Generator
@@ -19,6 +22,11 @@ from tinkoff.invest.exceptions import RequestError
 
 # Для исторических свечей
 from tinkoff.invest.services import MarketDataStreamService, MarketDataService
+
+load_dotenv()
+main_path = os.getenv('MAIN_PATH')
+sys.path.append(main_path)
+print(sys.path)
 
 #from .functional import *
 #from .exceptions import *

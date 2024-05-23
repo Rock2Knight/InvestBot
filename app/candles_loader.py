@@ -39,37 +39,42 @@ class CandlesLoader:
         self._delay = 0              # Задержка между сделками
 
 
+    def find_instrument(self, uid: str) -> tuple:
+        for ticker, info in self.strategies.items():
+            if info['uid'] == uid:
+                return ticker, info            
+
     def _init_delay(self):
         """ 
         Определяем задержку между сделками в секундах
         """
         match self.timeframe:
             case '1_MIN':
-                self._delay = 60
+                self._delay = 30
             case '5_MIN':
-                self._delay = 60 * 5
+                self._delay = 30 * 5
             case '15_MIN':
-                self._delay = 60 * 15
+                self._delay = 30 * 15
             case 'HOUR':
-                self._delay = 60 * 60
+                self._delay = 30 * 60
             case 'DAY':
-                self._delay = 60 * 60 * 24
+                self._delay = 30 * 60 * 24
             case '2_MIN':
-                self._delay = 60 * 2
+                self._delay = 30 * 2
             case '3_MIN':
-                self._delay = 60 * 3
+                self._delay = 30 * 3
             case '10_MIN':
-                self._delay = 60 * 10
+                self._delay = 30 * 10
             case '30_MIN':
-                self._delay = 60 * 30
+                self._delay = 30 * 30
             case '2_HOUR':
-                self._delay = 60 * 60 * 2
+                self._delay = 30 * 60 * 2
             case '4_HOUR':
-                self._delay = 60 * 60 * 4
+                self._delay = 30 * 60 * 4
             case 'WEEK':
-                self._delay = 60 * 60 * 24 * 7
+                self._delay = 30 * 60 * 24 * 7
             case 'MONTH':
-                self._delay = 60 * 60 * 24 * 31
+                self._delay = 30 * 60 * 24 * 31
 
 
     @cache

@@ -23,6 +23,9 @@ logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
 
 
 class Queue:
+    """
+    Очередь стоп-маркет заявок
+    """
 
     def __init__(self):
         self.stop_market = list([])

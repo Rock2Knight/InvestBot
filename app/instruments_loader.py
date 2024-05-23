@@ -16,11 +16,9 @@ load_dotenv()
 main_path = os.getenv('MAIN_PATH')
 sys.path.append(main_path)
 
-from work.functional import *
 from api import crud, models
 from api.database import *
 
-import app_utils
 from utils_funcs import utils_funcs
 
 logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
