@@ -183,8 +183,8 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         valuesRSI = getRSI(uid, t1, t2, tf, interval=rsi_interval)  # Получаем значения RSI
 
         # Выводим значения последних свечей и SMA в консоль для отладки
-        self.__print_candle(last_candles[2])
         self.__print_candle(last_candles[1])
+        self.__print_candle(last_candles[0])
         self.__print_sma(valuesEMA[0], valuesEMA[1])
  
         last_price = last_candles[1].close
@@ -192,12 +192,13 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
             last_prices_resp = client.market_data.get_last_prices(instrument_id=[uid])  # Получаем цены по рынку
             trade_price = last_prices_resp.last_prices[0].price
             last_price = utils_funcs.cast_money(trade_price)
+
         sma_prev, sma_cur = utils_funcs.cast_money(valuesEMA[0].signal), utils_funcs.cast_money(valuesEMA[1].signal)
         rsiVal = utils_funcs.cast_money(valuesRSI[1].signal)
 
-        if last_candles[2].close < sma_prev and last_price > sma_cur:
+        if last_candles[1].close < sma_prev and last_price > sma_cur:
             self.direct_trade[uid] = OrderDirection.ORDER_DIRECTION_BUY
-        elif last_candles[2].close > sma_prev and last_price < sma_cur:
+        elif last_candles[1].close > sma_prev and last_price < sma_cur:
             self.direct_trade[uid] = OrderDirection.ORDER_DIRECTION_SELL
         else:
             self.direct_trade[uid] = OrderDirection.ORDER_DIRECTION_UNSPECIFIED
@@ -741,3 +742,4 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
             for ticker, info in self.strategies.items():
                 await self.async_trade(ticker, info)
                 await self.stop_market_complete(info['uid'])
+            time.sleep(30)

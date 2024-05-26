@@ -7,6 +7,7 @@ import asyncio
 from functools import cache
 from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
+from config import program_config
 
 import numpy as np
 

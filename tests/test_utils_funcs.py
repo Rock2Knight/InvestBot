@@ -1,6 +1,11 @@
+import sys
+import os
 import unittest
 from time import perf_counter
 
+main_path = os.getenv('MAIN_PATH')
+sys.path.append(main_path)
+sys.path.append(main_path+'app/')
 from utils_funcs import utils_funcs
 
 from tinkoff.invest.schemas import (

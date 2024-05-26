@@ -29,7 +29,7 @@ UTC_OFFSET = "Europe/Moscow"
 
 class CandlesLoader:
 
-    def __init__(self, filename='../settings.ini'):
+    def __init__(self, filename='C:\\Users\\User\\PycharmProjects\\teleBotTest'):
         self._file_path = filename  # Имя файла с конфигурацией
         config = program_config.ProgramConfiguration(filename)
         self.strategies = config.strategies
