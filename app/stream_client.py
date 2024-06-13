@@ -7,6 +7,7 @@ import asyncio
 from functools import cache
 from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
+import multiprocessing as mp
 
 import numpy as np
 
@@ -21,6 +22,7 @@ from tinkoff.invest import (
 )
 from tinkoff.invest.schemas import IndicatorInterval
 from tinkoff.invest.sandbox.client import SandboxClient
+from tinkoff.invest.sandbox.async_client import AsyncSandboxClient
 
 from sqlalchemy.exc import ProgrammingError
 
@@ -54,7 +56,7 @@ def get_params_candle(candle: Candle):
 
 
 @utils_funcs.invest_api_retry()
-async def handle_candle(db, data_candle):
+async def handle_candle(db, uid: str, data_candle):
     print("begin of handle")
     open, close, low, high, time, volume = get_params_candle(data_candle)
     my_timeframe_id = crud.get_timeframe_id(db, timeframe_str)
@@ -66,7 +68,7 @@ async def handle_candle(db, data_candle):
     try:
         crud.create_candle(db, time_m=time, volume=volume,
                            open=open, close=close, low=low, high=high,
-                           uid_instrument=instrument_uid, id_timeframe=my_timeframe_id)
+                           uid_instrument=uid, id_timeframe=my_timeframe_id)
         print(data_candle)
     except ValueError as vr:
         logging.error(
@@ -79,21 +81,17 @@ async def handle_candle(db, data_candle):
         logging.error(e.args)
     print("end of handle")
 
-async def get_candles_in_stream(db, uid: str):
+async def get_candles_in_stream(db):
     global timeframe_str
     global timeframe
+    global instrument_uid
 
-    def request_iterator(uid, timeframe):
+    def request_iterator():
         yield MarketDataRequest(
             subscribe_candles_request=SubscribeCandlesRequest(
                 waiting_close=True,
                 subscription_action=SubscriptionAction.SUBSCRIPTION_ACTION_SUBSCRIBE,
-                instruments=[
-                    CandleInstrument(
-                        instrument_id=uid,
-                        interval=timeframe,
-                    )
-                ],
+                instruments=instrument_uid,
             )
         )
         while True:
@@ -101,12 +99,44 @@ async def get_candles_in_stream(db, uid: str):
 
     with SandboxClient(TOKEN) as client:
         for marketdata in client.market_data_stream.market_data_stream(
-            request_iterator(uid, timeframe)
+            request_iterator()
         ):
+            print(marketdata)
             if marketdata.candle:
                 print(marketdata.candle)
-                await handle_candle(db, marketdata.candle)
+                uid = marketdata.candle.instrument_uid
+                await handle_candle(db, uid, marketdata.candle)
+
+
+@utils_funcs.invest_api_retry(retry_count=1000)
+async def async_get_candles_in_stream(db, stop_event: mp.Event):
+    global timeframe_str
+    global timeframe
+    global instrument_uid
+
+    async def request_iterator():
+        yield MarketDataRequest(
+            subscribe_candles_request=SubscribeCandlesRequest(
+                waiting_close=True,
+                subscription_action=SubscriptionAction.SUBSCRIPTION_ACTION_SUBSCRIBE,
+                instruments=instrument_uid,
+            )
+        )
+        while True:
+            await asyncio.sleep(1)
+
+    async with AsyncSandboxClient(TOKEN) as client:
+        async for marketdata in client.market_data_stream.market_data_stream(
+            request_iterator()
+        ):
+            if stop_event.is_set():
+                print("Stream is exiting...")
+                break
             print(marketdata)
+            if marketdata.candle:
+                print(marketdata.candle)
+                uid = marketdata.candle.instrument_uid
+                await handle_candle(db, uid, marketdata.candle)
 
 def init_stream_data(config: ProgramConfiguration):
     global instrument_uid
@@ -125,27 +155,19 @@ def init_stream_data(config: ProgramConfiguration):
 def analyze_interval():
     global timeframe
     global timeframe_str
+    global instrument_uid
     """ Сопоставление IndicatorInterval с строчным описанием интервала """
     timeframe = utils_funcs.get_sub_timeframe_by_name(timeframe_str)
+    size = len(instrument_uid)
+    for i in range(size):
+        instrument_uid[i] = CandleInstrument(instrument_id=instrument_uid[i], interval=timeframe)
 
 
-async def init_stream():
-    """
-    Запуск стрима
-    """
-    global instrument_uid
-    db = SessionLocal()
-
-    tasks = list([])
-    for uid in instrument_uid:
-        task = asyncio.create_task(get_candles_in_stream(db, uid))
-        tasks.append(task)
-    await asyncio.gather(*tasks)
-
-def setup_stream(config: ProgramConfiguration):
+def setup_stream(config: ProgramConfiguration, stop_event: mp.Event):
     """
     Инициализация и запуск стрима
     """
     init_stream_data(config)       # Получаем uid инструмента и таймфрейм торговли
     analyze_interval()       # Конвертируем таймфрейм из строки в SubscriptionInterval
-    asyncio.run(init_stream()) # Запускаем получение данных в стриме
+    db = SessionLocal()
+    asyncio.run(async_get_candles_in_stream(db, stop_event))  # Запускаем получение данных в стриме

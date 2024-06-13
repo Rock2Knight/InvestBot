@@ -3,7 +3,7 @@ from typing import Union
 from functools import cache
 import math
 
-from tinkoff.invest.schemas import Quotation, MoneyValue, OrderDirection
+from tinkoff.invest.schemas import *
 from tinkoff.invest.sandbox.client import SandboxClient
 
 from telebot.types import Message, User, Chat
@@ -42,6 +42,13 @@ figi = {'derivative': 'Фьючерсы и опционы',
 def cast_money(sum: Union[Quotation, MoneyValue]) -> float:
     return sum.units + sum.nano / 1e9
 
+def is_open_account(account: Account):
+    if account.status == AccountStatus.ACCOUNT_STATUS_OPEN:
+        return True
+    else:
+        return False
+
+
 def reverse_money(sum: float) -> Quotation:
     zsum = math.floor(sum)
     drob = sum - zsum
@@ -65,7 +72,8 @@ def get_accounts(message):
         accounts_info = client.users.get_accounts()         # получаем информацию о счете
 
         for account in accounts_info.accounts:
-            message_text += str(account) + "\n\n"
+            if is_open_account(account):
+                message_text += str(account) + "\n\n"
 
         try:
             while(message_text[-1] == '\n'):

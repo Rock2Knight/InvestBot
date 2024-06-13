@@ -59,7 +59,7 @@ class InstrumentType(Base):
     __tablename__ = 'instrument_type'
 
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    name = Column(String, nullable=False)
+    name = Column(String, nullable=True)
 
     ins_type_ref = relationship("Instrument", backref="ins_type_back", cascade="all, delete-orphan")
 

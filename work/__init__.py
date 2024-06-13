@@ -28,5 +28,5 @@ __all__ = [
     "START_LOT_COUNT",
     "START_ACCOUNT_PORTFOLIO",
     "excelFile",
-    "excel_handler"
+    "excel_handler",
 ]

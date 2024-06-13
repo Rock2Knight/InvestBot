@@ -1,20 +1,21 @@
 """ Пример работы со стримом """
+import sys
 import os
+from dotenv import load_dotenv
 import time
 import multiprocessing as mp
 
-from tinkoff.invest import (
-    CandleInstrument,
-    Client,
-    MarketDataRequest,
-    SubscribeCandlesRequest,
-    SubscriptionAction,
-    SubscriptionInterval,
-)
+from tinkoff.invest.schemas import *
 from tinkoff.invest.sandbox.client import SandboxClient
 
+load_dotenv()
+main_path = os.getenv('MAIN_PATH')
+sys.path.append(main_path)
+sys.path.append(main_path+'app/')
 TOKEN = os.getenv("TINKOFF_TOKEN")
 
+from app import stream_client
+from config import program_config
 
 def main():
     def request_iterator():
@@ -46,6 +47,5 @@ def do_something():
 
 
 if __name__ == "__main__":
-    pr = mp.Process(target=main)
-    do_something()
-    pr.start()
+    pr_config = program_config.ProgramConfiguration(main_path+"settings.ini")
+    stream_client.setup_stream(pr_config)

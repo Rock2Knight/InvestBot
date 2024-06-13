@@ -2,10 +2,20 @@
 import logging
 from typing import Optional
 from functools import cache
+import sys
+import os
+from dotenv import load_dotenv
+from datetime import datetime
 
-import sqlalchemy.exc
+from sqlalchemy import select, Row, update
 from sqlalchemy.orm import Session, exc
-from sqlalchemy.orm.exc import UnmappedInstanceError
+
+load_dotenv()
+main_path = os.getenv('MAIN_PATH')
+sys.path.append(main_path)
+sys.path.append(main_path+'app/')
+
+from utils_funcs import utils_funcs
 from . import models
 from .database import *
 
@@ -16,13 +26,25 @@ logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
 def get_currency_list(db: Session, skip: int = 0, limit: int = 100) -> list[Optional[models.Currency]]:
     return db.query(models.Currency).offset(skip).limit(limit).all()
 
+def get_currency_by_name(db: Session, name: str) -> Optional[models.Currency]:
+    cur = get_currency_list(db)
+    for cu in cur:
+        if cu.name == name:
+            return cu
+
 """ Получение списка бирж """
 def get_exchange_list(db: Session, skip: int = 0, limit: int = 100) -> list[Optional[models.Exchange]]:
     return db.query(models.Exchange).offset(skip).limit(limit).all()
 
+def get_exchange_by_name(db: Session, name: str) -> Optional[models.Currency]:
+    return db.query(models.Exchange).filter(models.Exchange.name == name).first()
+
 """ Получение списка секторов """
 def get_sectors_list(db: Session, skip: int = 0, limit: int = 100) -> list[Optional[models.Sector]]:
     return db.query(models.Sector).offset(skip).limit(limit).all()
+
+def get_sector_by_name(db: Session, name: str) -> Optional[models.Sector]:
+    return db.query(models.Sector).filter(models.Sector.name == name).first()
 
 """ Получение списка активов """
 def get_assets_list(db: Session, skip: int = 0, limit: int = 100) -> Optional[list[models.Asset]]:
@@ -141,7 +163,10 @@ def get_instrument_list(db: Session, skip: int = 0, limit: int = 100) -> Optiona
 
 """ Получение бумаги по id (теперь аналогично get_instrument_uid) """
 def get_instrument(db: Session, instrument_uid: str) -> Optional[models.Instrument]:
-    return db.query(models.Instrument).filter(models.Instrument.uid == instrument_uid).first()
+    try:
+        return db.query(models.Instrument).filter(models.Instrument.uid == instrument_uid).first()
+    except Exception as e:
+        print('lol')
 
 """ Получение последнего id инструмента"""
 def get_last_instrument_uid(db: Session) -> int:
@@ -152,12 +177,12 @@ def get_last_instrument_uid(db: Session) -> int:
     else:
         return model_instrument.uid
 
-""" Получение инструмента  по FIGI """
+""" Получение инструмента  по FIGI (1)"""
 def get_instrument_by_figi(db: Session, figi: str, exchange_id: int = 1) -> Optional[models.Instrument]:
     db_figi = db.query(models.Instrument).filter(models.Instrument.figi == figi).first()
     return db_figi
 
-""" Получение инструмента по тикеру """
+""" Получение инструмента по тикеру (1)"""
 def get_instrument_by_ticker(db: Session, ticker: str) -> Optional[models.Instrument]:
     return db.query(models.Instrument).filter(models.Instrument.ticker == ticker).first()
 
@@ -165,21 +190,48 @@ def get_instrument_by_ticker(db: Session, ticker: str) -> Optional[models.Instru
 def get_instrument_uid(db: Session, instrument_uid: str) -> Optional[models.Instrument]:
     return db.query(models.Instrument).filter(models.Instrument.uid == instrument_uid).first()
 
-""" Получение инструмента по position_uid """
+""" Получение инструмента по position_uid (1)"""
 def get_instrument_by_position_uid(db: Session, position_uid: str) -> Optional[models.Instrument]:
     return db.query(models.Instrument).filter(models.Instrument.position_uid == position_uid).first()
 
-""" Получение инструментов определенной биржи """
+""" Получение инструментов определенной биржи (1)"""
 def get_instruments_by_exchange(db: Session, exchange_id: int) -> Optional[list[models.Instrument]]:
     return db.query(models.Instrument).filter(models.Instrument.id_exchange == exchange_id).order_by(models.Instrument.name).all()
 
-""" Получение бумаги по название """
+""" Получение бумаги по название (1)"""
 def get_instrument_by_name(db: Session, instrument_name: str) -> Optional[models.Instrument]:
     return db.query(models.Instrument).filter(models.Instrument.name == instrument_name).first()
 
-''' Получение списка инструментов определенных бирж '''
+''' Получение списка инструментов определенных бирж (1)'''
 def get_filter_by_exchange_instruments(db: Session, exchange_id: list[int]) -> Optional[list[models.Instrument]]:
     return db.query(models.Instrument).filter(models.Instrument.id_exchange.in_(exchange_id)).order_by(models.Instrument.name).all()
+
+
+def get_instruments_filtered_list(db: Session, exchange_id: Optional[int],
+                                  sector_id: Optional[int],
+                                  currency_id: Optional[int]) -> Optional[list[models.Instrument]]:
+    crit1 = models.Instrument.exchange_id==exchange_id
+    crit2 = models.Instrument.sector_id==sector_id
+    crit3 = models.Instrument.currency_id==currency_id
+    crits = list([crit1, crit2, crit3])
+    if exchange_id == 0:
+        crits.pop(0)
+    if sector_id == 0:
+        crits.pop(1) if len(crits) == 3 else crits.pop(0)
+    if currency_id == 0:
+        if len(crits) == 3:
+            crits.pop(2)
+        elif len(crits) == 2:
+            crits.pop(1)
+        else:
+            return None
+    '''
+    return db.query(models.Instrument).filter(models.Instrument.exchange_id==exchange_id,
+                                              models.Instrument.sector_id==sector_id,
+                                              models.Instrument.currency_id==currency_id).all()
+    '''
+    db_tools = db.query(models.Instrument).filter(*crits).all()
+    return db_tools
 
 
 
@@ -232,15 +284,15 @@ def get_candle(db: Session, candle_id: int) -> Optional[models.Candle]:
     return db.query(models.Candle).filter(models.Candle.id == candle_id).first()
 
 """ Поулчаем последнюю свечу """
-def get_last_candle(db: Session, instrument_uid: str, frame_id: int) -> Optional[models.Candle]:
-    res = db.query(models.Candle).filter(models.Candle.uid_instrument == instrument_uid,
-                                          models.Candle.id_timeframe == frame_id).order_by(
-        models.Candle.time_m.desc()).limit(1)
-    res = db.execute(res).all()
-    print(res)
-    return res
+def get_last_candle(instrument_uid: str, frame_id: int) -> Optional[Row]:
+    sel = select(models.candleTable).where(models.candleTable.c.uid_instrument == instrument_uid,
+                                      models.candleTable.c.id_timeframe == frame_id).order_by(models.candleTable.c.time_m.desc())
+    r = None
+    with engine.connect() as conn:
+        r = conn.execute(sel).first()
+    return r
 
-@cache
+@cache #(1)
 def check_candle_by_time(db: Session, time_obj) -> bool:
     db_candle = db.query(models.Candle).filter(models.Candle.time_m == time_obj).first()
     return True if db_candle else False
@@ -263,21 +315,6 @@ def get_last_candles(db: Session, uid_instrument: str, frame_id: int) -> tuple[O
     if len(last_candles) != 2:
         raise Exception("Недостаточно элементов в списке")
     return last_candles[1], last_candles[0]
-
-
-""" (1) Отладочный метод 
-def get_last_active_rezerve_id(db: Session) -> int:
-    db_instrument_rezerve = db.query(models.InstrumentRezerve).order_by(models.InstrumentRezerve.id.desc()).first()
-    if not db_instrument_rezerve:
-        return 0
-    return db_instrument_rezerve.id
-
- (3) Отладочный метод
-def get_rezerve_active_by_figi(db: Session, figi: str) -> Optional[models.InstrumentRezerve]:
-    return db.query(models.InstrumentRezerve).filter(models.InstrumentRezerve.figi == figi).first()
-"""
-
-
 
 
 """ CREATE-операции """
@@ -426,77 +463,61 @@ def create_instrument(db: Session, **kwargs):
     db.refresh(instrument)
     return instrument
 
-""" (2) Отладочный метод 
-def create_instrument_rezerve(db: Session, orig_instrument: models.Instrument, is_data: bool):
-
-    last_active_id = get_last_active_rezerve_id(db)
-    new_id = None
-
-    if last_active_id == 0:
-        new_id = 1
-    else:
-        new_id = last_active_id + 1
-
-    instrument_rez = models.InstrumentRezerve(id=new_id, figi=orig_instrument.figi, name=orig_instrument.name,
-                                   ticker=orig_instrument.ticker, lot=orig_instrument.lot,
-                                   id_exchange=orig_instrument.id_exchange, is_data=is_data)
-    db.add(instrument_rez)
-    db.commit()
-    db.refresh(instrument_rez)
-    return instrument_rez
-"""
-
-
 """ Добавление новой свечи в базу данных """
+@utils_funcs.invest_api_retry(retry_count=10)
 def create_candle(db: Session, **kwargs):
 
-    db_instrument =  get_instrument(db, instrument_uid=kwargs['uid_instrument'])
+    db_instrument = get_instrument(db, instrument_uid=kwargs['uid_instrument'])
     if not db_instrument:
         logging.error("Ошибка в методе crud.create_candle: инструмент не найден")
         raise ValueError("Инструмент не найден")
 
-    db_timeframe =  get_timeframe(db, kwargs['id_timeframe'])
+    db_timeframe = get_timeframe(db, kwargs['id_timeframe'])
     if not db_timeframe:
         logging.error("Ошибка в методе crud.create_candle: таймфрейм не найден")
         raise ValueError("Таймфрейм не найден")
 
-    last_id = get_last_candle_id(db)
-    if not last_id:
-        last_id = 1
+    last_candle = get_last_candle(kwargs['uid_instrument'], kwargs['id_timeframe'])
+    time_candle = None
+    if not last_candle:
+        time_candle = datetime.fromtimestamp(345435)
     else:
-        last_id += 1
-
-    new_id = None
-    if 'id' in kwargs.keys():
-        new_id = kwargs['id']
+        time_candle = last_candle[3]
+    state = None
+    if kwargs['time_m'] == time_candle:
+        state = update(models.candleTable).where(
+            models.candleTable.c.time_m == time_candle).values(
+            open=kwargs['open'], close=kwargs['close'], high=kwargs['high'],
+            low=kwargs['low'], volume=kwargs['volume']
+        )
     else:
-        new_id = last_id
+        models.metadata.create_all(engine)
+        last_id = get_last_candle_id(db)
+        if not last_id:
+            last_id = 1
+        else:
+            last_id += 1
 
-    candle = models.Candle(id=new_id, time_m=kwargs['time_m'], open=kwargs['open'],
-                           high=kwargs['high'], low=kwargs['low'], close=kwargs['close'],
-                           volume=kwargs['volume'], uid_instrument=kwargs['uid_instrument'],
-                           id_timeframe=kwargs['id_timeframe'])
+        new_id = None
+        if 'id' in kwargs.keys():
+            new_id = kwargs['id']
+        else:
+            new_id = last_id
+        state = models.candleTable.insert().values(
+            id=new_id, time_m=kwargs['time_m'], open=kwargs['open'],
+            high=kwargs['high'], low=kwargs['low'], close=kwargs['close'],
+            volume=kwargs['volume'], uid_instrument=kwargs['uid_instrument'],
+            id_timeframe=kwargs['id_timeframe']
+        )
 
-    models.metadata.create_all(engine)
-    ins = models.candleTable.insert().values(
-        id=new_id, time_m=kwargs['time_m'], open=kwargs['open'],
-        high=kwargs['high'], low=kwargs['low'], close=kwargs['close'],
-        volume=kwargs['volume'], uid_instrument=kwargs['uid_instrument'],
-        id_timeframe=kwargs['id_timeframe']
-    )
-
-    try:
-        #db.add(candle)
-        conn = engine.connect()
-        r = conn.execute(ins)
+    candle = None
+    with engine.connect() as conn:
+        candle = models.Candle(id=new_id, time_m=kwargs['time_m'], open=kwargs['open'],
+                               high=kwargs['high'], low=kwargs['low'], close=kwargs['close'],
+                               volume=kwargs['volume'], uid_instrument=kwargs['uid_instrument'],
+                               id_timeframe=kwargs['id_timeframe'])
+        conn.execute(state)
         conn.commit()
-    except UnmappedInstanceError as UIerror:
-        logging.error("Ошибка в методе crud.create_candle: ошибка при попытке добавить свечу в базу")
-        print(UIerror.with_traceback())
-    except sqlalchemy.exc.InternalError as e:
-        logging.error(e.args, e.detail)
-    except sqlalchemy.exc.ProgrammingError as e:
-        logging.error(e.args, e.detail)
 
     return candle
 
@@ -525,7 +546,7 @@ def delete_instrument_type(db: Session, id: int):
     return db_instrument_type
 
 
-""" Удаление сектора """
+""" Удаление сектора (1)"""
 def delete_sector(db: Session, id: int):
     db_sector =  get_sector(db, id)
     if not db_sector:
@@ -534,7 +555,7 @@ def delete_sector(db: Session, id: int):
     db.commit()
     return db_sector
 
-"""Удаление валюты"""
+"""Удаление валюты (1)"""
 def delete_currency(db: Session, id: int):
     db_currency =  get_currency(db, id)
     if not db_currency:
@@ -543,7 +564,7 @@ def delete_currency(db: Session, id: int):
     db.commit()
 
 
-""" Удаление биржи  """
+""" Удаление биржи  (1)"""
 def delete_exchange(db: Session, id: int):
     db_exchange =  get_exchange(db, id)
     if not db_exchange:
@@ -551,7 +572,7 @@ def delete_exchange(db: Session, id: int):
     db.delete(db_exchange)
     db.commit()
 
-""" Удаление таймфрейма """
+""" Удаление таймфрейма (1)"""
 def delete_timeframe(db: Session, id: int):
     db_timeframe =  get_timeframe(db, id)
     if not db_timeframe:
@@ -559,7 +580,7 @@ def delete_timeframe(db: Session, id: int):
     db.delete(db_timeframe)
     db.commit()
 
-"""" Удаление актива """
+"""" Удаление актива (1)"""
 def delete_asset(db: Session, uid: str):
     db_asset =  get_asset(db, uid)
     if not db_asset:
@@ -575,7 +596,7 @@ def delete_instrument(db: Session, uid: str):
     db.delete(db_instrument)
     db.commit()
 
-""" Удаление свечи """
+""" Удаление свечи (1)"""
 def delete_candle(db: Session, id: int):
     db_candle =  get_candle(db, id)
     if not db_candle:

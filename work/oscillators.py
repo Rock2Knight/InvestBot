@@ -1,9 +1,18 @@
 # Модуль, хранящий классы, реализующие технические индикаторы-осцилляторы
 from datetime import datetime
+import sys
+import os
+from dotenv import load_dotenv
 
 from tinkoff.invest.schemas import HistoricCandle
 
 import pandas as pd
+
+load_dotenv()
+main_path = os.getenv('MAIN_PATH')
+sys.path.append(main_path)
+sys.path.append(main_path+'work/')
+
 from work.MA_indicator import EMAIndicator
 from work.functional import cast_money
 import work.core_bot as core_bot
@@ -74,6 +83,12 @@ class RSI:
             if len(rsiValues['RSI']) == 0:
                 continue
 
+        path1 = main_path + "rsi_cache\\" + self._frame_
+        # path1 = "../sma_cache/" + self._frame_
+        if not os.path.exists(path1):
+            os.mkdir(path1)
+        raw_name1 = path1 + '\\' + self._uid_ + '_' + self._time_from_ + '_' + self._time_to_ + '.csv'
+        self._filenameSMA_ = raw_name1.replace(':', '_')
         self.RSI_df = pd.DataFrame(rsiValues)
         self.RSI_df.to_csv("rsi_history.csv")
 

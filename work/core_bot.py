@@ -13,11 +13,7 @@ from typing import Generator
 import pandas as pd               # Для датафреймов исторических свечей
 
 from tinkoff.invest import CandleInterval
-from tinkoff.invest.schemas import (
-    MoneyValue, InstrumentStatus, Quotation,
-    InstrumentIdType, AssetType, InstrumentType,
-    CandleSource
-)
+from tinkoff.invest.schemas import *
 from tinkoff.invest.exceptions import RequestError
 
 # Для исторических свечей
@@ -26,10 +22,12 @@ from tinkoff.invest.services import MarketDataStreamService, MarketDataService
 load_dotenv()
 main_path = os.getenv('MAIN_PATH')
 sys.path.append(main_path)
+sys.path.append(main_path+"work\\")
 print(sys.path)
 
 #from .functional import *
 #from .exceptions import *
+from utils_funcs import utils_funcs
 from work.functional import *
 from work.exceptions import *
 
@@ -507,6 +505,36 @@ def get_currency(message):
             bot.send_message(message.chat.id, f"Валюта инструмента = {currency.name}")
         else:
             bot.send_message(message.chat.id, f"Валюта инструмента не найдена")
+
+@bot.message_handler(commands=['BuyActive'])
+def buy_active(message):
+    words = message.text.split(' ')
+    if not words or len(words) < 4:
+        raise ValueError('Неправильный формат команды')
+    account_id = words[1]
+    uid = words[2]
+    lot_count = int(words[3])
+    last_price = None
+    portfolio = None
+    with SandboxClient(TOKEN) as client:
+        last_price_list = client.market_data.get_last_prices(instrument_id=uid)
+        portfolio = client.sandbox.get_sandbox_portfolio(account_id=account_id)
+        free_money = cast_money(portfolio.total_amount_currencies)
+        last_price = cast_money(last_price_list.last_prices[0].price)
+        total_amount = last_price * lot_count
+        last_price = utils_funcs.reverse_money(last_price)
+        if free_money < total_amount * 1.02:
+            amount = utils_funcs.reverse_money_mv(total_amont * 1.02)
+            client.sandbox.sandbox_pay_in(account_id=account_id, amount=amount)                      # Пополнение счета на сумму pay_sum
+            bot.send_message(message.chat.id, f"Account {account_sb_id} was refilled by {amount} RUB")   # Высылаем в чат подтверждение пополнения
+        POResponse = client.sandbox.post_sandbox_order(instrument_id=uid, price=last_price, direction=OrderDirection.ORDER_DIRECTION_BUY,
+                                                    account_id=account_id,
+                                                    order_type=OrderType.ORDER_TYPE_MARKET,
+                                                    price_type=PriceType.PRICE_TYPE_CURRENCY, quantity=lot_count)                                    
+        print(f"\n\n{POResponse}")
+        text = POResponse
+        bot.send_message(message.chat.id, POResponse)
+
 
 if __name__ == '__main__':
     #bot.infinity_polling()
