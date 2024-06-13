@@ -1,12 +1,16 @@
 import logging
+import sys
 import os
+from dotenv import load_dotenv
 import asyncio
 
 import openpyxl as pyxl
 from openpyxl.styles import numbers
 import pandas as pd
-import numpy as np
-from numba import jit
+
+load_dotenv()
+main_path = os.getenv('MAIN_PATH')
+sys.path.append(main_path)
 
 import work
 from api import models, crud
@@ -170,6 +174,3 @@ async def main():
     while not task.done():
         continue
     excelHandler.saveWorkbook()
-
-if __name__ == '__main__':
-    asyncio.run(main())

@@ -1,90 +1,72 @@
 # Модуль отладки инструментов тех. анализа
-from math import floor, fabs
-from contextlib import redirect_stdout
-from datetime import datetime
+import sys
 import os
+from dotenv import load_dotenv
+from math import floor, fabs
+from datetime import datetime
 import logging
-from typing import Iterable
-import numpy as np
+from typing import Optional
+import asyncio
 
 import pandas as pd
+from tinkoff.invest.schemas import IndicatorType
 
-from work.MA_indicator import SMAIndicator
-from work.oscillators import RSI
-from work import STOP_ACCOUNT
+load_dotenv()
+main_path = os.getenv('MAIN_PATH')
+sys.path.append(main_path)
+sys.path.append(main_path+'work\\')
+sys.path.append(main_path+'app\\')
+
+from app import technical_indicators
+from utils_funcs import utils_funcs
 
 # Раздел констант
-ACCOUNT_ID = "0a475568-a650-449d-b5a8-ebab32e6b5ce"
-MAX_MIN_INTERVAL = 14                                  # Интервал поиска максимумов и минимумов
-COMMISION = 0.003                                      # коммисия брокера
+COMMISION = 0.003 # коммисия брокера
 
 logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
                     format="%(asctime)s %(levelname)s %(message)s")
 
 
-class Queue:
+class StopMarketQueue:
     """
-    Очередь стоп-маркет заявок
+    Очередь стоп-маркет ордеров
     """
 
     def __init__(self):
-        self.stop_market = list([])
-        self.count = list([])
-        self.size = 0
+        self.stop_market = list([])  # список стоп маркет цен
+        self.count = list([])  # список количества лотов по заявкам
+        self.size = 0  # количество заявок
 
-    def push(self, cast: float, cnt: int):
+    async def push(self, cast: float, cnt: int):
         """
-        Вставить стоп-маркет заявку в очередь
-        :param cast: стоп-цена за лот
-        :param cnt: количество продаваемых лотов
-        :return:
+        Создать стоп-маркет ордер
+
+        :param cast: цена заявки
+        :param cnt: количество лотов
         """
         self.stop_market.append(cast)
         self.count.append(cnt)
         self.size += 1
 
-    def pop(self):
+    def pop(self) -> Optional[tuple]:
+        """
+        Получить данные для самого раннего стоп-ордера
+        """
+        if not self.stop_market or not self.count:
+            return None
         stop_market = self.stop_market.pop(0)
         cnt_lots = self.count.pop(0)
         self.size -= 1
         return stop_market, cnt_lots
 
-    def get_cast(self, index: int):
-        return self.stop_market[index]
-
-    def isEmpty(self):
-        if not self.stop_market:
-            return True
-        return False
-
-    def getMaxSL(self):
-        # Получение максимального уровня по стоп-маркет заявкам
-        maxSL = max(self.stop_market)
-        return maxSL
-
-    def _getIndexByCast_(self, cast: float):
-        return self.stop_market.index(cast)
-
-    async def removeMaxSL(self, cast: float):
+    def get(self) -> Optional[tuple]:
         """
-        Удаление из очереди заявки при срабатывании стоп-маркета
-        :param cast: цена за лот, на котором сейчас находится интсрумент
+        Получение данных о первой заявке
+        :return: (цена заявки, количество лотов)
         """
-        maxSL = self.getMaxSL()
-        if cast <= maxSL:
-            index = self._getIndexByCast_(maxSL)
-            sl_lot_cast = self.stop_market.pop(index)
-            sl_lot_cnt = self.count.pop(index)
-            self.size -= 1
-            return sl_lot_cast, sl_lot_cnt
-
-    def remove(self, index: int):
-        stop_market = self.stop_market[index]
-        cnt_lots = self.count[index]
-        self.stop_market.pop(index)
-        self.count.pop(index)
-        self.size -= 1
-        return stop_market, cnt_lots
+        if not self.stop_market or not self.count:
+            return None
+        return self.stop_market[0], self.count[0]
 
 
 def getDateNow():
@@ -93,6 +75,7 @@ def getDateNow():
 
 
 """ Функция, моделирующая торговлю и формирующая выходные данные в виде датасета """
+@utils_funcs.invest_api_retry(retry_count=10)
 async def HistoryTrain(uid, cnt_lots, account_portfolio, is_test=False, **kwargs):
     """ Моделирует торговую активность по историческим данным
     в соответствии с заданной торговой стратегией.
@@ -107,10 +90,12 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, is_test=False, **kwargs
 
     Keyword arguments:
     :param lot - лотность инструмента
-    :param ma_interval - Интервал SMA
+    :param ma_type - тип MA
+    :param ma_interval - Интервал MA
     :param rsi_interval - Интервал RSI
     :param stopAccount - риск для счета в процентах
     :param stopLoss - стоп-лосс (максимальный риск для одной позиции) в процентах
+    :param takeProfit - тейк-профит (максимальная доходность для одной позиции) в процентах
     :param time_from - время начала торговой стратегии в секундах
     :param time_to - время конца торговой стратегии в секундах
     :param timeframe - таймфрейм
@@ -128,6 +113,13 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, is_test=False, **kwargs
     # Условия расчета позиции
     stopAccount = kwargs['stopAccount']  # Риск для счета в процентах
     stopLoss = kwargs['stopLoss']  # Точка аннулирования для торговой стратегии в процентах
+    takeProfit = kwargs['takeProfit']
+
+    # Устанавливаем тип MA
+    ma_type = 0
+    if kwargs['ma_type']:
+        if kwargs['ma_type'] == IndicatorType.INDICATOR_TYPE_EMA:
+            ma_type = 1
 
     if not is_test:
 
@@ -168,11 +160,50 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, is_test=False, **kwargs
         dfTrades, dfPortfolio = None, None
         return dfTrades, dfPortfolio
 
-    rsiObject = RSI(filename=filename, RSI_interval=kwargs['rsi_interval'])  # Добавляем RSI индикатор с интервалом 14
-    SMA_5 = SMAIndicator(ma_interval=ma_interval, uid=uid,
-                         time_from=kwargs['time_from'],
-                         time_to=kwargs['time_to'],
-                         frame=kwargs['timeframe'])  # Добавляем SMA с интервалом 5
+    tf = kwargs['timeframe']
+    if isinstance(tf, str):
+        tf = utils_funcs.get_timeframe_by_name(tf)
+    from_time = kwargs['time_from']
+    if isinstance(from_time, str):
+        from_time = datetime.strptime(from_time, '%Y-%m-%d_%H:%M:%S')
+    to_time = kwargs['time_to']
+    if isinstance(to_time, str):
+        to_time = datetime.strptime(to_time, '%Y-%m-%d_%H:%M:%S')
+    MA, RSI = None, None
+    try:
+        if ma_type == 0:
+            MA = technical_indicators.getSMA(uid_instrument=uid, time_from=from_time,
+                                          time_to=to_time,
+                                          timeframe=tf)
+        else:
+            MA = technical_indicators.getEMA(uid_instrument=uid, time_from=from_time,
+                                             time_to=to_time,
+                                             timeframe=tf)
+    except Exception as e:
+        await asyncio.sleep(2)
+        if ma_type == 0:
+            MA = technical_indicators.getSMA(uid_instrument=uid, time_from=from_time,
+                                          time_to=to_time,
+                                          timeframe=tf)
+        else:
+            MA = technical_indicators.getEMA(uid_instrument=uid, time_from=from_time,
+                                             time_to=to_time,
+                                             timeframe=tf)
+    try:
+        RSI = technical_indicators.getRSI(uid_instrument=uid, time_from=from_time,
+                                          time_to=to_time,
+                                          timeframe=tf)
+    except Exception as e:
+        await asyncio.sleep(2)
+        RSI = technical_indicators.getRSI(uid_instrument=uid, time_from=from_time,
+                                          time_to=to_time,
+                                          timeframe=tf)
+    if not MA and not RSI:
+        print("\nNo indicators\n")
+        if not is_test:
+            raise ValueError
+        else:
+            return None, None
 
     # Локальные минимумы и максимумы (по свечам и по RSI)
     minMaxDict = {'time': list([]), 'minC': list([]), 'maxC': list([]), 'minR': list([]), 'maxR': list([])}
@@ -209,12 +240,15 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, is_test=False, **kwargs
                      "profit_in_rub": list([]), "profit_in_percent": list([]), "SM_SELL_sum": list([])}
 
     # Очередь стоп-маркет заявок
-    stopMarketQueue = Queue()
+    stopLossQueue = StopMarketQueue()    # Очередь стоп-лосс заявок
+    takeProfitQueue = StopMarketQueue()  # Очередь тейк-профит заявок
     realizedSM = 0.0
     # Анализируем свечи из выделенного интервала
     for i in range(CandlesDF.shape[0]):
 
         # Обновляем состояние портфеля с учетом текущих цен имеющихся активов
+        if i >= CandlesDF.shape[0] or i < 0:
+            break
         active_cast = CandlesDF.iloc[i]['close']  # Рыночная цена актива (типа)
         if cnt_lots != 0:
             totalSharePrice = active_cast * lot * cnt_lots  # Обновляем стоимость имеющихся активов
@@ -242,51 +276,23 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, is_test=False, **kwargs
         lot_cast_pr = active_cast * lot            # Текущая цена за лот
         # Проверка стоп-маркета
         sl_lot_cast, sl_lot_cnt = None, None
-        if not stopMarketQueue.isEmpty():
-            pushedObj = await stopMarketQueue.removeMaxSL(lot_cast_pr)
-            if isinstance(pushedObj, Iterable):
-                sl_lot_cast, sl_lot_cnt = pushedObj[0], pushedObj[1]
-                if sl_lot_cast and sl_lot_cnt:
-                    # Если цена пересекла стоп-цену сверху вниз, срабатывает стоп-маркет
-                    posStopMarket = sl_lot_cast * sl_lot_cnt
-                    account_portfolio += posStopMarket
-                    cnt_lots -= sl_lot_cnt
-                    realizedSM += posStopMarket
-                    if trName:
-                        with open("historyTradingLog.txt", 'a', encoding="utf-8") as f, redirect_stdout(f):
-                            print("INFO ABOUT TRANSACTION\n--------------------------\n" +
-                                  "\nSTOP MARKET SELL - %2.f RUB" % posStopMarket + "\n+ " + str(cnt_tradeLots) + " " +
-                                  trName + " lots" + "--------------------------\n")
-                        print("INFO ABOUT TRANSACTION\n--------------------------\n" +
-                              "\nSTOP MARKET SELL - %2.f RUB" % posStopMarket + "\n+ " + str(cnt_tradeLots) + " " +
-                              trName + " lots" + "--------------------------\n")
-
-        if trName:
-            with open("historyTradingLog.txt", 'a', encoding="utf-8") as f, redirect_stdout(f):
-                # Вывод информации об аккаунте
-                print("INFO ABOUT ACCOUNT\n--------------------------\n" +
-                      f"\nTime: {CandlesDF.iloc[i]['time']}" +
-                      "\nStart sum on account(full): %.2f RUB " % start_sum +
-                      "\nCurrent sum on account(free): %.2f RUB " % account_portfolio +
-                      "\nCurrent sum on account(full): %.2f RUB " % fullPortfolio +
-                      "\nProfit in RUB: %.2f RUB " % profitInRub +
-                      "\nProfit in percent: %.2f %%" % profitInPercent +
-                      f"\nCurrent count of {trName} lots: " + str(cnt_lots) +
-                      f"\nCast per {trName} lot: {lot_cast:.2f} RUB" +
-                      "\nTotal instrument price: %.2f RUB" % floor(totalSharePrice) +
-                      "--------------------------\n")
-
-            print("INFO ABOUT ACCOUNT\n--------------------------\n" +
-                  f"\nTime: {CandlesDF.iloc[i]['time']}" +
-                  "\nStart sum on account(full): %.2f RUB " % start_sum +
-                  "\nCurrent sum on account(free): %.2f RUB " % account_portfolio +
-                  "\nCurrent sum on account(full): %.2f RUB " % fullPortfolio +
-                  "\nProfit in RUB: %.2f RUB " % profitInRub +
-                  "\nProfit in percent: %.2f %%" % profitInPercent +
-                  f"\nCurrent count of {trName} lots: " + str(cnt_lots) +
-                  f"\nCast per {trName} lot: {lot_cast:.2f} RUB" +
-                  "\nTotal instrument price: %.2f RUB" % floor(totalSharePrice) +
-                  "--------------------------\n")
+        sl, tp = stopLossQueue.get(), takeProfitQueue.get()
+        if sl:
+            if lot_cast_pr <= sl[0]:
+                # Срабатывание стоп-лосса
+                posStopMarket = sl[0] * sl[1]
+                account_portfolio += posStopMarket
+                cnt_lots -= sl[1]
+                realizedSM += posStopMarket
+                stopLossQueue.pop()
+        if tp:
+            if lot_cast_pr >= tp[0]:
+                # Срабатывание тейк-профита
+                posStopMarket = tp[0] * tp[1]
+                account_portfolio -= posStopMarket
+                cnt_lots += tp[1]
+                realizedSM += posStopMarket
+                takeProfitQueue.pop()
 
         # Обновляем информацию по портфелю
         portfolioInfo["time"].append(CandlesDF.iloc[i]['time'])
@@ -299,36 +305,22 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, is_test=False, **kwargs
         portfolioInfo["profit_in_percent"].append(profitInPercent)
         portfolioInfo['SM_SELL_sum'].append(realizedSM)  # Общая сумма сработавших по стоп-маркету заявок
 
-        # Если количество свеч для построения SMA недостаточно, продолжаем цикл
-        if i < ma_interval - 1:  # Если номер свечи меньше периода SMA, то просто делаем итерацию без действий
+        # Если количество свеч для построения MA недостаточно, продолжаем цикл
+        if i < ma_interval - 1:  # Если номер свечи меньше периода MA, то просто делаем итерацию без действий
             continue
 
         if i < 0:
             raise IndexError
 
-        if i >= MAX_MIN_INTERVAL:
-            # Ищем локальные максимумы и минимумы
-
-            for j in range(i - MAX_MIN_INTERVAL + 1, i):
-                if CandlesDF.iloc[j]['close'] < locMinC:
-                    locMinC = CandlesDF.iloc[j]['close']
-                if CandlesDF.iloc[j]['close'] > locMaxC:
-                    locMaxC = CandlesDF.iloc[j]['close']
-                if rsiObject.get_RSI(j) < locMinR:
-                    locMinR = rsiObject.get_RSI(j)
-                if rsiObject.get_RSI(j) > locMaxR:
-                    locMaxR = rsiObject.get_RSI(j)
-
-            minMaxDict['time'].append(CandlesDF.iloc[i]['time'])
-            minMaxDict['minC'].append(locMinC)
-            minMaxDict['maxC'].append(locMaxC)
-            minMaxDict['minR'].append(locMinR)
-            minMaxDict['maxR'].append(locMaxR)
-            locMinC, locMinR = 10000, 10000
-            locMaxC, locMaxR = 0, 0
-
-        sma_prev = SMA_5.get_SMA(i - 1)
-        sma_cur = SMA_5.get_SMA(i)
+        #sma_prev = MA.get_MA(i - 1)
+        #sma_cur = MA.get_MA(i)
+        if i >= len(MA) or i < 0:
+            if not is_test:
+                raise IndexError("Нет элементов в MA")
+            else:
+                return None, None
+        sma_prev = utils_funcs.cast_money(MA[i-1].signal)
+        sma_cur = utils_funcs.cast_money(MA[i].signal)
         BUY_Signal = CandlesDF.iloc[i - 1]['close'] < sma_prev and CandlesDF.iloc[i]['close'] > sma_cur
         SELL_Signal = CandlesDF.iloc[i - 1]['close'] > sma_prev and CandlesDF.iloc[i]['close'] < sma_cur
 
@@ -341,13 +333,26 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, is_test=False, **kwargs
                 start_frame = i - CNT_timeframe
 
             for j in range(start_frame + 1, i + 1):
-                # Считаем количество персечений SMA в 10 предыдущих таймфреймах
-                sma_prev = SMA_5.get_SMA(j - 1)
-                sma_cur = SMA_5.get_SMA(j)
+                # Считаем количество персечений MA в 10 предыдущих таймфреймах
+                #sma_prev = MA.get_MA(j - 1)
+                #sma_cur = MA.get_MA(j)
+                if i >= len(MA) or i < 0:
+                    if not is_test:
+                        raise IndexError("Нет элементов в MA")
+                    else:
+                        return None, None
+                sma_prev = utils_funcs.cast_money(MA[i - 1].signal)
+                sma_cur = utils_funcs.cast_money(MA[i].signal)
                 if CandlesDF.iloc[j - 1]['close'] < sma_prev and CandlesDF.iloc[j]['close'] > sma_cur:
                     cntInter += 1
 
-            rsi_val = rsiObject.get_RSI(i)  # Получаем значение RSI
+            #rsi_val = rsiObject.get_RSI(i)  # Получаем значение RSI
+            if i >= len(RSI) or i < 0:
+                if not is_test:
+                    raise IndexError("Нет элементов в MA")
+                else:
+                    return None, None
+            rsi_val = utils_funcs.cast_money(RSI[i].signal)
 
             # Если количество пересечений не очень большое, то совершаем сделку
             if cntInter < MAXInter:
@@ -359,12 +364,10 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, is_test=False, **kwargs
                 else:
                     if rsi_val <= 30:  # Если сигнал на покупку и RSI в зоне перепроданности
                         continue  # то не совершаем продажу
-
-
-                #active_cast = CandlesDF.iloc[i]['close']  # Рыночная цена торгового инструмента (типа)
                 lot_cast = lot * active_cast  # Рыночная цена одного лота торгового инструмента (типа)
                 final_lot_cast = 0.0
-                stop_cast = lot_cast * (1 - stopLoss)  # Рассчитываем стоп-цену за лот для стоп-маркета
+                sl_cast = lot_cast * (1 - stopLoss)  # Рассчитываем стоп-цену за лот для стоп-лосса
+                tp_cast = lot_cast * (1 + takeProfit)  # Рассчитываем стоп-цену за лот для тейк-профита
 
                 if BUY_Signal:
                     final_lot_cast = lot_cast * (1 + COMMISION) # Рыночная цена одного лота актива с учетом комиссии брокера
@@ -387,17 +390,8 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, is_test=False, **kwargs
 
                     cnt_lots += cnt_tradeLots  # Получаем лоты инструмента (акции Тинькофф) на счет
                     account_portfolio -= positionReal  # Перечисляем деньги за сделку брокеру в случае покупки
-                    stopMarketQueue.push(stop_cast, cnt_tradeLots) # Фиксируем стоп-маркет заявку в журнале заявок
-
-                    if trName:
-                        with open("historyTradingLog.txt", 'a', encoding="utf-8") as f, redirect_stdout(f):
-
-                            print("INFO ABOUT TRANSACTION\n--------------------------\n" +
-                                  "\nBUY - %2.f RUB" % positionReal + "\n+ " + str(cnt_tradeLots) + " "+trName +
-                                  " lots" + "--------------------------\n")
-                        print("INFO ABOUT TRANSACTION\n--------------------------\n" +
-                            "\nBUY - %2.f RUB" % positionReal + "\n+ " + str(cnt_tradeLots) + " " + trName + " lots" +
-                            "--------------------------\n")
+                    await stopLossQueue.push(sl_cast, cnt_tradeLots) # Фиксируем стоп-лосс заявку в журнале заявок
+                    await takeProfitQueue.push(tp_cast, cnt_tradeLots)  # Фиксируем стоп-лосс заявку в журнале заявок
                 else:
                     # Если размер позиции на продажу с учетом комиссии меньше рассчитываемого, то увеличиваем количество лотов
                     while positionReal > positionSize:
@@ -406,15 +400,6 @@ async def HistoryTrain(uid, cnt_lots, account_portfolio, is_test=False, **kwargs
 
                     cnt_lots -= cnt_tradeLots  # Продаем лоты инструмента (акции Тинькофф) брокеру
                     account_portfolio += positionReal  # Получаем деньги за сделку от брокера в случае продажи
-                    if trName:
-                        with open("historyTradingLog.txt", 'a', encoding="utf-8") as f, redirect_stdout(f):
-                            print("INFO ABOUT TRANSACTION\n--------------------------\n" +
-                                "\nSELL + %2.f RUB" % positionReal + "\n- " + str(cnt_tradeLots) + " "+ trName +
-                                  " lots" + "--------------------------\n")
-                        print("INFO ABOUT TRANSACTION\n--------------------------\n" +
-                            "\nSELL + %2.f RUB" % positionReal + "\n- " + str(cnt_tradeLots) + " "+trName +
-                              " lots" + "--------------------------\n")
-
 
                 stopLossSize = positionReal * stopLoss  # Рассчитываем размер стоп-лосса (max убытка от позиции)
 

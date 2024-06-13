@@ -1,41 +1,14 @@
 # Сам бот
-import sys
-import os
-from dotenv import load_dotenv
-import logging
-import asyncio
-import math
-import multiprocessing as mp
-import csv
-import time
-from datetime import datetime, timedelta, timezone
+from imports import *
 
-from tinkoff.invest import RequestError
-from tinkoff.invest.schemas import (
-    CandleInterval,
-    OrderDirection,
-    OrderType,
-    PriceType,
-    PostOrderResponse,
-    TechAnalysisItem
-)
+from tinkoff.invest.sandbox.async_client import AsyncSandboxClient
+from tinkoff.invest.schemas import *
 
-load_dotenv()
-main_path = os.getenv('MAIN_PATH')
-sys.path.append(main_path)
-sys.path.append(main_path+'app/')
-
-#import app.technical_indicators
-# Для исторических свечей
 import stream_client
 
-from app.StopMarketQueue import StopMarketQueue
 from api import crud, models
 from api.database import *
 from technical_indicators import *
-
-from config import program_config
-from utils_funcs import utils_funcs
 
 from instruments_loader import InstrumentsLoader
 from candles_loader import CandlesLoader
@@ -53,10 +26,12 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
     Класс, реализующий логику торгового робота в песочнице
     """
 
-    def __init__(self, account_id: str, correct_sum=False, cor_sum_value=0, filename='../settings.ini', autofill=True):
+    def __init__(self, account_id: str, filename='settings.ini', autofill=False):
         # Ожидаемая доходность, риск, СТОП-ЛОСС, ТЕЙК-ПРОФИТ
+        filename = main_path + filename
         config = program_config.ProgramConfiguration(filename)
         self.__token = os.getenv('TINKOFF_TOKEN')
+        self.__autofill = autofill
 
         self._user_return = config.user_return
         self._user_risk = config.user_risk
@@ -64,32 +39,24 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         InstrumentsLoader.__init__(self, autofill)     # Инициализируем базу и загружаем инструменты
         CandlesLoader.__init__(self, filename)
 
-        self.market_queue = StopMarketQueue()
         self.account_id = account_id
-        
         self.direct_trade = dict()    # Направление сделки (купить/продать)
-        self.profit = 0                                # Прибыль портфеля в процентах
-        self.trades_list = dict()                      # Журнал сделок
-        self.buy_cast_list = list([])                  # Список пар "цена покупки"-"количество лотов"
-        self.__cor_sum = correct_sum
-        self.__cor_sum_val = cor_sum_value             # Сумма для пополнения
+        self.profit = 0               # Прибыль портфеля в процентах
+        self.trades_list = dict()     # Журнал сделок
+        self.buy_cast_list = list([]) # Список пар "цена покупки"-"количество лотов"
         self.__last_prices = list([])                  # Список последних цен покупки
         self.__sl_queue = StopMarketQueue()            # Очередь стоп-лосс заявок
         self.__tp_queue = StopMarketQueue()            # Очередь тейк-профит заявок
         self.file_path = filename
         self.timeframe = config.timeframe
-        self.__stream_process = mp.Process(target=stream_client.setup_stream, args=[config])  # Процесс загрузки данных через Stream
+        self.__end_time = datetime.now().strftime("%Y-%m-%d")
+        self.__end_time = datetime.strptime(self.__end_time+" 22:00:00", "%Y-%m-%d %H:%M:%S")
         self._init_delay()
+        self.__stop_flag = False
+        self.is_alive = False
 
-    def __correct_sum(self):
-        balance = None
-        with SandboxClient(self.__token) as client:
-            balance = client.sandbox.get_sandbox_portfolio(account_id=self.account_id)
-            free_money = utils_funcs.cast_money(balance.total_amount_currencies)
-            while free_money < 20000:
-                self.pay_in(5000)
-                balance = client.sandbox.get_sandbox_portfolio(account_id=self.account_id)
-                free_money = utils_funcs.cast_money(balance.total_amount_currencies)
+    def set_stop(self):
+        self.__stop_flag = True
 
 
     def is_trade_available(self, uid: str) -> bool:
@@ -110,19 +77,12 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
                 return False
 
 
-    def pay_in(self, sum_rub: float):
-        """ Пополнение счета в песочнице """
-        with SandboxClient(self.__token) as client:
-            sum_trade = utils_funcs.reverse_money_mv(sum_rub)
-            client.sandbox.sandbox_pay_in(account_id=self.account_id, amount=sum_trade)  # Пополнение счета на сумму pay_sum
-            print(f"\nПортфель пополнен на {sum_rub:.2f} RUB\n\n")
-
-
     def __print_candle(self, candle: models.Candle):
         """
          Метод для вывода свечи в консоль
         """
-        time_m = candle.time_m.strftime('%Y-%m-%d %H:%M:%S')
+        time_m = candle.time_m - timedelta(hours=3)
+        time_m = time_m.strftime('%Y-%m-%d %H:%M:%S')
         print(f"\nOpen: {candle.open:.2f}, Close: {candle.close:.2f}, Low: {candle.low:.2f}, High: {candle.high:.2f}, Time: {time_m}\n")
 
 
@@ -138,7 +98,7 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
 
 
     @utils_funcs.invest_api_retry()
-    def check_signal(self, uid: str, ma_interval: int, rsi_interval: int, max_inter: int):
+    def check_signal(self, uid: str, ma_interval: int, ma_type: IndicatorType, rsi_interval: int, max_inter: int):
         """
         Метод, проверяющий наличие торговых сигналов
         """
@@ -147,7 +107,7 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
 
         if not last_candles:
             raise ValueError
-        t2 = last_candles[0].time_m
+        t2 = datetime.now(timezone.utc)
         t1 = None
         tf = utils_funcs.get_timeframe_by_name(self.timeframe)
         #self.make_trade()
@@ -179,21 +139,34 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
             case CandleInterval.CANDLE_INTERVAL_MONTH:
                 t1 = t2 - timedelta(days=365*2)
 
-        valuesEMA = getEMA(uid, t1, t2, tf, interval=ma_interval)  # Получаем значения MA
+        valuesMA = None
+        if ma_type == IndicatorType.INDICATOR_TYPE_SMA:
+            print("Type of MA: SMA\n")
+            valuesMA = getSMA(uid, t1, t2, tf, interval=ma_interval)  # Получаем значения SMA
+        else:
+            print("Type of MA: EMA\n")
+            valuesMA = getEMA(uid, t1, t2, tf, interval=ma_interval)  # Получаем значения EMA
         valuesRSI = getRSI(uid, t1, t2, tf, interval=rsi_interval)  # Получаем значения RSI
+        if not valuesMA or not valuesRSI:
+            return False
+        valuesMA = list(reversed(valuesMA))
+        valuesRSI = list(reversed(valuesRSI))
+        daysEMA = valuesMA[0].timestamp.timestamp()
+        daysCandle = last_candles[0].time_m.timestamp()
+        if abs(daysEMA - daysCandle) > 4 * 60 * 60:
+            return False
 
         # Выводим значения последних свечей и SMA в консоль для отладки
         self.__print_candle(last_candles[1])
         self.__print_candle(last_candles[0])
-        self.__print_sma(valuesEMA[0], valuesEMA[1])
+        self.__print_sma(valuesMA[0], valuesMA[1])
  
         last_price = last_candles[1].close
         with SandboxClient(self.__token) as client:
             last_prices_resp = client.market_data.get_last_prices(instrument_id=[uid])  # Получаем цены по рынку
             trade_price = last_prices_resp.last_prices[0].price
             last_price = utils_funcs.cast_money(trade_price)
-
-        sma_prev, sma_cur = utils_funcs.cast_money(valuesEMA[0].signal), utils_funcs.cast_money(valuesEMA[1].signal)
+        sma_prev, sma_cur = utils_funcs.cast_money(valuesMA[0].signal), utils_funcs.cast_money(valuesMA[1].signal)
         rsiVal = utils_funcs.cast_money(valuesRSI[1].signal)
 
         if last_candles[1].close < sma_prev and last_price > sma_cur:
@@ -205,7 +178,7 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
             return False
 
         print('\nSIGNAL 1 TAKEN\n')
-        valuesSMA = valuesEMA[-10:]
+        valuesSMA = valuesMA[-10:]
         size = len(valuesSMA)
         last_candles = last_candles[:-1]
         last_candles.reverse()
@@ -349,12 +322,14 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
                     raise Exception('Markets were not detected')
 
             if not self.is_trade_available(info['uid']):
+                print(f"\n{ticker} is not avaable to trade\n")
                 return      # Если инструмент не доступен для торгов, отменяем сделку
             if lot_count <= 0:
+                print("Invalid lot count")
                 return
 
             # Совершаем сделку
-            POResponse = self.real_trade(info['uid'], trade_price, direct, self.account_id,
+            POResponse = await self.real_trade(info['uid'], trade_price, direct, self.account_id,
                                          OrderType.ORDER_TYPE_MARKET, PriceType.PRICE_TYPE_CURRENCY, lot_count)
             print("END OF TRADE\n")
 
@@ -366,21 +341,19 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         """
         Проверка сигнала и совершение сделки
         """
-        if self.check_signal(info['uid'], info['ma_interval'], info['rsi_interval'], info['max_inter']):
+        if self.check_signal(info['uid'], info['ma_interval'], info['ma_type'], info['rsi_interval'], info['max_inter']):
             await self.make_trade(ticker, info)
 
 
-    def real_trade(self, *args):
-        with SandboxClient(self.__token) as client:
+    async def real_trade(self, *args):
+        async with AsyncSandboxClient(self.__token) as client:
             try:
-                POResponse = client.sandbox.post_sandbox_order(instrument_id=args[0], price=args[1], direction=args[2],
+                POResponse = await client.sandbox.post_sandbox_order(instrument_id=args[0], price=args[1], direction=args[2],
                                                        account_id=args[3],
                                                        order_type=args[4],
                                                        price_type=args[5], quantity=args[6])
             except Exception as e:
                 if args[6] <= 0:
-                    print(f"Quantity = {args[6]}")
-                    print('lol')
                     raise e
             return POResponse
 
@@ -451,7 +424,7 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         if lot_count <= 0:
             return False
         direct = OrderDirection.ORDER_DIRECTION_SELL
-        POResponse = self.real_trade(uid, trade_price, direct, self.account_id,
+        POResponse = await self.real_trade(uid, trade_price, direct, self.account_id,
                                      OrderType.ORDER_TYPE_MARKET, PriceType.PRICE_TYPE_CURRENCY, lot_count)
         await self.printPostOrderResponse(POResponse)  # Выводим информацию о сделке
         return True
@@ -706,6 +679,13 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         return filename
 
     async def pre_run(self) -> bool:
+        last_date = datetime.strptime("2020-01-01_10:00:00", "%Y-%m-%d_%H:%M:%S")
+        if self.__autofill:
+            tasks = list([])
+            for val in self.strategies.values():
+                task = asyncio.create_task(self._load_candles(self._db, val['uid'], last_date))
+                tasks.append(task)
+            done, pending = await asyncio.wait(tasks)
         event_loop = asyncio.new_event_loop()
         last_time_dict = self._check_last_candles(self._db)
         tasks = list([])
@@ -721,15 +701,23 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
         return True
 
     @utils_funcs.invest_api_retry(retry_count=10)
-    async def run(self):
+    async def run(self, stop_event: mp.Event, stop_event2: mp.Event):
         """ Главный цикл торгового робота """
+        self.is_alive = True
+        weekday = datetime.now(timezone.utc).isoweekday()
+        if weekday == 6 or weekday == 7:
+            print("ОШИБКА InvestBot: торговля по выходным недоступна")
+            self.is_alive = False
+            raise Exception("ОШИБКА InvestBot: торговля по выходным недоступна")
+        
         is_loaded = await self.pre_run()
         while not is_loaded:
             continue
 
-        if self.__cor_sum:      # Если не стоит флаг коррекции суммы
-            self.__correct_sum()
-
+        config = program_config.ProgramConfiguration(self.file_path)
+        engine.dispose()
+        self.__stream_process = mp.Process(target=stream_client.setup_stream,
+                                           args=[config, stop_event2])  # Процесс загрузки данных через Stream
         self.__stream_process.start()   # (**) Запускаем процесс загрузки данных через Stream
 
         while True:
@@ -738,8 +726,25 @@ class InvestBot(CandlesLoader, InstrumentsLoader):
                 self.__stream_process.terminate()     # Завершаем процесс стрима
                 print('\nStream process terminated')
                 print('Session was exited')
+                self.is_alive = False
                 return                                # Выходим из функции
             for ticker, info in self.strategies.items():
                 await self.async_trade(ticker, info)
                 await self.stop_market_complete(info['uid'])
-            time.sleep(30)
+            cur_time = datetime.now()
+            if cur_time >= self.__end_time:
+                print('\nТорговый день завершен. Робот прекращает работу')
+                self.__stream_process.terminate()
+                print("Стрим-соединение отключено")
+                self.is_alive = False
+                return
+            if stop_event.is_set():
+                print('\nТорговый день завершен. Робот прекращает работу')
+                self.__stream_process.join(timeout=5)
+                if self.__stream_process.is_alive():
+                    self.__stream_process.terminate()
+                print("Стрим-соединение отключено")
+                self.is_alive = False
+                print("Торговый робот прекратил работу")
+                return
+            await asyncio.sleep(self._delay)

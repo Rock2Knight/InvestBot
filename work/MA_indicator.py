@@ -1,10 +1,17 @@
 # Модуль, содержащий реализацию индикатора скользящей средней
 from abc import ABC, abstractmethod  # Для абстрактных классов и интерфейсов
 from typing import Union, Any
+import sys
 import os
+from dotenv import load_dotenv
 import pandas as pd
 
 from api.models import Candle
+
+load_dotenv()
+main_path = os.getenv('MAIN_PATH')
+sys.path.append(main_path)
+sys.path.append(main_path+'work/')
 
 # Интерфейс для индикатора MA
 class MAIndicator(ABC):
@@ -49,14 +56,15 @@ class SMAIndicator(MAIndicator):
             self._frame_ = kwargs['frame']
             self._uid_ = kwargs['uid']
 
-            path1 = "../sma_cache/" + self._frame_
+            path1 = main_path + "sma_cache\\" + self._frame_
+            #path1 = "../sma_cache/" + self._frame_
             if not os.path.exists(path1):
                 os.mkdir(path1)
-            raw_name1 = path1+'/'+self._uid_+'_'+self._time_from_+'_'+self._time_to_+'.csv'
+            raw_name1 = path1+'\\'+self._uid_+'_'+self._time_from_+'_'+self._time_to_+'.csv'
             self._filenameSMA_ = raw_name1.replace(':', '_')
 
-            path2 = "../instruments_info/" + self._frame_
-            raw_name2 = path2+'/'+self._uid_+'_'+self._time_from_+'_'+self._time_to_+'.csv'
+            path2 = main_path + "instruments_info\\" + self._frame_
+            raw_name2 = path2+'\\'+self._uid_+'_'+self._time_from_+'_'+self._time_to_+'.csv'
             self._filenameCandles_ = raw_name2.replace(':', '_')
 
         if model:

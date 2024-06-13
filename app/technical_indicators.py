@@ -1,24 +1,8 @@
 # Модуль, содержащий реализацию индикатора скользящей средней
-import sys
-import os
-from datetime import datetime, timedelta, timezone
-from dotenv import load_dotenv
+from imports import *
 
 from tinkoff.invest.sandbox.client import SandboxClient
-from tinkoff.invest.schemas import (
-    CandleInterval,
-    GetTechAnalysisRequest,
-    IndicatorType,
-    IndicatorInterval,
-    TypeOfPrice,
-    Smoothing
-)
-
-load_dotenv()
-TOKEN = os.getenv('TINKOFF_TOKEN')
-main_path = os.getenv('MAIN_PATH')
-sys.path.append(main_path)
-from utils_funcs import utils_funcs
+from tinkoff.invest.schemas import *
 
 def analyze_interval(timeframe: CandleInterval):
     """ Сопоставление IndicatorInterval с CandleInterval """
@@ -51,9 +35,7 @@ def analyze_interval(timeframe: CandleInterval):
 
 def getSMA(uid_instrument, time_from, time_to, timeframe, interval=10):
     """ Получение покзателя SMA с длиной interval за указнный период """
-    timeframe = (timeframe)
-    #t1 = datetime.strptime(time_from, '%Y-%m-%d_%H:%M:%S')
-    #t2 = datetime.strptime(time_to, '%Y-%m-%d_%H:%M:%S')
+    timeframe = utils_funcs.candle_to_indicator(timeframe)
     request = GetTechAnalysisRequest(
         indicator_type=IndicatorType.INDICATOR_TYPE_SMA,
         instrument_uid=uid_instrument,
@@ -75,8 +57,6 @@ def getSMA(uid_instrument, time_from, time_to, timeframe, interval=10):
 def getEMA(uid_instrument: str, time_from, time_to, timeframe, interval=10):
     """ Получение покзателя EMA с длиной interval за указнный период """
     timeframe = utils_funcs.candle_to_indicator(timeframe)
-    #t1 = datetime.strptime(time_from, '%Y-%m-%d_%H:%M:%S')
-    #t2 = datetime.strptime(time_to, '%Y-%m-%d_%H:%M:%S')
     request = GetTechAnalysisRequest(
         indicator_type=IndicatorType.INDICATOR_TYPE_EMA,
         instrument_uid=uid_instrument,
@@ -97,8 +77,6 @@ def getEMA(uid_instrument: str, time_from, time_to, timeframe, interval=10):
 def getRSI(uid_instrument: str, time_from, time_to, timeframe, interval=14):
     """ Получение покзателя RSI с длиной interval за указнный период """
     timeframe = utils_funcs.candle_to_indicator(timeframe)
-    #t1 = datetime.strptime(time_from, '%Y-%m-%d_%H:%M:%S')
-    #t2 = datetime.strptime(time_to, '%Y-%m-%d_%H:%M:%S')
     request = GetTechAnalysisRequest(
         indicator_type=IndicatorType.INDICATOR_TYPE_RSI,
         instrument_uid=uid_instrument,

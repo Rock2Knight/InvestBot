@@ -11,7 +11,6 @@ class ProgramConfiguration:
     """
     def __init__(self, file_name: str) -> None:
         # classic ini file
-        print(f"\nConfig file = {file_name}\n")
         self.config = ConfigParser()
         self.config.read(file_name)
 

@@ -243,5 +243,9 @@ class UtilsFuncsTest(unittest.TestCase):
         self.assertEqual(result.nano, expected_nano)
         self.assertEqual(result.currency, 'RUB')
 
+    def test_get_candles(self):
+        request = "/get_candles 2024-05-23 10:00:00 2024-05-26 10:00:00_1 MIN"
+        utils_funcs.get_candles(request)
+
 if __name__ == '__main__':
     unittest.main()

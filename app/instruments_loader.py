@@ -1,25 +1,13 @@
 # Загрузчик информации об инструментах
-import os
-import sys
-import logging
+from imports import *
 from typing import Any
-from dotenv import load_dotenv
 
-from tinkoff.invest.schemas import (
-    InstrumentIdType, Asset,
-    AssetInstrument, InstrumentType,
-)
+from tinkoff.invest.schemas import *
 from tinkoff.invest.sandbox.client import SandboxClient
 from tinkoff.invest.exceptions import RequestError
 
-load_dotenv()
-main_path = os.getenv('MAIN_PATH')
-sys.path.append(main_path)
-
 from api import crud, models
 from api.database import *
-
-from utils_funcs import utils_funcs
 
 logging.basicConfig(level=logging.WARNING, filename='logger.log', filemode='a',
                     format="%(asctime)s %(levelname)s %(message)s")
@@ -42,6 +30,7 @@ class InstrumentsLoader:
         if not self._db:
             logging.error("Не указана база данных")
             raise Exception("Не указана база данных")
+        create_db(engine)
 
         instrument_list =  crud.get_instrument_list(self._db)  # Достаем все записи из таблицы instrument
         if not instrument_list:                              # Если таблица instrument пуста, то выходим
@@ -51,7 +40,7 @@ class InstrumentsLoader:
     def db(self):
         return self._db
 
-    def __check_instrument_kind(self, sb_client: SandboxClient, instr: AssetInstrument) -> tuple[str | Any] | bool:
+    def __check_instrument_kind(self, instr: AssetInstrument) -> tuple[str | Any] | bool:
         """
         Проверка типа торгового инструмента
         """
@@ -65,10 +54,11 @@ class InstrumentsLoader:
             case InstrumentType.INSTRUMENT_TYPE_SHARE:
                 shareResp = None
                 try:
-                    shareResp = sb_client.instruments.share_by(
-                        id_type=InstrumentIdType.INSTRUMENT_ID_TYPE_TICKER,
-                        id=instr.ticker,
-                        class_code=instr.class_code)
+                    with SandboxClient(self.__token) as client:
+                        shareResp = client.instruments.share_by(
+                            id_type=InstrumentIdType.INSTRUMENT_ID_TYPE_TICKER,
+                            id=instr.ticker,
+                            class_code=instr.class_code)
                 except Exception as e:
                     if isinstance(e, RequestError):
                         logging.error("Ошбика во время запроса данных об акции на стороне сервера\n")
@@ -91,10 +81,11 @@ class InstrumentsLoader:
             case InstrumentType.INSTRUMENT_TYPE_BOND:
                 bondResp = None
                 try:
-                    bondResp = sb_client.instruments.bond_by(
-                        id_type=InstrumentIdType.INSTRUMENT_ID_TYPE_TICKER,
-                        id=instr.ticker,
-                        class_code=instr.class_code)
+                    with SandboxClient(self.__token) as sb_client:
+                        bondResp = sb_client.instruments.bond_by(
+                            id_type=InstrumentIdType.INSTRUMENT_ID_TYPE_TICKER,
+                            id=instr.ticker,
+                            class_code=instr.class_code)
                 except Exception as e:
                     if isinstance(e, RequestError):
                         logging.error(
@@ -118,10 +109,11 @@ class InstrumentsLoader:
             case InstrumentType.INSTRUMENT_TYPE_ETF:
                 etfResp = None
                 try:
-                    etfResp = sb_client.instruments.etf_by(
-                        id_type=InstrumentIdType.INSTRUMENT_ID_TYPE_TICKER,
-                        id=instr.ticker,
-                        class_code=instr.class_code)
+                    with SandboxClient(self.__token) as sb_client:
+                        etfResp = sb_client.instruments.etf_by(
+                            id_type=InstrumentIdType.INSTRUMENT_ID_TYPE_TICKER,
+                            id=instr.ticker,
+                            class_code=instr.class_code)
                 except Exception as e:
                     if isinstance(e, RequestError):
                         logging.error("Ошбика во время запроса данных об ETF на стороне сервера\n")
@@ -151,7 +143,7 @@ class InstrumentsLoader:
         return currency_name, sector_name, exchange_name, instrument_name, lot
 
 
-    def __create_instrument(self, sb_client: SandboxClient, instrument: AssetInstrument, asset: Asset) -> bool:
+    def __create_instrument(self, instrument: AssetInstrument, asset: Asset) -> bool:
         """
         Метод для добавления торгвого инструмента в базу
 
@@ -159,7 +151,7 @@ class InstrumentsLoader:
         :return bool - признак досрочного продолжения цикла (досрочного завершения итерации)
         """
 
-        resp = self.__check_instrument_kind(sb_client, instrument)
+        resp = self.__check_instrument_kind(instrument)
         if isinstance(resp, bool):
             if not resp:
                 return True
@@ -212,9 +204,18 @@ class InstrumentsLoader:
             id_instr_type = id_instr_type.id
 
         # Если в базе нет обозначения актива инструмента, добавляем его в базу
+        str_asset_type = utils_funcs.get_str_type(asset.type, True)
+        db_asset_type_id = crud.get_asset_type_name(self._db, asset_type_name=str_asset_type)
+        if not db_asset_type_id:
+            last_id = crud.get_last_asset_type_id(self._db)
+            last_id = last_id + 1 if last_id else 1
+            db_asset_type_id = crud.create_asset_type(self._db, id=last_id, name=str_asset_type)
+            db_asset_type_id = db_asset_type_id.id
+        else:
+            db_asset_type_id = db_asset_type_id.id
         uid_asset =  crud.get_asset_uid(db=self._db, asset_uid=asset.uid)
         if not uid_asset:
-            crud.create_asset(db=self._db, uid=asset.uid, name=asset.name)
+            crud.create_asset(db=self._db, uid=asset.uid, name=asset.name, type_id=db_asset_type_id)
             uid_asset = crud.get_asset_uid(db=self._db, asset_uid=asset.uid)
             uid_asset = uid_asset.uid
         elif isinstance(uid_asset, models.Asset):
@@ -243,7 +244,7 @@ class InstrumentsLoader:
             last_id =  crud.get_last_asset_type_id(self._db)
             last_id = last_id + 1 if last_id else 1
             db_asset_type_id =  crud.create_asset_type(self._db, id=last_id, name=str_asset_type)
-            db_asset_type_id = db_asset_type_id
+            db_asset_type_id = db_asset_type_id.id
         else:
             db_asset_type_id = db_asset_type_id.id
 
@@ -258,23 +259,21 @@ class InstrumentsLoader:
         Метод для загрузки в базу информации о всех возможных инструментах с Tinkoff Invest API
         """
         resp = None
-        my_sb_client = None
         
         with SandboxClient(self.__token) as sb_client:
-            my_sb_client = sb_client
             resp = sb_client.instruments.get_assets()  # Получаем список всех активов
 
         for asset in resp.assets:
             db_asset = crud.get_asset(self._db, asset_uid=asset.uid)
             if db_asset:
                 for instrument in asset.instruments:
-                    is_cont = self.__create_instrument(my_sb_client, instrument, asset) # Добавляем торговый инструмент в базу
+                    is_cont = self.__create_instrument(instrument, asset) # Добавляем торговый инструмент в базу
                     if is_cont:
                         continue
 
                 self.__create_asset(asset)
 
             for instrument in asset.instruments:
-                is_cont = self.__create_instrument(my_sb_client, instrument, asset) # Добавляем торговый инструмент в базу
+                is_cont = self.__create_instrument(instrument, asset) # Добавляем торговый инструмент в базу
                 if is_cont:
                     continue
